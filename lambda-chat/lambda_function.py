@@ -131,33 +131,15 @@ def load_document(file_type, s3_file_name):
         ) for t in texts[:3]
     ]
     return docs
-              
-def get_answer_basic(query, vectorstore_faiss):
-    wrapper_store_faiss = VectorStoreIndexWrapper(vectorstore=vectorstore_faiss)
-    query_embedding = vectorstore_faiss.embedding_function(query)
 
-    relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
+def get_answer_from_opensearch(query, docsearch):
+    relevant_documents = docsearch.similarity_search(query)
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
     for i, rel_doc in enumerate(relevant_documents):
         print_ww(f'## Document {i+1}: {rel_doc.page_content}.......')
         print('---')
     
-    answer = wrapper_store_faiss.query(question=query, llm=llm)
-    print_ww(answer)
-
-    return answer
-
-def get_answer(query, vectorstore_faiss):
-    query_embedding = vectorstore_faiss.embedding_function(query)
-
-    relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
-    print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-    print('----')
-    for i, rel_doc in enumerate(relevant_documents):
-        print_ww(f'## Document {i+1}: {rel_doc.page_content}.......')
-        print('---')
-
     prompt_template = """Human: Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
     {context}
@@ -171,7 +153,7 @@ def get_answer(query, vectorstore_faiss):
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
-        retriever=vectorstore_faiss.as_retriever(
+        retriever=docsearch.as_retriever(
             search_type="similarity", search_kwargs={"k": 3}
         ),
         return_source_documents=True,
@@ -183,6 +165,9 @@ def get_answer(query, vectorstore_faiss):
     print(source_documents)
 
     return result['result']
+    
+    
+
         
 def lambda_handler(event, context):
     print(event)
@@ -257,18 +242,20 @@ def lambda_handler(event, context):
             # load documents where text, pdf, csv are supported
             docs = load_document(file_type, object)
             
-            # create new vectorstore from a document
-            vectorstore_faiss = FAISS.from_documents(
-                docs,  # documents
-                bedrock_embeddings,  # embeddings
-            )
 
-            # summerization
+            domain_endpoint = "https://search-rag-project-gpszsrgvakwercyhhyfl3api74.ap-northeast-2.es.amazonaws.com"
+            from langchain.vectorstores import OpenSearchVectorSearch
+            docsearch = OpenSearchVectorSearch.from_documents(
+                docs, 
+                bedrock_embeddings, 
+                opensearch_url=f"http://{domain_endpoint}:9200"
+)
+             # summerization
             query = "summerize the documents"
             #msg = get_answer_basic(query, vectorstore_faiss)
             #print('msg1: ', msg)
 
-            msg = get_answer(query, vectorstore_faiss)
+            msg = get_answer_from_opensearch(query, docsearch)
             print('msg2: ', msg)
                 
         elapsed_time = int(time.time()) - start
