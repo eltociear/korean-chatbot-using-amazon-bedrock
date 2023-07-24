@@ -33,14 +33,14 @@ git clone https://github.com/kyopark2014/question-answering-chatbot-with-RAG
 5) cdk 폴더로 이동하여 필요한 라이브러리를 설치합니다.
 
 ```java
-cd question-answering-chatbot-with-RAG/cdk-qa-chatbot-with-regg/ && npm install
+cd question-answering-chatbot-with-RAG/cdk-qa-chatbot-with-reg/ && npm install
 ```
 
 6) bedrock-sdk를 설치합니다.
 
 ```java
 cd ../lambda-chat && wget https://preview.documentation.bedrock.aws.dev/Documentation/SDK/bedrock-python-sdk.zip
-unzip bedrock-python-sdk.zip -d bedrock-sdk && python3 -m pip install -U ./bedrock-sdk/boto3-1.26.162-py3-none-any.whl -t . && python3 -m pip install -U ./bedrock-sdk/awscli-1.27.162-py3-none-any.whl -t . && cd ../cdk-qa-chatbot-with-regg/
+unzip bedrock-python-sdk.zip -d bedrock-sdk && python3 -m pip install -U ./bedrock-sdk/boto3-1.26.162-py3-none-any.whl -t . && python3 -m pip install -U ./bedrock-sdk/awscli-1.27.162-py3-none-any.whl -t . && cd ../cdk-qa-chatbot-with-reg/
 ```
 
 6) CDK 사용을 위해 Boostraping을 수행합니다.
