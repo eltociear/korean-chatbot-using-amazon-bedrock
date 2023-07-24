@@ -20,7 +20,7 @@ const model_id = "amazon.titan-tg1-large"; // amazon.titan-e1t-medium, anthropic
 const projectName = "qa-bot-with-rag"
 const bucketName = `storage-for-${projectName}`;
 
-export class CdkQaChatbotWithRegStack extends cdk.Stack {
+export class CdkQaChatbotWithRagStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
