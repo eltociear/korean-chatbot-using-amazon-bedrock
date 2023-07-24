@@ -1,4 +1,5 @@
-# qa-chatbot-with-RAG-using-opensearch
+# RAG를 이용한 Question/Answering Chatbot
+
 It shows a question and answering chatbot with RAG where OpenSearch is used for a vector database.
 
 
