@@ -168,22 +168,8 @@ Chatbot API를 테스트하기 위해 제공하는 Web client는 일반적인 �
 
 ## Reference 
 
-[Getting started - Faiss](https://github.com/facebookresearch/faiss/wiki/Getting-started)
-
-[FAISS - LangChain](https://python.langchain.com/docs/modules/data_connection/vectorstores/integrations/faiss)
-
-[Welcome to Faiss Documentation](https://faiss.ai/)
-
-[Adding a FAISS or Elastic Search index to a Dataset](https://huggingface.co/docs/datasets/v1.6.1/faiss_and_ea.html)
-
-[Python faiss.write_index() Examples](https://www.programcreek.com/python/example/112290/faiss.write_index)
 
 
 
-[OpenSearch - Langchain](https://python.langchain.com/docs/integrations/vectorstores/opensearch)
 
-[OpenSearch - Domain](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_opensearchservice.Domain.html)
 
-[Kendra - LangChain](https://python.langchain.com/docs/integrations/retrievers/amazon_kendra_retriever)
-
-[kendra_chat_anthropic.py](https://github.com/aws-samples/amazon-kendra-langchain-extensions/blob/main/kendra_retriever_samples/kendra_chat_anthropic.py)
