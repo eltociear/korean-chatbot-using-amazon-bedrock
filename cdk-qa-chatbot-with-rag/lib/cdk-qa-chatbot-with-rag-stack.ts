@@ -10,6 +10,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as s3Deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 const debug = false;
 const stage = 'dev';
@@ -112,6 +114,30 @@ export class CdkQaChatbotWithRagStack extends cdk.Stack {
         statements: [BedrockPolicy],
       }),
     );      
+
+    // const domainArn = "arn:aws:es:" + this.region + ":" + this.account + ":domain/" + applicationPrefix + "/*"
+
+    const domain = new opensearch.Domain(this, 'Domain', {
+      version: opensearch.EngineVersion.OPENSEARCH_2_3,
+      domainName: `os-${projectName}`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      ebs: {
+        volumeSize: 100,
+        volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+      },
+      nodeToNodeEncryption: true,
+      encryptionAtRest: {
+        enabled: true,
+      },
+    });
+    new cdk.CfnOutput(this, `Domain-of-OpenSearch-for-${projectName}`, {
+      value: domain.domainArn,
+      description: 'The arm of OpenSearch Domain',
+    });
+    new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
+      value: domain.domainEndpoint,
+      description: 'The endpoint of OpenSearch Domain',
+    }); 
 
     // Lambda for chat using langchain (container)
     const lambdaChatApi = new lambda.DockerImageFunction(this, `lambda-chat-for-${projectName}`, {
