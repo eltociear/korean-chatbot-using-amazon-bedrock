@@ -1,0 +1,2 @@
+# qa-chatbot-with-RAG-using-opensearch
+It shows a question and answering chatbot with RAG where OpenSearch is used for a vector database.
