@@ -96,18 +96,6 @@ llm = Bedrock(model_id=modelId, client=boto3_bedrock)
 # embedding
 bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
 
-# define vectorstore
-docs = [
-    Document(
-        page_content=""
-    )
-]
-vectorstore_faiss = FAISS.from_documents(
-    docs,  # documents
-    bedrock_embeddings,  # embeddings
-)
-print('vector store size: ', len(vectorstore_faiss.docstore._dict))
-
 # load documents from s3
 def load_document(file_type, s3_file_name):
     s3r = boto3.resource("s3")
@@ -270,21 +258,17 @@ def lambda_handler(event, context):
             docs = load_document(file_type, object)
             
             # create new vectorstore from a document
-            vectorstore_faiss_new = FAISS.from_documents(
+            vectorstore_faiss = FAISS.from_documents(
                 docs,  # documents
                 bedrock_embeddings,  # embeddings
             )
-
-            # merge            
-            vectorstore_faiss.merge_from(vectorstore_faiss_new)
-            print('vector store size: ', len(vectorstore_faiss.docstore._dict))
 
             # summerization
             query = "summerize the documents"
             #msg = get_answer_basic(query, vectorstore_faiss)
             #print('msg1: ', msg)
 
-            msg = get_answer(query, vectorstore_faiss_new)
+            msg = get_answer(query, vectorstore_faiss)
             print('msg2: ', msg)
                 
         elapsed_time = int(time.time()) - start
