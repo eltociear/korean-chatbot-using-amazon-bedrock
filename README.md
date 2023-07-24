@@ -5,3 +5,5 @@ It shows a question and answering chatbot with RAG where OpenSearch is used for 
 ## Reference
 
 [OpenSearch - Langchain](https://python.langchain.com/docs/integrations/vectorstores/opensearch)
+
+[OpenSearch - Domain](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_opensearchservice.Domain.html)
