@@ -117,10 +117,42 @@ export class CdkQaChatbotWithRagStack extends cdk.Stack {
 
     // const domainArn = "arn:aws:es:" + this.region + ":" + this.account + ":domain/" + applicationPrefix + "/*"
 
+    const clusterConfigProperty: opensearch.CfnDomain.ClusterConfigProperty = {
+      dedicatedMasterCount: 3,
+      dedicatedMasterEnabled: true,
+      dedicatedMasterType: 'dedicatedMasterType',
+      instanceCount: 3,
+      instanceType: 'instanceType',
+      //multiAzWithStandbyEnabled: true,
+      //warmCount: 123,
+      //warmEnabled: false,
+      //warmType: 'warmType',
+      zoneAwarenessConfig: {
+        availabilityZoneCount: 3,
+      },
+      zoneAwarenessEnabled: true,
+    };
+    // maskter: m6g.large.search
+    // data: r6g.large.search
+    // Domain with standby
     const domain = new opensearch.Domain(this, 'Domain', {
       version: opensearch.EngineVersion.OPENSEARCH_2_3,
       domainName: `os-${projectName}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      fineGrainedAccessControl: {
+        masterUserName: 'admin',
+        // masterUserPassword: cdk.SecretValue.secretsManager('dkim-private-key'),
+        masterUserPassword:cdk.SecretValue.unsafePlainText('Wifi1234!')
+      },
+      capacity: {
+        masterNodes: 3,
+        masterNodeInstanceType: 'm6g.large.search',
+        dataNodes: 3,
+        dataNodeInstanceType: 'r6g.large.search',
+        //multiAzWithStandbyEnabled: true,
+        // warmNodes: 2,
+        // warmInstanceType: 'ultrawarm1.medium.search',
+      },
       ebs: {
         volumeSize: 100,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
@@ -135,9 +167,10 @@ export class CdkQaChatbotWithRagStack extends cdk.Stack {
       description: 'The arm of OpenSearch Domain',
     });
     new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
-      value: domain.domainEndpoint,
+      value: 'https://'+domain.domainEndpoint,
       description: 'The endpoint of OpenSearch Domain',
     }); 
+
 
     // Lambda for chat using langchain (container)
     const lambdaChatApi = new lambda.DockerImageFunction(this, `lambda-chat-for-${projectName}`, {
