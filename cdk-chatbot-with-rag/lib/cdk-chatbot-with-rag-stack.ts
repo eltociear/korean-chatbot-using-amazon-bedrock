@@ -21,7 +21,6 @@ const endpoint_url = "https://prod.us-west-2.frontend.bedrock.aws.dev";
 const model_id = "amazon.titan-tg1-large"; // anthropic.claude-v1
 const projectName = "qa-chatbot-for-korean";
 const bucketName = `storage-for-${projectName}`;
-const rag_type = 'opensearch';
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
 
@@ -204,7 +203,6 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,
         configTableName: configTableName,
-        rag_type: rag_type,
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd
       }

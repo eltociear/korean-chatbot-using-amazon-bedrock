@@ -41,7 +41,6 @@ configTableName = os.environ.get('configTableName')
 endpoint_url = os.environ.get('endpoint_url')
 opensearch_url = os.environ.get('opensearch_url')
 bedrock_region = os.environ.get('bedrock_region')
-rag_type = os.environ.get('rag_type')
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 modelId = os.environ.get('model_id')
@@ -142,11 +141,7 @@ def load_document(file_type, s3_file_name):
 def get_answer_using_query(query, vectorstore, rag_type):
     wrapper_store = VectorStoreIndexWrapper(vectorstore=vectorstore)
     
-    if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-    elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
+    relevant_documents = vectorstore.similarity_search(query)
     
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
@@ -159,12 +154,8 @@ def get_answer_using_query(query, vectorstore, rag_type):
 
     return answer
 
-def get_answer_using_template(query, vectorstore, rag_type):
-    if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-    elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
+def get_answer_using_template(query, vectorstore):
+    relevant_documents = vectorstore.similarity_search(query)
 
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
@@ -209,7 +200,7 @@ def lambda_handler(event, context):
     body = event['body']
     print('body: ', body)
 
-    global modelId, llm, vectorstore, enableRAG, rag_type
+    global modelId, llm, vectorstore, enableRAG
     
     modelId = load_configuration(userId)
     if(modelId==""): 
@@ -219,90 +210,40 @@ def lambda_handler(event, context):
     start = int(time.time())    
 
     msg = ""
-    if type == 'text' and body[:11] == 'list models':
-        msg = f"The list of models: \n"
-        lists = modelInfo['modelSummaries']
-        
-        for model in lists:
-            msg += f"{model['modelId']}\n"
-        
-        msg += f"current model: {modelId}"
-        print('model lists: ', msg)
-    
-    elif type == 'text' and body[:20] == 'change the model to ':
-        new_model = body.rsplit('to ', 1)[-1]
-        print(f"new model: {new_model}, current model: {modelId}")
-
-        if modelId == new_model:
-            msg = "No change! The new model is the same as the current model."
-        else:        
-            lists = modelInfo['modelSummaries']
-            isChanged = False
-            for model in lists:
-                if model['modelId'] == new_model:
-                    print(f"new modelId: {new_model}")
-                    modelId = new_model
-                    llm = Bedrock(model_id=modelId, client=boto3_bedrock)
-                    isChanged = True
-                    save_configuration(userId, modelId)            
-
-            if isChanged:
-                msg = f"The model is changed to {modelId}"
-            else:
-                msg = f"{modelId} is not in lists."
-        print('msg: ', msg)
-
-    else:             
-        if type == 'text':
-            print('enableRAG: ', enableRAG)
-            text = body
-            if enableRAG==False:                
-                msg = llm(text)
-            else:
-                msg = get_answer_using_query(text, vectorstore, rag_type)
-                print('msg1: ', msg)
+    if type == 'text':
+        print('enableRAG: ', enableRAG)
+        text = body
+        if enableRAG==False:                
+            msg = llm(text)
+        else:
+            msg = get_answer_using_query(text, vectorstore)
+            print('msg1: ', msg)
             
-        elif type == 'document':
-            object = body
+    elif type == 'document':
+        object = body
         
-            file_type = object[object.rfind('.')+1:len(object)]
-            print('file_type: ', file_type)
+        file_type = object[object.rfind('.')+1:len(object)]
+        print('file_type: ', file_type)
             
-            # load documents where text, pdf, csv are supported
-            docs = load_document(file_type, object)
+        # load documents where text, pdf, csv are supported
+        docs = load_document(file_type, object)
                         
-            if rag_type == 'faiss':
-                if enableRAG == False:                    
-                    vectorstore = FAISS.from_documents( # create vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings  # embeddings
-                    )
-                    enableRAG = True                    
-                else:                             
-                    vectorstore_new = FAISS.from_documents( # create new vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings,  # embeddings
-                    )                               
-                    vectorstore.merge_from(vectorstore_new) # merge 
-                    print('vector store size: ', len(vectorstore.docstore._dict))
-
-            elif rag_type == 'opensearch':         
-                vectorstore = OpenSearchVectorSearch.from_documents(
-                    docs, 
-                    bedrock_embeddings, 
-                    opensearch_url=opensearch_url,
-                    http_auth=(opensearch_account, opensearch_passwd),
-                )
-                if enableRAG==False: 
-                    enableRAG = True
+        vectorstore = OpenSearchVectorSearch.from_documents(
+            docs, 
+            bedrock_embeddings, 
+            opensearch_url=opensearch_url,
+            http_auth=(opensearch_account, opensearch_passwd),
+        )
+        if enableRAG==False: 
+            enableRAG = True
                     
-            # summerization
-            query = "summerize the documents"
-            #msg = get_answer_using_query(query, vectorstore, rag_type)
-            #print('msg1: ', msg)
+        # summerization
+        query = "summerize the documents"
+        #msg = get_answer_using_query(query, vectorstore)
+        #print('msg1: ', msg)
 
-            msg = get_answer_using_template(query, vectorstore, rag_type)
-            print('msg2: ', msg)
+        msg = get_answer_using_template(query, vectorstore)
+        print('msg2: ', msg)
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
