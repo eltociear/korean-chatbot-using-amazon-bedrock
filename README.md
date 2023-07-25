@@ -124,7 +124,7 @@ relevant_documents = vectorstore.similarity_search(query)
 
 ### 문서 등록
 
-문서를 업로드하면 FAISS를 이용하여 vector store에 저장합니다. 파일을 여러번 업로드할 경우에는 기존 vector store에 추가합니다. 
+문서를 업로드하면 문서로 만들어서 vector store에 저장합니다. 파일을 여러번 업로드할 경우에는 기존 vector store에 추가합니다. 
 
 ```python
 docs = load_document(file_type, object)
