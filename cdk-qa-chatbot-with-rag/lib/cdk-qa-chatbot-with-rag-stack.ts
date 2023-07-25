@@ -139,6 +139,7 @@ export class CdkQaChatbotWithRagStack extends cdk.Stack {
       version: opensearch.EngineVersion.OPENSEARCH_2_3,
       domainName: `os-${projectName}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      enforceHttps: true,
       fineGrainedAccessControl: {
         masterUserName: 'admin',
         // masterUserPassword: cdk.SecretValue.secretsManager('dkim-private-key'),
