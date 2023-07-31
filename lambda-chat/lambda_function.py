@@ -142,13 +142,21 @@ bedrock_embeddings = BedrockEmbeddings(client = boto3_bedrock)
 from langchain.vectorstores import OpenSearchVectorSearch
 endpoint_url = "https://search-os-korean-chatbot-with-rag-clxtavqc2fpjgj3rzuemljb6zm.ap-northeast-2.es.amazonaws.com"
 
-
-vectorstore = OpenSearchVectorSearch.from_documents(
-    docs,
+from langchain import OpenSearchVectorSearch
+vectorstore = OpenSearchVectorSearch(
     bedrock_embeddings,
     opensearch_url = endpoint_url,
-    http_auth = ("admin", "Wifi1234!"),
+    http_auth=("admin", "Wifi1234!"),
 )
+
+#vectorstore = OpenSearchVectorSearch.from_documents(
+#    docs,
+#    bedrock_embeddings,
+#    opensearch_url = endpoint_url,
+#    http_auth=("admin", "Wifi1234!"),
+#)
+
+vectorstore.add_documents(docs)
 
 from langchain.embeddings import BedrockEmbeddings
 bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
