@@ -20,13 +20,10 @@ from langchain.agents.agent_types import AgentType
 from langchain.llms.bedrock import Bedrock
 from langchain.chains.question_answering import load_qa_chain
 
-from langchain.indexes import VectorstoreIndexCreator
 from langchain.document_loaders import CSVLoader
 from langchain.embeddings import BedrockEmbeddings
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
-from langchain.vectorstores import OpenSearchVectorSearch
 
 module_path = "."
 sys.path.append(os.path.abspath(module_path))
@@ -215,15 +212,13 @@ def lambda_handler(event, context):
             # load documents where text, pdf, csv are supported
             docs = load_document(file_type, object)
 
-            """                        
-            if rag_type == 'opensearch':         
-                vectorstore = OpenSearchVectorSearch.from_documents(
-                    docs, 
-                    bedrock_embeddings, 
-                    opensearch_url=opensearch_url,
-                    http_auth=(opensearch_account, opensearch_passwd),
-                )
-               """
+            from langchain.vectorstores import OpenSearchVectorSearch
+            vectorstore = OpenSearchVectorSearch.from_documents(
+                docs, 
+                bedrock_embeddings, 
+                opensearch_url=opensearch_url,
+                http_auth=(opensearch_account, opensearch_passwd),
+            )
                  
             # summerization to show the document
             prompt_template = """Write a concise summary of the following:
