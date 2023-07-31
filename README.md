@@ -11,29 +11,6 @@ Vector store는 이미지, 문서(text document), 오디오와 같은 구조화 
 <img src="https://github.com/kyopark2014/question-answering-chatbot-with-vector-store/assets/52392004/f1d99797-7929-4aa8-ba42-4369c0f268dd" width="800">
 
 
-문서파일을 업로드하여 vector store에 저장하는 과정은 아래와 같습니다.
-
-1) 사용자가 파일 업로드를 요청합니다. 이때 사용하는 Upload API는 [lambda (upload)](./lambda-upload/index.js)에 전달되어 S3 presigned url을 생성하게 됩니다.
-2) 사용자가 presigned url로 문서를 업로드 하면 S3에 object로 저장됩니다.
-3) Chat API에서 request type을 "document"로 지정하면 [lambda (chat)](./lambda-chat/lambda_function.py)는 S3에서 object를 로드하여 텍스트를 추출합니다.
-4) Embeding을 통해 단어들을 vector화 합니다.
-5) Vector store에 문서를 저장합니다. 이때 RAG의 type이 "faiss"이면 in-memory store인 Faiss로 저장하고, "opensearch"이면 Amazon OpenSearch로 저장합니다.
-6) 채팅창에 업로드한 문서의 요약(Summerization)을 보여지기 위해 summerization을 수행하고 그 결과를 사용자에게 전달합니다.
-
-아래는 문서 업로드시의 sequence diagram입니다. 
-
-<img src="./sequence/seq-upload.png" width="600">
-
-채팅 창에서 텍스트 입력(Prompt)를 통해 RAG를 활용하는 과정은 아래와 같습니다.
-1) 사용자가 채팅창에서 질문(Question)을 입력합니다.
-2) 이것은 Chat API를 이용하여 [lambda (chat)](./lambda-chat/lambda_function.py)에 전달됩니다.
-3) lambda(chat)은 질문을 Embedding후에 vector store에 관련된 문장이 있는지 확인합니다.
-4) Vector store가 관련된 문장을 전달하면 prompt template를 이용하여 LLM에 질문을 전달합니다. 이후 답변을 받으면 사용자에게 결과를 전달합니다.
-
-아래는 vectore store를 이용한 메시지 동작을 설명하는 sequence diagram입니다. 
-
-<img src="./sequence/seq-chat.png" width="600">
-
 ## 주요 구성
 
 ### Bedrock을 LangChain으로 연결
