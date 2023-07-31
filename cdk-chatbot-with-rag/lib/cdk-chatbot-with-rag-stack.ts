@@ -140,7 +140,7 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       accessPolicies: [OpenSearchAccessPolicy],      
       ebs: {
         volumeSize: 100,
-        volumeType: ec2.EbsDeviceVolumeType.PROVISIONED_IOPS_SSD_IO2,
+        volumeType: ec2.EbsDeviceVolumeType.PROVISIONED_IOPS_SSD,
       },
       nodeToNodeEncryption: true,
       encryptionAtRest: {
