@@ -200,6 +200,7 @@ def get_answer_using_template(query, vectorstore, rag_type):
 
 if rag_type == 'opensearch':     
     vectorstore = OpenSearchVectorSearch(
+        index_name="index-*",
         embedding_function = bedrock_embeddings,
         opensearch_url = endpoint_url,
         http_auth = ("admin", "Wifi1234!"),
