@@ -206,24 +206,48 @@ def lambda_handler(event, context):
         elif type == 'document':
             object = body
         
-            file_type = object[object.rfind('.')+1:len(object)]
-            print('file_type: ', file_type)
-            
-            # load documents where text, pdf, csv are supported
-            docs = load_document(file_type, object)
+            s3_file_name = 'gen-ai-aws.pdf'
+            s3r = boto3.resource("s3")
+            doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
+                
+            contents = doc.get()['Body'].read()
+            reader = PyPDF2.PdfReader(BytesIO(contents))
+                    
+            raw_text = []
+            for page in reader.pages:
+                raw_text.append(page.extract_text())
+            contents = '\n'.join(raw_text)  
 
-            from langchain.vectorstores import OpenSearchVectorSearch
+            new_contents = str(contents).replace("\n"," ") 
+
+
+            from langchain.text_splitter import CharacterTextSplitter
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=100)
+            texts = text_splitter.split_text(new_contents) 
+
+            from langchain.docstore.document import Document
+            docs = [
+                Document(
+                    page_content=t
+                ) for t in texts[:3]
+            ]
 
             from langchain.embeddings import BedrockEmbeddings
             bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
 
-            print('opensearch_url: ', opensearch_url)
+            from langchain.vectorstores import OpenSearchVectorSearch
+            endpoint_url = "https://search-os-korean-chatbot-with-rag-clxtavqc2fpjgj3rzuemljb6zm.ap-northeast-2.es.amazonaws.com"
+
+
             vectorstore = OpenSearchVectorSearch.from_documents(
                 docs, 
                 bedrock_embeddings, 
-                opensearch_url=opensearch_url,
-                http_auth=(opensearch_account, opensearch_passwd),
+                opensearch_url=endpoint_url,
+                http_auth=("admin", "Wifi1234!"),
             )
+
                  
             # summerization to show the document
             prompt_template = """Write a concise summary of the following:
