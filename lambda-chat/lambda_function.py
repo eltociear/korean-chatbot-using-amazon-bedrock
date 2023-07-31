@@ -81,28 +81,6 @@ def load_configuration(userId):
 
         return modelId
 
-# Bedrock Contiguration
-bedrock_region = bedrock_region
-bedrock_config = {
-    "region_name":bedrock_region,
-    "endpoint_url":endpoint_url
-}
-    
-# supported llm list from bedrock
-boto3_bedrock = bedrock.get_bedrock_client(
-    region=bedrock_config["region_name"],
-    url_override=bedrock_config["endpoint_url"])
-    
-modelInfo = boto3_bedrock.list_foundation_models()    
-print('models: ', modelInfo)
-
-llm = Bedrock(model_id=modelId, client=boto3_bedrock)
-
-# embedding
-bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
-
-enableRAG = False
-
 # load documents from s3
 def load_document(file_type, s3_file_name):
     s3r = boto3.resource("s3")
@@ -207,6 +185,37 @@ if rag_type == 'opensearch':
         http_auth = ("admin", "Wifi1234!"),
     )
 
+
+# Bedrock Contiguration
+bedrock_region = bedrock_region
+bedrock_config = {
+    "region_name":bedrock_region,
+    "endpoint_url":endpoint_url
+}
+    
+# supported llm list from bedrock
+boto3_bedrock = bedrock.get_bedrock_client(
+    region=bedrock_config["region_name"],
+    url_override=bedrock_config["endpoint_url"])
+    
+modelInfo = boto3_bedrock.list_foundation_models()    
+print('models: ', modelInfo)
+
+llm = Bedrock(model_id=modelId, client=boto3_bedrock)
+
+# embedding
+bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
+
+enableRAG = False
+
+vectorstore = OpenSearchVectorSearch(
+    index_name = "rag-index-*",
+    is_aoss = False,
+    embedding_function = bedrock_embeddings,
+    opensearch_url=opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd),
+)
+
 def lambda_handler(event, context):
     print(event)
     userId  = event['user-id']
@@ -224,9 +233,6 @@ def lambda_handler(event, context):
     if(modelId==""): 
         modelId = os.environ.get('model_id')
         save_configuration(userId, modelId)
-
-    
-            
 
     start = int(time.time())    
 
@@ -299,15 +305,15 @@ def lambda_handler(event, context):
                     print('vector store size: ', len(vectorstore.docstore._dict))
 
             elif rag_type == 'opensearch':         
-                vectorstore = OpenSearchVectorSearch.from_documents(
+                new_vectorstore = OpenSearchVectorSearch.from_documents(
                     docs, 
                     bedrock_embeddings, 
                     opensearch_url=opensearch_url,
                     http_auth=(opensearch_account, opensearch_passwd),
-                    index_name="rag-index"
+                    index_name="rag-index"+requestId
                 )
-                print('add docs')
-                vectorstore.add_documents(docs)
+                # print('add docs')
+                # new_vectorstore.add_documents(docs)
                 
                 if enableRAG==False: 
                     enableRAG = True
