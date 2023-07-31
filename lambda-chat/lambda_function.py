@@ -300,8 +300,8 @@ def lambda_handler(event, context):
 
             elif rag_type == 'opensearch':         
                 vectorstore = OpenSearchVectorSearch.from_documents(
-                    texts=docs, 
-                    embedding_function=bedrock_embeddings, 
+                    docs, 
+                    bedrock_embeddings, 
                     opensearch_url=opensearch_url,
                     http_auth=(opensearch_account, opensearch_passwd),
                     index_name="rag-index"
