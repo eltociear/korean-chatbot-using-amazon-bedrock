@@ -218,6 +218,20 @@ const OpenSearchAccessPolicy = new iam.PolicyStatement({
     principals: [new iam.AnyPrincipal()],
 });
 ```
+
+
+aoss(Amazon OpenSearch Service Serverless)는 False 입니다.
+
+```python
+vectorstore = OpenSearchVectorSearch(
+    index_name = "*",
+    is_aoss = False,
+    embedding_function = bedrock_embeddings,
+    opensearch_url = endpoint_url,
+    http_auth = ("admin", "Wifi1234!"),
+)
+```
+
   
 [OpenSearchVectorSearch()](https://python.langchain.com/docs/integrations/vectorstores/opensearch)로 아래와 같이 vector store를 정의합니다. 
 
