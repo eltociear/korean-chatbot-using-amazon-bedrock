@@ -144,66 +144,7 @@ def load_document(file_type, s3_file_name):
         ) for t in texts[:3]
     ]
     return docs
-              
-def get_answer_using_query(query, vectorstore, rag_type):
-    wrapper_store = VectorStoreIndexWrapper(vectorstore=vectorstore)
-    
-    if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-    elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
-    
-    print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-    print('----')
-    for i, rel_doc in enumerate(relevant_documents):
-        print_ww(f'## Document {i+1}: {rel_doc.page_content}.......')
-        print('---')
-    
-    answer = wrapper_store.query(question=query, llm=llm)
-    print_ww(answer)
-
-    return answer
-
-def get_answer_using_template(query, vectorstore, rag_type):
-    if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-    elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
-
-    print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-    print('----')
-    for i, rel_doc in enumerate(relevant_documents):
-        print_ww(f'## Document {i+1}: {rel_doc.page_content}.......')
-        print('---')
-
-    prompt_template = """Human: Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-    {context}
-
-    Question: {question}
-    Assistant:"""
-    PROMPT = PromptTemplate(
-        template=prompt_template, input_variables=["context", "question"]
-    )
-
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 3}
-        ),
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": PROMPT}
-    )
-    result = qa({"query": query})
-    
-    source_documents = result['source_documents']
-    print(source_documents)
-
-    return result['result']
-        
+                      
 def lambda_handler(event, context):
     print(event)
     userId  = event['user-id']
@@ -215,7 +156,7 @@ def lambda_handler(event, context):
     body = event['body']
     print('body: ', body)
 
-    global modelId, llm, vectorstore, enableRAG, rag_type
+    global modelId, llm, enableRAG, rag_type
     
     modelId = load_configuration(userId)
     if(modelId==""): 
@@ -264,9 +205,6 @@ def lambda_handler(event, context):
             text = body
             if enableRAG==False:                
                 msg = llm(text)
-            else:
-                msg = get_answer_using_query(text, vectorstore, rag_type)
-                print('msg1: ', msg)
             
         elif type == 'document':
             object = body
