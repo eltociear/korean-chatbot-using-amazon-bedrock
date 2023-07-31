@@ -232,6 +232,18 @@ vectorstore = OpenSearchVectorSearch(
 )
 ```
 
+#### Similarity Search
+OpenSearch by default supports Approximate Search powered by nmslib, faiss and lucene engines recommended for large datasets. Also supports brute force search through Script Scoring and Painless Scripting.
+
+지원하는 Search 방식: faiss, lucene, 
+
+Approximate k-NN: faiss engine, 기본값(?)
+
+Script Scoring: search_type을 아래와 같이 script_scoring로 지정합니다.
+- search_type="script_scoring",
+
+Painless Scripting: search_type을 아래와 같이 painless_scripting로 지정합니다.
+search_type="painless_scripting",
   
 [OpenSearchVectorSearch()](https://python.langchain.com/docs/integrations/vectorstores/opensearch)로 아래와 같이 vector store를 정의합니다. 
 
