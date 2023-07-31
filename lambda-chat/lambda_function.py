@@ -200,7 +200,7 @@ def get_answer_using_template(query, vectorstore, rag_type):
 
 if rag_type == 'opensearch':     
     vectorstore = OpenSearchVectorSearch(
-        index_name = "*",
+        index_name = "rag-index",
         is_aoss = False,
         embedding_function = bedrock_embeddings,
         opensearch_url = endpoint_url,
@@ -300,10 +300,11 @@ def lambda_handler(event, context):
 
             elif rag_type == 'opensearch':         
                 vectorstore = OpenSearchVectorSearch.from_documents(
-                    docs, 
-                    bedrock_embeddings, 
+                    texts=docs, 
+                    embedding_function=bedrock_embeddings, 
                     opensearch_url=opensearch_url,
                     http_auth=(opensearch_account, opensearch_passwd),
+                    index_name="rag-index"
                 )
                 print('add docs')
                 vectorstore.add_documents(docs)
