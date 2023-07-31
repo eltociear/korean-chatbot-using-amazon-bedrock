@@ -144,9 +144,9 @@ endpoint_url = "https://search-os-korean-chatbot-with-rag-clxtavqc2fpjgj3rzuemlj
 
 from langchain import OpenSearchVectorSearch
 vectorstore = OpenSearchVectorSearch(
-    bedrock_embeddings,
+    embedding_function = bedrock_embeddings,
     opensearch_url = endpoint_url,
-    http_auth=("admin", "Wifi1234!"),
+    http_auth = ("admin", "Wifi1234!"),
 )
 
 #vectorstore = OpenSearchVectorSearch.from_documents(
