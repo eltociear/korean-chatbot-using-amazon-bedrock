@@ -18,9 +18,10 @@ const stage = 'dev';
 const s3_prefix = 'docs';
 const bedrock_region = "us-west-2";
 const endpoint_url = "https://prod.us-west-2.frontend.bedrock.aws.dev";
-const model_id = "amazon.titan-tg1-large"; // anthropic.claude-v1
-const projectName = "qa-chatbot-for-korean";
+const model_id = "amazon.titan-tg1-large"; // amazon.titan-e1t-medium, anthropic.claude-v1
+const projectName = "korean-chatbot-with-rag";
 const bucketName = `storage-for-${projectName}`;
+const rag_type = 'opensearch';  // faiss
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
 
@@ -36,6 +37,16 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       autoDeleteObjects: true,
       publicReadAccess: false,
       versioned: false,
+      cors: [
+        {
+          allowedHeaders: ['*'],
+          allowedMethods: [
+            s3.HttpMethods.POST,
+            s3.HttpMethods.PUT,
+          ],
+          allowedOrigins: ['*'],
+        },
+      ],
     });
     if(debug) {
       new cdk.CfnOutput(this, 'bucketName', {
@@ -120,8 +131,11 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       capacity: {
         masterNodes: 3,
         masterNodeInstanceType: 'm6g.large.search',
+        // multiAzWithStandbyEnabled: false,
         dataNodes: 3,
         dataNodeInstanceType: 'r6g.large.search',        
+        // warmNodes: 2,
+        // warmInstanceType: 'ultrawarm1.medium.search',
       },
       accessPolicies: [OpenSearchAccessPolicy],      
       ebs: {
@@ -180,7 +194,7 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
         statements: [BedrockPolicy],
       }),
     );         
-    roleLambda.attachInlinePolicy( // add bedrock policy
+    roleLambda.attachInlinePolicy( // add opensearch policy
       new iam.Policy(this, `opensearch-policy-for-${projectName}`, {
         statements: [OpenSearchPolicy],
       }),
@@ -203,6 +217,7 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,
         configTableName: configTableName,
+        rag_type: rag_type,
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd
       }
@@ -282,12 +297,10 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       description: 'The web url of request for chat',
     });
 
-    if(debug) {
-      new cdk.CfnOutput(this, `UpdateCommend-for-${projectName}`, {
-        value: 'aws s3 cp ../html/chat.js '+'s3://'+s3Bucket.bucketName,
-        description: 'The url of web file upload',
-      });
-    }
+    new cdk.CfnOutput(this, `UpdateCommend-for-${projectName}`, {
+      value: 'aws s3 cp ../html/chat.js '+'s3://'+s3Bucket.bucketName,
+      description: 'The url of web file upload',
+    });
 
     // Lambda - Upload
     const lambdaUpload = new lambda.Function(this, `lambda-upload-for-${projectName}`, {
@@ -313,7 +326,7 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       integrationResponses: [{
         statusCode: '200',
       }], 
-      proxy:true, 
+      proxy:false, 
     }), {
       methodResponses: [  
         {
