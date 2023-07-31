@@ -199,13 +199,12 @@ def get_answer_using_template(query, vectorstore, rag_type):
     return result['result']
 
 if rag_type == 'opensearch':     
-    from langchain import OpenSearchVectorSearch
     vectorstore = OpenSearchVectorSearch(
         embedding_function = bedrock_embeddings,
         opensearch_url = endpoint_url,
         http_auth = ("admin", "Wifi1234!"),
     )
-        
+
 def lambda_handler(event, context):
     print(event)
     userId  = event['user-id']
@@ -223,6 +222,9 @@ def lambda_handler(event, context):
     if(modelId==""): 
         modelId = os.environ.get('model_id')
         save_configuration(userId, modelId)
+
+    
+            
 
     start = int(time.time())    
 
