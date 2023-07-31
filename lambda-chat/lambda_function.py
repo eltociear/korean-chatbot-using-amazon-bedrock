@@ -214,7 +214,8 @@ def lambda_handler(event, context):
             
             # load documents where text, pdf, csv are supported
             docs = load_document(file_type, object)
-                        
+
+            """                        
             if rag_type == 'opensearch':         
                 vectorstore = OpenSearchVectorSearch.from_documents(
                     docs, 
@@ -222,9 +223,8 @@ def lambda_handler(event, context):
                     opensearch_url=opensearch_url,
                     http_auth=(opensearch_account, opensearch_passwd),
                 )
-                if enableRAG==False: 
-                    enableRAG = True
-                    
+               """
+                 
             # summerization to show the document
             prompt_template = """Write a concise summary of the following:
 
