@@ -20,7 +20,6 @@ from langchain.agents.agent_types import AgentType
 from langchain.llms.bedrock import Bedrock
 from langchain.chains.question_answering import load_qa_chain
 
-from langchain.vectorstores import FAISS
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.document_loaders import CSVLoader
 from langchain.embeddings import BedrockEmbeddings
@@ -278,22 +277,7 @@ def lambda_handler(event, context):
             # load documents where text, pdf, csv are supported
             docs = load_document(file_type, object)
                         
-            if rag_type == 'faiss':
-                if enableRAG == False:                    
-                    vectorstore = FAISS.from_documents( # create vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings  # embeddings
-                    )
-                    enableRAG = True                    
-                else:                             
-                    vectorstore_new = FAISS.from_documents( # create new vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings,  # embeddings
-                    )                               
-                    vectorstore.merge_from(vectorstore_new) # merge 
-                    print('vector store size: ', len(vectorstore.docstore._dict))
-
-            elif rag_type == 'opensearch':         
+            if rag_type == 'opensearch':         
                 vectorstore = OpenSearchVectorSearch.from_documents(
                     docs, 
                     bedrock_embeddings, 
@@ -317,13 +301,6 @@ def lambda_handler(event, context):
             print('summary: ', summary)
 
             msg = summary
-            # summerization
-            #query = "summerize the documents"
-            #msg = get_answer_using_query(query, vectorstore, rag_type)
-            #print('msg1: ', msg)
-
-            #msg = get_answer_using_template(query, vectorstore, rag_type)
-            #print('msg2: ', msg)
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
