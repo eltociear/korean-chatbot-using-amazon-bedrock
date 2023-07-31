@@ -106,6 +106,62 @@ bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
 
 enableRAG = False
 
+
+
+s3_file_name = 'gen-ai-aws.pdf'
+s3r = boto3.resource("s3")
+doc = s3r.Object(s3_bucket, s3_prefix + '/' + s3_file_name)
+
+contents = doc.get()['Body'].read()
+reader = PyPDF2.PdfReader(BytesIO(contents))
+
+raw_text = []
+for page in reader.pages:
+    raw_text.append(page.extract_text())
+contents = '\n'.join(raw_text)
+
+new_contents = str(contents).replace("\n", " ") 
+
+
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 100)
+texts = text_splitter.split_text(new_contents) 
+
+from langchain.docstore.document import Document
+docs =[
+    Document(
+        page_content = t
+    ) for t in texts[: 3]
+]
+
+from langchain.embeddings import BedrockEmbeddings
+bedrock_embeddings = BedrockEmbeddings(client = boto3_bedrock)
+
+from langchain.vectorstores import OpenSearchVectorSearch
+endpoint_url = "https://search-os-korean-chatbot-with-rag-clxtavqc2fpjgj3rzuemljb6zm.ap-northeast-2.es.amazonaws.com"
+
+
+vectorstore = OpenSearchVectorSearch.from_documents(
+    docs,
+    bedrock_embeddings,
+    opensearch_url = endpoint_url,
+    http_auth = ("admin", "Wifi1234!"),
+)
+
+from langchain.embeddings import BedrockEmbeddings
+bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
+
+query = "Tell me how to use the manual."
+
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+
+wrapper_store_faiss = VectorStoreIndexWrapper(vectorstore=vectorstore)
+
+answer = wrapper_store_faiss.query(question=query, llm=llm)
+print(answer)
+
 # load documents from s3
 def load_document(file_type, s3_file_name):
     s3r = boto3.resource("s3")
@@ -206,48 +262,7 @@ def lambda_handler(event, context):
         elif type == 'document':
             object = body
         
-            s3_file_name = 'gen-ai-aws.pdf'
-            s3r = boto3.resource("s3")
-            doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
-                
-            contents = doc.get()['Body'].read()
-            reader = PyPDF2.PdfReader(BytesIO(contents))
-                    
-            raw_text = []
-            for page in reader.pages:
-                raw_text.append(page.extract_text())
-            contents = '\n'.join(raw_text)  
-
-            new_contents = str(contents).replace("\n"," ") 
-
-
-            from langchain.text_splitter import CharacterTextSplitter
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=100)
-            texts = text_splitter.split_text(new_contents) 
-
-            from langchain.docstore.document import Document
-            docs = [
-                Document(
-                    page_content=t
-                ) for t in texts[:3]
-            ]
-
-            from langchain.embeddings import BedrockEmbeddings
-            bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
-
-            from langchain.vectorstores import OpenSearchVectorSearch
-            endpoint_url = "https://search-os-korean-chatbot-with-rag-clxtavqc2fpjgj3rzuemljb6zm.ap-northeast-2.es.amazonaws.com"
-
-
-            vectorstore = OpenSearchVectorSearch.from_documents(
-                docs, 
-                bedrock_embeddings, 
-                opensearch_url=endpoint_url,
-                http_auth=("admin", "Wifi1234!"),
-            )
-
+            
                  
             # summerization to show the document
             prompt_template = """Write a concise summary of the following:
