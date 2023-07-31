@@ -230,7 +230,7 @@ def lambda_handler(event, context):
             from langchain.docstore.document import Document
             docs = [
                 Document(
-                    page_content=t
+                    t
                 ) for t in texts[:3]
             ]
 
