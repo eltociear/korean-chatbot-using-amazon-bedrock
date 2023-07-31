@@ -213,6 +213,11 @@ def lambda_handler(event, context):
             docs = load_document(file_type, object)
 
             from langchain.vectorstores import OpenSearchVectorSearch
+
+            from langchain.embeddings import BedrockEmbeddings
+            bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
+
+            print('opensearch_url: ', opensearch_url)
             vectorstore = OpenSearchVectorSearch.from_documents(
                 docs, 
                 bedrock_embeddings, 
