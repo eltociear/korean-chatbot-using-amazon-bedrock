@@ -299,12 +299,12 @@ def lambda_handler(event, context):
                     print('vector store size: ', len(vectorstore.docstore._dict))
 
             elif rag_type == 'opensearch':         
-                #vectorstore = OpenSearchVectorSearch.from_documents(
-                #    docs, 
-                #    bedrock_embeddings, 
-                #    opensearch_url=opensearch_url,
-                #    http_auth=(opensearch_account, opensearch_passwd),
-                #)
+                vectorstore = OpenSearchVectorSearch.from_documents(
+                    docs, 
+                    bedrock_embeddings, 
+                    opensearch_url=opensearch_url,
+                    http_auth=(opensearch_account, opensearch_passwd),
+                )
                 print('add docs')
                 vectorstore.add_documents(docs)
                 
