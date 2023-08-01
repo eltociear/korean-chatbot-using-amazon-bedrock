@@ -145,7 +145,7 @@ def lambda_handler(event, context):
                     'name': object,
                     'page':1
                 }
-            ) for t in texts[:3]
+            ) for t in texts[:5]
         ]
         print('docs: ', docs)
 
