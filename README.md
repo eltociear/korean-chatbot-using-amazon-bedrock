@@ -377,6 +377,8 @@ AWS 서울 리전에서 Amazon Bedrock과 vector store를 이용하여 질문과
 
 [FAISS - LangChain](https://python.langchain.com/docs/modules/data_connection/vectorstores/integrations/faiss)
 
+[langchain.vectorstores.faiss.FAISS](https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.faiss.FAISS.html)
+
 [Welcome to Faiss Documentation](https://faiss.ai/)
 
 [Adding a FAISS or Elastic Search index to a Dataset](https://huggingface.co/docs/datasets/v1.6.1/faiss_and_ea.html)
@@ -384,6 +386,8 @@ AWS 서울 리전에서 Amazon Bedrock과 vector store를 이용하여 질문과
 [Python faiss.write_index() Examples](https://www.programcreek.com/python/example/112290/faiss.write_index)
 
 [OpenSearch - Langchain](https://python.langchain.com/docs/integrations/vectorstores/opensearch)
+
+[langchain.vectorstores.opensearch_vector_search.OpenSearchVectorSearch](https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.html#langchain.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.from_documents)
 
 [OpenSearch - Domain](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_opensearchservice.Domain.html)
 
