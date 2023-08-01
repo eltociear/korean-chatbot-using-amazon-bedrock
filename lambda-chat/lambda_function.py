@@ -276,7 +276,11 @@ def lambda_handler(event, context):
             texts = load_document(file_type, object)
             docs = [
                 Document(
-                    page_content=t
+                    page_content=t,
+                    metadata={
+                        'filename': object,
+                        'id':1
+                    }
                 ) for t in texts[:3]
             ]
                         
