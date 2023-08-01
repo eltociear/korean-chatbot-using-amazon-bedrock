@@ -151,14 +151,24 @@ def lambda_handler(event, context):
 
         # embedding
         bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
-                        
-        new_vectorstore = OpenSearchVectorSearch.from_documents(
-            docs, 
-            bedrock_embeddings, 
-            opensearch_url=opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd),
-            index_name="rag-index"+userId
+
+        new_vectorstore = OpenSearchVectorSearch(
+            index_name="rag-index-"+userId,
+            is_aoss = False,
+            embedding_function = bedrock_embeddings,
+            opensearch_url = endpoint_url,
+            http_auth = ("admin", "Wifi1234!"),
         )
+        new_vectorstore.add_documents(docs)
+                        
+
+        #new_vectorstore = OpenSearchVectorSearch.from_documents(
+        #    docs, 
+        #    bedrock_embeddings, 
+        #    opensearch_url=opensearch_url,
+        #    http_auth=(opensearch_account, opensearch_passwd),
+        #    index_name="rag-index"+userId
+        #)
         
         # summerization to show the document
         docs = [
