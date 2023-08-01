@@ -109,13 +109,8 @@ def load_document(file_type, s3_file_name):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=100)
     texts = text_splitter.split_text(new_contents) 
     print('texts[0]: ', texts[0])
-        
-    docs = [
-        Document(
-            page_content=t
-        ) for t in texts[:3]
-    ]
-    return docs
+            
+    return texts
               
 def get_answer_using_query(query, vectorstore, rag_type):
     wrapper_store = VectorStoreIndexWrapper(vectorstore=vectorstore)
@@ -176,16 +171,6 @@ def get_answer_using_template(query, vectorstore, rag_type):
 
     return result['result']
 
-if rag_type == 'opensearch':     
-    vectorstore = OpenSearchVectorSearch(
-        index_name = "rag-index",
-        is_aoss = False,
-        embedding_function = bedrock_embeddings,
-        opensearch_url = endpoint_url,
-        http_auth = ("admin", "Wifi1234!"),
-    )
-
-
 # Bedrock Contiguration
 bedrock_region = bedrock_region
 bedrock_config = {
@@ -208,13 +193,14 @@ bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
 
 enableRAG = False
 
-vectorstore = OpenSearchVectorSearch(
-    index_name = "rag-index-*",
-    is_aoss = False,
-    embedding_function = bedrock_embeddings,
-    opensearch_url=opensearch_url,
-    http_auth=(opensearch_account, opensearch_passwd),
-)
+if rag_type == 'opensearch':     
+    vectorstore = OpenSearchVectorSearch(
+        index_name = "rag-index-*",
+        is_aoss = False,
+        embedding_function = bedrock_embeddings,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd),
+    )
 
 def lambda_handler(event, context):
     print(event)
@@ -287,21 +273,28 @@ def lambda_handler(event, context):
             print('file_type: ', file_type)
             
             # load documents where text, pdf, csv are supported
-            docs = load_document(file_type, object)
+            texts = load_document(file_type, object)
+            docs = [
+                Document(
+                    page_content=t
+                ) for t in texts[:3]
+            ]
                         
             if rag_type == 'faiss':
-                if enableRAG == False:                    
+                if enableRAG == False:    
                     vectorstore = FAISS.from_documents( # create vectorstore from a document
                         docs,  # documents
                         bedrock_embeddings  # embeddings
                     )
                     enableRAG = True                    
                 else:                             
-                    vectorstore_new = FAISS.from_documents( # create new vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings,  # embeddings
-                    )                               
-                    vectorstore.merge_from(vectorstore_new) # merge 
+                    #vectorstore_new = FAISS.from_documents( # create new vectorstore from a document
+                    #    docs,  # documents
+                    #    bedrock_embeddings,  # embeddings
+                    #)                 
+                    #vectorstore.merge_from(vectorstore_new) # merge 
+
+                    vectorstore.add_documents(docs)                                  
                     print('vector store size: ', len(vectorstore.docstore._dict))
 
             elif rag_type == 'opensearch':         
@@ -310,7 +303,7 @@ def lambda_handler(event, context):
                     bedrock_embeddings, 
                     opensearch_url=opensearch_url,
                     http_auth=(opensearch_account, opensearch_passwd),
-                    index_name="rag-index"+requestId
+                    index_name="rag-index"+userId
                 )
                 # print('add docs')
                 # new_vectorstore.add_documents(docs)
@@ -319,6 +312,12 @@ def lambda_handler(event, context):
                     enableRAG = True
                     
             # summerization to show the document
+            docs = [
+                Document(
+                    page_content=t
+                ) for t in texts[:3]
+            ]
+            
             prompt_template = """Write a concise summary of the following:
 
             {text}
