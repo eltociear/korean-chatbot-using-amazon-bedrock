@@ -198,7 +198,22 @@ export class CdkChatbotWithRagStack extends cdk.Stack {
       new iam.Policy(this, `opensearch-policy-for-${projectName}`, {
         statements: [OpenSearchPolicy],
       }),
-    );       
+    );      
+    
+    const passRoleResourceArn = roleLambda.roleArn;
+    const passRolePolicy = new iam.PolicyStatement({  
+      resources: [passRoleResourceArn],      
+      actions: ['iam:PassRole'],
+    });
+    roleLambda.attachInlinePolicy( // add pass role policy
+      new iam.Policy(this, `pass-role-for-${projectName}`, {
+        statements: [passRolePolicy],
+      }), 
+    );      
+    new cdk.CfnOutput(this, `passRole-resource-arn-for-${projectName}`, {
+      value: passRoleResourceArn,
+      description: 'The arn of pass role',
+    }); 
 
     // Lambda for chat using langchain (container)
     const lambdaChatApi = new lambda.DockerImageFunction(this, `lambda-chat-for-${projectName}`, {
