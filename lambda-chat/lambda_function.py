@@ -131,8 +131,11 @@ def lambda_handler(event, context):
                     'name': object,
                     'page':1
                 }
-            ) for t in texts[:3]
+            ) for t in texts[:2]
         ]
+
+        # embedding
+        bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
                         
         new_vectorstore = OpenSearchVectorSearch.from_documents(
             docs, 
