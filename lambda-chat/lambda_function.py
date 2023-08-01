@@ -114,8 +114,7 @@ def lambda_handler(event, context):
     if type == 'text':
         print('enableRAG: ', enableRAG)
         text = body
-        if enableRAG==False:                
-            msg = llm(text)
+        msg = llm(text)
             
     elif type == 'document':
         object = body
