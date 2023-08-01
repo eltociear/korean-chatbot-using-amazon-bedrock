@@ -95,6 +95,21 @@ vectorstore = OpenSearchVectorSearch(
     http_auth=(opensearch_account, opensearch_passwd),
 )
 
+query = "Tell me the relaotion between BMW and Generative AI"
+
+relevant_documents = vectorstore.similarity_search(query)
+print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
+print('----')
+for i, rel_doc in enumerate(relevant_documents):
+    print_ww(f'## Document {i+1}: {rel_doc.page_content}.......')
+    print('---')
+
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+wrapper_store = VectorStoreIndexWrapper(vectorstore=vectorstore)
+
+answer = wrapper_store.query(question=query, llm=llm)
+print(answer)
+
 def lambda_handler(event, context):
     print(event)
     userId  = event['user-id']
