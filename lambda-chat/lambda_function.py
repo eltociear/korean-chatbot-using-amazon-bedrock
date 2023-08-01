@@ -137,13 +137,13 @@ def lambda_handler(event, context):
         # embedding
         bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
                         
-        new_vectorstore = OpenSearchVectorSearch.from_documents(
-            docs[0], 
-            bedrock_embeddings, 
-            opensearch_url=opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd),
-            index_name="rag-index"+userId
-        )
+        #new_vectorstore = OpenSearchVectorSearch.from_documents(
+        #    docs, 
+        #    bedrock_embeddings, 
+        #    opensearch_url=opensearch_url,
+        #    http_auth=(opensearch_account, opensearch_passwd),
+        #    index_name="rag-index"+userId
+        #)
 
         new_vectorstore = OpenSearchVectorSearch.from_texts(
             texts, 
