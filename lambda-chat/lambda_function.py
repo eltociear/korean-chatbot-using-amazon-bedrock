@@ -156,7 +156,7 @@ def lambda_handler(event, context):
             index_name="rag-index-"+userId,
             is_aoss = False,
             embedding_function = bedrock_embeddings,
-            opensearch_url = endpoint_url,
+            opensearch_url = opensearch_url,
             http_auth = ("admin", "Wifi1234!"),
         )
         new_vectorstore.add_documents(docs)
