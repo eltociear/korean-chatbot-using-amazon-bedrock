@@ -10,7 +10,7 @@ COPY . ..
 RUN /var/lang/bin/python3.9 -m pip install --upgrade pip
 
 RUN /var/lang/bin/python3 -m pip install PyPDF2
-RUN /var/lang/bin/python3 -m pip install langchain
+RUN /var/lang/bin/python3 -m pip install langchain==0.0.249
 RUN /var/lang/bin/python3 -m pip install faiss-cpu
 RUN /var/lang/bin/python3 -m pip install opensearch-py
 
