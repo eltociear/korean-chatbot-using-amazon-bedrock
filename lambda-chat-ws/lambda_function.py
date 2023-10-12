@@ -391,6 +391,39 @@ def get_generated_prompt(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
+def get_answer_using_RAG(text, vectorstore, convType):
+    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
+    print('generated_prompt: ', generated_prompt)
+    msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
+
+    # extract chat history for debug
+    chat_history_all = extract_chat_history_from_memory(memory_chain) 
+    print('chat_history_all: ', chat_history_all)
+
+    memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+    memory_chain.chat_memory.add_ai_message(msg)
+
+    return msg
+
+def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
+    conversation.prompt = get_prompt_template(text, convType)
+    stream = conversation.predict(input=text)
+    #print('stream: ', stream)
+                        
+    msg = readStreamMsg(connectionId, requestId, stream)
+
+    # extract chat history for debug
+    chats = chat_memory.load_memory_variables({})
+    chat_history_all = chats['history']
+    print('chat_history_all: ', chat_history_all)
+    return msg
+
+def get_answer_from_PROMPT(text, convType, connectionId, requestId):
+    PROMPT = get_prompt_template(text, convType)
+    stream = llm(PROMPT.format(input=text))
+
+    msg = readStreamMsg(connectionId, requestId, stream)
+    return msg
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -406,7 +439,7 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, conversation, map, chat_memory, memory_chain
+    global modelId, llm, parameters, map, chat_memory, memory_chain
 
     # create memory
     if convType == 'qa': 
@@ -488,38 +521,15 @@ def getResponse(connectionId, jsonBody):
                 print(f"query size: {querySize}, workds: {textCount}")
 
                 if convType == 'qa':   # question & answering
-                    if querySize>1800: 
-                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
-                    elif rag_type == 'faiss' and isReady == False: 
-                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
+                    if rag_type == 'faiss' and isReady == False: 
+                        msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
                     else: 
-                        generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
-                        print('generated_prompt: ', generated_prompt)
-                        msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
-
-                        # extract chat history for debug
-                        chat_history_all = extract_chat_history_from_memory(memory_chain) 
-                        print('chat_history_all: ', chat_history_all)
-
-                        memory_chain.chat_memory.add_user_message(text)  # append new diaglog
-                        memory_chain.chat_memory.add_ai_message(msg)
+                        msg = get_answer_using_RAG(text, vectorstore, convType)
 
                 elif convType == 'translation': 
-                    PROMPT = get_prompt_template(text, convType)
-                    msg = llm(PROMPT.format(input=text))
-
-                    msg = readStreamMsg(connectionId, requestId, msg)
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
                 else:     # normal
-                    conversation.prompt = get_prompt_template(text, convType)
-                    stream = conversation.predict(input=text)
-                    #print('stream: ', stream)
-                        
-                    msg = readStreamMsg(connectionId, requestId, stream)
-
-                    # extract chat history for debug
-                    chats = chat_memory.load_memory_variables({})
-                    chat_history_all = chats['history']
-                    print('chat_history_all: ', chat_history_all)
+                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                 
         elif type == 'document':
             object = body
