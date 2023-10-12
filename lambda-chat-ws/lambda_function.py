@@ -488,7 +488,9 @@ def getResponse(connectionId, jsonBody):
 
             memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
             map[userId] = memory_chat
-            print('memory_chat does not exist. create new one!')
+            print('memory_chat does not exist. create new one!')        
+        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+
     else:    # normal 
         if userId in map:  
             memory_chat = map[userId]
@@ -496,8 +498,7 @@ def getResponse(connectionId, jsonBody):
         else:
             memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
             map[userId] = memory_chat
-            print('memory_chat does not exist. create new one!')
-        
+            print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     allowTime = getAllowTime()
