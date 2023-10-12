@@ -370,7 +370,7 @@ def get_reference(docs):
     return reference
 
 _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
-def extract_chat_history_from_memory(memory_chain):
+def extract_chat_history_from_memory():
     chat_history = []
     chats = memory_chain.load_memory_variables({})    
     for dialogue_turn in chats['chat_history']:
@@ -390,7 +390,7 @@ def get_generated_prompt(query):
         template = condense_template, input_variables = ["chat_history", "question"]
     )
     
-    chat_history = extract_chat_history_from_memory(memory_chain)
+    chat_history = extract_chat_history_from_memory()
     #print('chat_history: ', chat_history)
     
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
@@ -402,7 +402,7 @@ def get_answer_using_RAG(text, vectorstore, convType):
     msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
 
     # extract chat history for debug
-    chat_history_all = extract_chat_history_from_memory(memory_chain) 
+    chat_history_all = extract_chat_history_from_memory() 
     print('chat_history_all: ', chat_history_all)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
