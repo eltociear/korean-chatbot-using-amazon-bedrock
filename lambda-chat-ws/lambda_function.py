@@ -356,15 +356,14 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
         return_source_documents=True,
         chain_type_kwargs={"prompt": PROMPT}
     )
-    result = qa({"query": query})
+    result = qa.stream({"query": query})
     
-
     if result:
         for event in result['result']:
             print('event: ', event)
 
     print('result: ', result)
-    #msg = readStreamMsg(connectionId, requestId, stream)
+    msg = readStreamMsg(connectionId, requestId, result['result'])
 
     source_documents = result['source_documents']
     print('source_documents: ', source_documents)
@@ -373,9 +372,9 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
         reference = get_reference(source_documents)
         #print('reference: ', reference)
 
-        return result['result']+reference
+        return msg+reference
     else:
-        return result['result']
+        return msg
 
 def get_reference(docs):
     reference = "\n\nFrom\n"
