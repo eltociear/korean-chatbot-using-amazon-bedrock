@@ -283,7 +283,7 @@ def load_chatHistory(userId, allowTime, convType):
             print('text: ', text)
             print('msg: ', msg)        
 
-            if convType=='qa':
+            if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)                       
             else:
