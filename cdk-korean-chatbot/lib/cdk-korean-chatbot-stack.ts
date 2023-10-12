@@ -11,6 +11,8 @@ import * as apiGateway from 'aws-cdk-lib/aws-apigateway';
 import * as s3Deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -23,6 +25,14 @@ const bucketName = `storage-for-${projectName}-${region}`;
 const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2" 
 const conversationMode = 'true'; 
 
+const rag_type = 'faiss';  // faiss, opensearch
+let rag_source = "all";   // all, opensearch, kendra
+
+const opensearch_account = "admin";
+const opensearch_passwd = "Wifi1234!";
+const enableReference = 'false';
+const enableRAG = 'true';
+let opensearch_url = "";
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -97,6 +107,76 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       value: distribution.domainName,
       description: 'The domain name of the Distribution',
     });
+
+    if(rag_source=='opensearch' || rag_source=='all') {
+      // Permission for OpenSearch
+      const domainName = projectName
+      const accountId = process.env.CDK_DEFAULT_ACCOUNT;
+      const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
+      if(debug) {
+        new cdk.CfnOutput(this, `resource-arn-for-${projectName}`, {
+          value: resourceArn,
+          description: 'The arn of resource',
+        }); 
+      }
+
+      const OpenSearchPolicy = new iam.PolicyStatement({  
+        resources: [resourceArn],      
+        actions: ['es:*'],
+      });  
+      const OpenSearchAccessPolicy = new iam.PolicyStatement({        
+        resources: [resourceArn],      
+        actions: ['es:*'],
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.AnyPrincipal()],      
+      });  
+
+      // OpenSearch
+      const domain = new opensearch.Domain(this, 'Domain', {
+        version: opensearch.EngineVersion.OPENSEARCH_2_3,
+      
+        domainName: domainName,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        enforceHttps: true,
+        fineGrainedAccessControl: {
+          masterUserName: opensearch_account,
+          // masterUserPassword: cdk.SecretValue.secretsManager('opensearch-private-key'),
+          masterUserPassword:cdk.SecretValue.unsafePlainText(opensearch_passwd)
+        },
+        capacity: {
+          masterNodes: 3,
+          masterNodeInstanceType: 'm6g.large.search',
+          // multiAzWithStandbyEnabled: false,
+          dataNodes: 3,
+          dataNodeInstanceType: 'r6g.large.search',        
+          // warmNodes: 2,
+          // warmInstanceType: 'ultrawarm1.medium.search',
+        },
+        accessPolicies: [OpenSearchAccessPolicy],      
+        ebs: {
+          volumeSize: 100,
+          volumeType: ec2.EbsDeviceVolumeType.GP3,
+        },
+        nodeToNodeEncryption: true,
+        encryptionAtRest: {
+          enabled: true,
+        },
+        zoneAwareness: {
+          enabled: true,
+          availabilityZoneCount: 3,        
+        }
+      });
+      new cdk.CfnOutput(this, `Domain-of-OpenSearch-for-${projectName}`, {
+        value: domain.domainArn,
+        description: 'The arm of OpenSearch Domain',
+      });
+      new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
+        value: 'https://'+domain.domainEndpoint,
+        description: 'The endpoint of OpenSearch Domain',
+      });
+
+      opensearch_url = 'https://'+domain.domainEndpoint;
+    }
 
     // role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
@@ -341,9 +421,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The URL of connection',
     });
 
-    
-    
-
     // Lambda - chat (websocket)
     const roleLambdaWebsocket = new iam.Role(this, `role-lambda-chat-ws-for-${projectName}`, {
       roleName: `role-lambda-chat-ws-for-${projectName}-${region}`,
@@ -379,21 +456,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }),
     );  
    
-    /* const lambdaChatWebsocket = new lambda.Function(this, `lambda-websocket-for-${projectName}`, {
-      description: 'lambda for websocket in order to test the connection of websocket ',
-      functionName: `lambda-websocket-for-${projectName}`,
-      handler: 'lambda_function.lambda_handler',
-      runtime: lambda.Runtime.PYTHON_3_11,
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-websocket')),
-      timeout: cdk.Duration.seconds(120),
-      logRetention: logs.RetentionDays.ONE_DAY,
-      role: roleLambdaWebsocket,
-      environment: {
-        connection_url: connection_url
-      }
-    });
-    lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  */
-
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
       description: 'lambda for chat using websocket',
       functionName: `lambda-chat-ws-for-${projectName}`,
@@ -407,7 +469,13 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,
         conversationMode: conversationMode,
-        connection_url: connection_url
+        connection_url: connection_url,
+        rag_type: rag_type,
+        opensearch_account: opensearch_account,
+        opensearch_passwd: opensearch_passwd,
+        enableReference: enableReference,
+        opensearch_url: opensearch_url,
+        enableRAG: enableRAG
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  

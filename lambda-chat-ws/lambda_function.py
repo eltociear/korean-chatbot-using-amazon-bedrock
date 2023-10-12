@@ -20,6 +20,12 @@ from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from botocore.config import Config
 
+from langchain.vectorstores import FAISS
+from langchain.vectorstores import OpenSearchVectorSearch
+from langchain.embeddings import BedrockEmbeddings
+from langchain.chains import RetrievalQA
+from langchain.chains import LLMChain
+
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
@@ -28,6 +34,14 @@ bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
 modelId = os.environ.get('model_id', 'amazon.titan-tg1-large')
 print('model_id: ', modelId)
 conversationMode = os.environ.get('conversationMode', 'false')
+rag_type = os.environ.get('rag_type', 'faiss')
+isReady = False   
+
+opensearch_account = os.environ.get('opensearch_account')
+opensearch_passwd = os.environ.get('opensearch_passwd')
+enableReference = os.environ.get('enableReference', 'false')
+enableRAG = os.environ.get('enableRAG', 'true')
+opensearch_url = os.environ.get('opensearch_url')
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -82,6 +96,13 @@ llm = Bedrock(
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
     model_kwargs=parameters)
+
+# embedding for RAG
+bedrock_embeddings = BedrockEmbeddings(
+    client=boto3_bedrock,
+    region_name = bedrock_region,
+    model_id = 'amazon.titan-embed-text-v1' # amazon.titan-e1t-medium, amazon.titan-embed-g1-text-02 amazon.titan-embed-text-v1
+)
 
 map = dict() # Conversation
 
@@ -242,7 +263,7 @@ def get_summary(texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chatHistory(userId, allowTime, chat_memory):
+def load_chatHistory(userId, allowTime, enableRAG, chat_memory, memory_chain):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -264,7 +285,11 @@ def load_chatHistory(userId, allowTime, chat_memory):
             print('text: ', text)
             print('msg: ', msg)        
 
-            chat_memory.save_context({"input": text}, {"output": msg})             
+            if enableRAG==False:
+                chat_memory.save_context({"input": text}, {"output": msg})             
+            else:
+                memory_chain.chat_memory.add_user_message(text)
+                memory_chain.chat_memory.add_ai_message(msg) 
 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
@@ -289,6 +314,86 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
+def get_answer_using_template(query, vectorstore, rag_type, convType):        
+    if rag_type == 'faiss':
+        query_embedding = vectorstore.embedding_function(query)
+        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
+    elif rag_type == 'opensearch':
+        relevant_documents = vectorstore.similarity_search(query)
+
+    print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
+    print('----')
+    for i, rel_doc in enumerate(relevant_documents):
+        print(f'## Document {i+1}: {rel_doc.page_content}.......')
+    print('---')
+    
+    print('length of relevant_documents: ', len(relevant_documents))
+
+    PROMPT = get_prompt_template(query, convType)
+
+    qa = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=vectorstore.as_retriever(
+            search_type="similarity", 
+            search_kwargs={
+                #"k": 3, 'score_threshold': 0.8
+                "k": 3
+            }
+        ),
+        return_source_documents=True,
+        chain_type_kwargs={"prompt": PROMPT}
+    )
+    result = qa({"query": query})
+    print('result: ', result)
+    source_documents = result['source_documents']
+    print('source_documents: ', source_documents)
+
+    if len(relevant_documents)>=1 and enableReference=='true':
+        reference = get_reference(source_documents)
+        #print('reference: ', reference)
+
+        return result['result']+reference
+    else:
+        return result['result']
+
+def get_reference(docs):
+    reference = "\n\nFrom\n"
+    for doc in docs:
+        name = doc.metadata['name']
+        page = doc.metadata['row']
+    
+        reference = reference + (str(page)+'page in '+name+'\n')
+    return reference
+
+_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
+def extract_chat_history_from_memory(memory_chain):
+    chat_history = []
+    chats = memory_chain.load_memory_variables({})    
+    for dialogue_turn in chats['chat_history']:
+        role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+        chat_history.append(f"{role_prefix[2:]}{dialogue_turn.content}")
+
+    return chat_history
+
+def get_generated_prompt(query):    
+    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:"""
+    CONDENSE_QUESTION_PROMPT = PromptTemplate(
+        template = condense_template, input_variables = ["chat_history", "question"]
+    )
+    
+    chat_history = extract_chat_history_from_memory(memory_chain)
+    #print('chat_history: ', chat_history)
+    
+    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    return question_generator_chain.run({"question": query, "chat_history": chat_history})
+
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -303,22 +408,49 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, conversation, conversationMode, map, chat_memory
+    global modelId, llm, parameters, conversation, conversationMode, map, chat_memory, memory_chain
 
-    # create chat_memory
-    if userId in map:  
-        chat_memory = map[userId]
-        print('chat_memory exist. reuse it!')
-    else: 
-        chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-        map[userId] = chat_memory
-        print('chat_memory does not exist. create new one!')
-
-        allowTime = getAllowTime()
-        load_chatHistory(userId, allowTime, chat_memory)
-
-        conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
+    # create memory
+    if enableRAG == False: 
+        if userId in map:  
+            chat_memory = map[userId]
+            print('chat_memory exist. reuse it!')
+        else:
+            chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+            map[userId] = chat_memory
+            print('chat_memory does not exist. create new one!')
     
+    else:    
+        if userId in map:  
+            memory_chain = map[userId]
+            print('memory_chain exist. reuse it!')            
+        else: 
+            memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            map[userId] = memory_chain
+            print('memory_chain does not exist. create new one!')
+
+    allowTime = getAllowTime()
+    load_chatHistory(userId, allowTime,  enableRAG, chat_memory, memory_chain)
+
+    if enableRAG == False: 
+        conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
+
+    # rag sources
+    if rag_type == 'opensearch':
+        vectorstore = OpenSearchVectorSearch(
+            #index_name = "rag-index-*", # all
+            index_name = 'rag-index-'+userId+'-*',
+            is_aoss = False,
+            ef_search = 1024, # 512(default)
+            m=48,
+            #engine="faiss",  # default: nmslib
+            embedding_function = bedrock_embeddings,
+            opensearch_url=opensearch_url,
+            http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+        )
+    elif rag_type == 'faiss':
+        print('isReady = ', isReady)
+
     start = int(time.time())    
 
     msg = ""
@@ -347,20 +479,14 @@ def getResponse(connectionId, jsonBody):
             textCount = len(text.split())
             print(f"query size: {querySize}, words: {textCount}")
 
-            if text == 'enableConversationMode':
-                conversationMode = 'true'
-                msg  = "Conversation mode is enabled"
-            elif text == 'disableConversationMode':
-                conversationMode = 'false'
-                msg  = "Conversation mode is disabled"
-            elif text == 'clearMemory':
+            if text == 'clearMemory':
                 chat_memory = ""
                 chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
                 map[userId] = chat_memory
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:            
-                if conversationMode == 'true':
+                if enableRAG == 'false':   # normal
                     if convType == 'translation': 
                         PROMPT = get_prompt_template(text, convType)
                         msg = llm(PROMPT.format(input=text))
@@ -377,8 +503,16 @@ def getResponse(connectionId, jsonBody):
                     chats = chat_memory.load_memory_variables({})
                     chat_history_all = chats['history']
                     print('chat_history_all: ', chat_history_all)
-                else:
-                    msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
+                else:   # question & answering
+                    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
+                    print('generated_prompt: ', generated_prompt)
+                    msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
+
+                    chat_history_all = extract_chat_history_from_memory(memory_chain) # debugging
+                    print('chat_history_all: ', chat_history_all)
+
+                    memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+                    memory_chain.chat_memory.add_ai_message(msg)
             #print('msg: ', msg)
                 
         elif type == 'document':

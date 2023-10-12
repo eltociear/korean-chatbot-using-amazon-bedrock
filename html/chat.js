@@ -474,16 +474,14 @@ attachFile.addEventListener('click', function(){
                             console.log(xmlHttp.responseText);
                                            
                             // summary for the upload file                            
-                            if(protocol == 'WEBSOCKET') {
-                                sendMessage({
-                                    "user_id": userId,
-                                    "request_id": requestId,
-                                    "request_time": requestTime,
-                                    "type": "document",
-                                    "body": filename,
-                                    "convType": conversationType
-                                })
-                            }                           
+                            sendMessage({
+                                "user_id": userId,
+                                "request_id": requestId,
+                                "request_time": requestTime,
+                                "type": "document",
+                                "body": filename,
+                                "convType": conversationType
+                            })
                         }
                         else if(xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status != 200) {
                             console.log('status' + xmlHttp.status);
