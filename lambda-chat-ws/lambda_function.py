@@ -112,7 +112,8 @@ def get_prompt_template(query, convType):
     print('word_kor: ', word_kor)
 
     if word_kor:    
-        if convType=='qa':  # for RAG, context and question
+        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):  
+            # for RAG, context and question
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
             {context}
@@ -137,7 +138,7 @@ def get_prompt_template(query, convType):
             
             Assistant:"""
     else:  # English
-        if convType=='qa':  # for RAG
+        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):  # for RAG
             prompt_template = """Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
         
             {context}
