@@ -221,7 +221,7 @@ def load_csv_document(s3_file_name):
             page_content=content,
             metadata={
                 'name': s3_file_name,
-                'row': n+1,
+                'page': n+1,
                 'url': path+s3_file_name
             }
             #metadata=to_metadata
@@ -381,7 +381,7 @@ def get_reference(docs):
     reference = "\n\nFrom\n"
     for doc in docs:
         name = doc.metadata['name']
-        page = doc.metadata['row']
+        page = doc.metadata['page']
         url = doc.metadata['url']
     
         #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
@@ -576,7 +576,7 @@ def getResponse(connectionId, jsonBody):
                             page_content=texts[i],
                             metadata={
                                 'name': object,
-                                'row':i+1,
+                                'page':i+1,
                                 'url': path+object
                             }
                         )
