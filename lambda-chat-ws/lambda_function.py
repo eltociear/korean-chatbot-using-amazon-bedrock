@@ -357,7 +357,15 @@ def get_answer_using_template(query, vectorstore, rag_type, convType):
         chain_type_kwargs={"prompt": PROMPT}
     )
     result = qa({"query": query})
+    
+
+    if result:
+        for event in result:
+            print('event: ', event)
+
     print('result: ', result)
+    #msg = readStreamMsg(connectionId, requestId, stream)
+
     source_documents = result['source_documents']
     print('source_documents: ', source_documents)
 
@@ -408,11 +416,11 @@ def get_generated_prompt(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
-def get_answer_using_RAG(text, vectorstore, convType):
+def get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
-    msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
-
+    msg = get_answer_using_template(text, vectorstore, rag_type, convType, connectionId, requestId) 
+    
     # extract chat history for debug
     chat_history_all = extract_chat_history_from_memory() 
     print('chat_history_all: ', chat_history_all)
@@ -539,7 +547,7 @@ def getResponse(connectionId, jsonBody):
                     if rag_type == 'faiss' and isReady == False: 
                         msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                     else: 
-                        msg = get_answer_using_RAG(text, vectorstore, convType)
+                        msg = get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId)
 
                 elif convType == 'translation': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)

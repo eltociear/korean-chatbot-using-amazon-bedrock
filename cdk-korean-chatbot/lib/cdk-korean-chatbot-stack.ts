@@ -29,7 +29,7 @@ let deployed_rag_type = 'opensearch';   // all, opensearch, kendra, faiss
 
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
-const enableReference = 'false';
+const enableReference = 'true';
 let opensearch_url = "";
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
