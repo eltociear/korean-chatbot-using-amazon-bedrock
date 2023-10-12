@@ -326,7 +326,7 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def get_answer_using_template(query, vectorstore, rag_type, convType):        
+def get_answer_using_template(query, vectorstore, rag_type, convType, connectionId, requestId):        
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
