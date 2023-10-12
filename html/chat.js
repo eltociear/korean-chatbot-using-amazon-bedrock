@@ -1,11 +1,8 @@
-const protocol = 'WEBSOCKET'; // WEBSOCKET or HTTP
 const endpoint = 'wss://etl2hxx4la.execute-api.ap-northeast-1.amazonaws.com/dev';
 const langstate = 'korean'; // korean or english
 let webSocket
 let isConnected = false;
-if(protocol == 'WEBSOCKET') {
-    webSocket = connect(endpoint, 'initial');
-}
+webSocket = connect(endpoint, 'initial');
 
 function sendMessage(message) {
     if(!isConnected) {
@@ -179,8 +176,6 @@ else {
     addReceivedMessage(uuidv4(), "Welcome to Amazon Bedrock. Use the conversational chatbot and summarize documents, TXT, PDF, and CSV. ")           
 }
 
-
-
 // get history
 function getAllowTime() {    
     let allowableDays = 2; // two day's history
@@ -231,19 +226,14 @@ function onSend(e) {
         let requestId = uuidv4();
         addSentMessage(requestId, timestr, message.value);
         
-        if(protocol == 'WEBSOCKET') {
-            sendMessage({
-                "user_id": userId,
-                "request_id": requestId,
-                "request_time": requestTime,        
-                "type": "text",
-                "body": message.value,
-                "convType": conversationType
-            })
-        }
-        else {
-            sendRequest(message.value, requestId, requestTime);
-        }            
+        sendMessage({
+            "user_id": userId,
+            "request_id": requestId,
+            "request_time": requestTime,        
+            "type": "text",
+            "body": message.value,
+            "convType": conversationType
+        })                    
     }
     message.value = "";
 
@@ -490,13 +480,10 @@ attachFile.addEventListener('click', function(){
                                     "request_id": requestId,
                                     "request_time": requestTime,
                                     "type": "document",
-                                    "body": message.value,
+                                    "body": filename,
                                     "convType": conversationType
                                 })
-                            }
-                            else {
-                                sendRequestForSummary(filename, requestId, requestTime);
-                            }                            
+                            }                           
                         }
                         else if(xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status != 200) {
                             console.log('status' + xmlHttp.status);
@@ -524,138 +511,6 @@ attachFile.addEventListener('click', function(){
        
     return false;
 });
-
-function sendRequest(text, requestId, requestTime) {
-    const uri = "chat";
-    const xhr = new XMLHttpRequest();
-
-    isResponsed.put(requestId, false);
-    retryNum.put(requestId, 12); // max 60s (5x12)
-
-    xhr.open("POST", uri, true);
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            response = JSON.parse(xhr.responseText);
-            console.log("response: " + JSON.stringify(response));
-            
-            addReceivedMessage(response.request_id, response.msg)
-        }
-        else if(xhr.readyState ===4 && xhr.status === 504) {
-            console.log("response: " + xhr.readyState + ', xhr.status: '+xhr.status);
-
-            getResponse(requestId);
-        }
-        else {
-            console.log("response: " + xhr.readyState + ', xhr.status: '+xhr.status);
-        }
-    };
-
-    var requestObj = {
-        "user_id": userId,
-        "request_id": requestId,
-        "request_time": requestTime,
-        "type": "text",
-        "body":text,
-        "convType": conversationType
-    }
-    console.log("request: " + JSON.stringify(requestObj));
-
-    var blob = new Blob([JSON.stringify(requestObj)], {type: 'application/json'});
-
-    xhr.send(blob);            
-}
-
-function sendRequestForSummary(object, requestId, requestTime) {
-    const uri = "chat";
-    const xhr = new XMLHttpRequest();
-
-    isResponsed.put(requestId, false);
-    retryNum.put(requestId, 60); // max 300s (5x60)
-
-    xhr.open("POST", uri, true);
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            response = JSON.parse(xhr.responseText);
-            console.log("response: " + JSON.stringify(response));
-            
-            addReceivedMessage(response.request_id, response.msg)
-        }
-        else if(xhr.readyState ===4 && xhr.status === 504) {
-            console.log("response: " + xhr.readyState + ', xhr.status: '+xhr.status);
-
-            getResponse(requestId);
-        }
-        else {
-            console.log("response: " + xhr.readyState + ', xhr.status: '+xhr.status);
-        }
-    };
-    
-    var requestObj = {
-        "user_id": userId,
-        "request_id": requestId,
-        "request_time": requestTime,
-        "type": "document",
-        "body": object,
-        "convType": conversationType
-    }
-    console.log("request: " + JSON.stringify(requestObj));
-
-    var blob = new Blob([JSON.stringify(requestObj)], {type: 'application/json'});
-
-    xhr.send(blob);            
-}
-
-function delay(ms = 1000) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-async function getResponse(requestId) {
-    await delay(5000);
-    
-    let n = retryNum.get(requestId);
-    if(n == 0) {
-        console.log('Failed!')
-        return;
-    }
-    else {
-        console.log('Retry!');
-        retryNum.put(requestId, n-1);
-        sendRequestForRetry(requestId);
-    }    
-}
-
-function sendRequestForRetry(requestId) {
-    const uri = "query";
-    const xhr = new XMLHttpRequest();
-
-    xhr.open("POST", uri, true);
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            response = JSON.parse(xhr.responseText);
-            console.log("response: " + JSON.stringify(response));
-                        
-            if(response.msg) {
-                isResponsed.put(response.request_id, true);
-                addReceivedMessage(response.request_id, response.msg);        
-                
-                console.log('completed!');
-            }            
-            else {
-                console.log('The request is not completed yet.');
-
-                getResponse(requestId);
-            }
-        }
-    };
-    
-    var requestObj = {
-        "request_id": requestId,
-    }
-    console.log("request: " + JSON.stringify(requestObj));
-
-    var blob = new Blob([JSON.stringify(requestObj)], {type: 'application/json'});
-
-    xhr.send(blob);            
-}
 
 function getHistory(userId, allowTime) {
     const uri = "history";
