@@ -445,7 +445,7 @@ def getResponse(connectionId, jsonBody):
     global modelId, llm, parameters, map, chat_memory, memory_chain, isReady
 
     # create memory
-    if convType == 'qa': 
+    if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
         if userId in map:  
             memory_chain = map[userId]
             print('memory_chain exist. reuse it!')            
@@ -462,11 +462,10 @@ def getResponse(connectionId, jsonBody):
             map[userId] = chat_memory
             print('chat_memory does not exist. create new one!')
         
+        conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
+        
     allowTime = getAllowTime()
     load_chatHistory(userId, allowTime, convType)
-
-    if convType != 'qa': 
-        conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
 
     # rag sources
     if convType == 'qa' and rag_type == 'opensearch':
@@ -521,7 +520,7 @@ def getResponse(connectionId, jsonBody):
             else:          
                 if convType == 'qa':   # question & answering
                     if rag_type == 'faiss' and isReady == False: 
-                        msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                     else: 
                         msg = get_answer_using_RAG(text, vectorstore, convType)
 
