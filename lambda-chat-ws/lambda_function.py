@@ -356,7 +356,7 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
         return_source_documents=True,
         chain_type_kwargs={"prompt": PROMPT}
     )
-    result = qa.stream({"query": query})
+    result = qa({"query": query})
     
     if result:
         for event in result['result']:
