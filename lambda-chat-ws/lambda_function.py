@@ -261,7 +261,7 @@ def get_summary(texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chatHistory(userId, allowTime, convType, chat_memory, memory_chain):
+def load_chatHistory(userId, allowTime, convType):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -284,11 +284,11 @@ def load_chatHistory(userId, allowTime, convType, chat_memory, memory_chain):
             print('msg: ', msg)        
 
             if convType=='qa':
-                chat_memory.save_context({"input": text}, {"output": msg})             
-            else:
                 memory_chain.chat_memory.add_user_message(text)
-                memory_chain.chat_memory.add_ai_message(msg) 
-
+                memory_chain.chat_memory.add_ai_message(msg)                       
+            else:
+                chat_memory.save_context({"input": text}, {"output": msg})       
+                
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
     timeStr = str(d)[0:19]
@@ -460,7 +460,7 @@ def getResponse(connectionId, jsonBody):
             print('chat_memory does not exist. create new one!')
         
     allowTime = getAllowTime()
-    load_chatHistory(userId, allowTime, convType, chat_memory, memory_chain)
+    load_chatHistory(userId, allowTime, convType)
 
     if convType != 'qa': 
         conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
