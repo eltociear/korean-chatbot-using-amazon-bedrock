@@ -360,7 +360,7 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     
 
     if result:
-        for event in result:
+        for event in result['result']:
             print('event: ', event)
 
     print('result: ', result)
