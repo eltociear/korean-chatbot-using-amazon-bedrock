@@ -356,13 +356,9 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
         return_source_documents=True,
         chain_type_kwargs={"prompt": PROMPT}
     )
-    result = qa({"query": query})
-    
-    if result:
-        for event in result['result']:
-            print('event: ', event)
-
+    result = qa({"query": query})    
     print('result: ', result)
+
     msg = readStreamMsg(connectionId, requestId, result['result'])
 
     source_documents = result['source_documents']
@@ -384,7 +380,7 @@ def get_reference(docs):
         url = doc.metadata['url']
     
         #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-        reference = reference + f"({page}page in {name} ({url})\n"
+        reference = reference + f"({page}page in {name} ({url}) <a href={url}>Go</a> \n"
         
     return reference
 
