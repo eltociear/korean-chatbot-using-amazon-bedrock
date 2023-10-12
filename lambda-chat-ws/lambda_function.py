@@ -543,6 +543,20 @@ def getResponse(connectionId, jsonBody):
                 print('texts: ', texts)
             else:
                 texts = load_document(file_type, object)
+
+                docs = []
+                for i in range(len(texts)):
+                    docs.append(
+                        Document(
+                            page_content=texts[i],
+                            metadata={
+                                'name': object,
+                                'page':i+1
+                            }
+                        )
+                    )        
+                print('docs[0]: ', docs[0])    
+                print('docs size: ', len(docs))
             
             msg = get_summary(texts)
 
