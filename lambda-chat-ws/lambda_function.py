@@ -40,6 +40,7 @@ opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 opensearch_url = os.environ.get('opensearch_url')
+path = os.environ.get('path')
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -78,7 +79,7 @@ def get_parameter(modelId):
         }
     elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2':
         return {
-            "max_tokens_to_sample":8191, # 90k
+            "max_tokens_to_sample":8191, # 8k
             "temperature":0.1,
             "top_k":250,
             "top_p": 0.9,
@@ -112,13 +113,12 @@ def get_prompt_template(query, convType):
 
     if word_kor:    
         if convType=='qa':
-            condense_template = """아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다.
+            condense_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+        
+            {context}
             
-            Current conversation:
-            {history}
-            
-            Human: {input}
-            
+            Question: {question}
+
             Assistant:"""
         elif convType == "translation":
             condense_template = """
@@ -214,6 +214,7 @@ def load_csv_document(s3_file_name):
             metadata={
                 'name': s3_file_name,
                 'row': n+1,
+                'url': path+s3_file_name
             }
             #metadata=to_metadata
         )
@@ -365,8 +366,11 @@ def get_reference(docs):
     for doc in docs:
         name = doc.metadata['name']
         page = doc.metadata['row']
+        url = doc.metadata['url']
     
-        reference = reference + (str(page)+'page in '+name+'\n')
+        #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
+        reference = reference + f"({page}page in {name} ({url})\n"
+        
     return reference
 
 _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
@@ -556,7 +560,8 @@ def getResponse(connectionId, jsonBody):
                             page_content=texts[i],
                             metadata={
                                 'name': object,
-                                'page':i+1
+                                'page':i+1,
+                                'url': path+object
                             }
                         )
                     )        
