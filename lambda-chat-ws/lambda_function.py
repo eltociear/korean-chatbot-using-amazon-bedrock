@@ -442,7 +442,7 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, map, chat_memory, memory_chain, isReady
+    global modelId, llm, parameters, map, chat_memory, memory_chain, isReady, vectorstore
 
     # create memory
     if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
