@@ -31,16 +31,14 @@ s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
 bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
-modelId = os.environ.get('model_id', 'amazon.titan-tg1-large')
+modelId = os.environ.get('model_id', 'anthropic.claude-v2')
 print('model_id: ', modelId)
-conversationMode = os.environ.get('conversationMode', 'false')
 rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
-enableRAG = os.environ.get('enableRAG', 'true')
 opensearch_url = os.environ.get('opensearch_url')
 
 # websocket
@@ -263,7 +261,7 @@ def get_summary(texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chatHistory(userId, allowTime, enableRAG, chat_memory, memory_chain):
+def load_chatHistory(userId, allowTime, convType):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -285,7 +283,7 @@ def load_chatHistory(userId, allowTime, enableRAG, chat_memory, memory_chain):
             print('text: ', text)
             print('msg: ', msg)        
 
-            if enableRAG==False:
+            if convType=='qa':
                 chat_memory.save_context({"input": text}, {"output": msg})             
             else:
                 memory_chain.chat_memory.add_user_message(text)
@@ -405,22 +403,13 @@ def getResponse(connectionId, jsonBody):
     # print('type: ', type)
     body = jsonBody['body']
     # print('body: ', body)
-    convType = jsonBody['convType']
+    convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, conversation, conversationMode, map, chat_memory, memory_chain
+    global modelId, llm, parameters, conversation, map, chat_memory, memory_chain
 
     # create memory
-    if enableRAG == False: 
-        if userId in map:  
-            chat_memory = map[userId]
-            print('chat_memory exist. reuse it!')
-        else:
-            chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            map[userId] = chat_memory
-            print('chat_memory does not exist. create new one!')
-    
-    else:    
+    if convType == 'qa': 
         if userId in map:  
             memory_chain = map[userId]
             print('memory_chain exist. reuse it!')            
@@ -428,15 +417,23 @@ def getResponse(connectionId, jsonBody):
             memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
             map[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
-
+    else:    
+        if userId in map:  
+            chat_memory = map[userId]
+            print('chat_memory exist. reuse it!')
+        else:
+            chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+            map[userId] = chat_memory
+            print('chat_memory does not exist. create new one!')
+        
     allowTime = getAllowTime()
-    load_chatHistory(userId, allowTime,  enableRAG, chat_memory, memory_chain)
+    load_chatHistory(userId, allowTime, convType)
 
-    if enableRAG == False: 
+    if convType != 'qa': 
         conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
 
     # rag sources
-    if rag_type == 'opensearch':
+    if convType == 'qa' and rag_type == 'opensearch':
         vectorstore = OpenSearchVectorSearch(
             #index_name = "rag-index-*", # all
             index_name = 'rag-index-'+userId+'-*',
@@ -448,7 +445,7 @@ def getResponse(connectionId, jsonBody):
             opensearch_url=opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
-    elif rag_type == 'faiss':
+    elif convType == 'qa' and rag_type == 'faiss':
         print('isReady = ', isReady)
 
     start = int(time.time())    
@@ -485,35 +482,44 @@ def getResponse(connectionId, jsonBody):
                 map[userId] = chat_memory
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
-            else:            
-                if enableRAG == 'false':   # normal
-                    if convType == 'translation': 
-                        PROMPT = get_prompt_template(text, convType)
-                        msg = llm(PROMPT.format(input=text))
+            else:          
+                querySize = len(text)
+                textCount = len(text.split())  
+                print(f"query size: {querySize}, workds: {textCount}")
 
-                        msg = readStreamMsg(connectionId, requestId, msg)
-                    else:    
-                        conversation.prompt = get_prompt_template(text, convType)
-                        stream = conversation.predict(input=text)
-                        #print('stream: ', stream)
+                if convType == 'qa':   # question & answering
+                    if querySize>1800: 
+                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
+                    elif rag_type == 'faiss' and isReady == False: 
+                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
+                    else: 
+                        generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
+                        print('generated_prompt: ', generated_prompt)
+                        msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
+
+                        # extract chat history for debug
+                        chat_history_all = extract_chat_history_from_memory(memory_chain) 
+                        print('chat_history_all: ', chat_history_all)
+
+                        memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+                        memory_chain.chat_memory.add_ai_message(msg)
+
+                elif convType == 'translation': 
+                    PROMPT = get_prompt_template(text, convType)
+                    msg = llm(PROMPT.format(input=text))
+
+                    msg = readStreamMsg(connectionId, requestId, msg)
+                else:     # normal
+                    conversation.prompt = get_prompt_template(text, convType)
+                    stream = conversation.predict(input=text)
+                    #print('stream: ', stream)
                         
-                        msg = readStreamMsg(connectionId, requestId, stream)
-                        
+                    msg = readStreamMsg(connectionId, requestId, stream)
+
                     # extract chat history for debug
                     chats = chat_memory.load_memory_variables({})
                     chat_history_all = chats['history']
                     print('chat_history_all: ', chat_history_all)
-                else:   # question & answering
-                    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
-                    print('generated_prompt: ', generated_prompt)
-                    msg = get_answer_using_template(text, vectorstore, rag_type, convType) 
-
-                    chat_history_all = extract_chat_history_from_memory(memory_chain) # debugging
-                    print('chat_history_all: ', chat_history_all)
-
-                    memory_chain.chat_memory.add_user_message(text)  # append new diaglog
-                    memory_chain.chat_memory.add_ai_message(msg)
-            #print('msg: ', msg)
                 
         elif type == 'document':
             object = body
@@ -531,6 +537,28 @@ def getResponse(connectionId, jsonBody):
                 texts = load_document(file_type, object)
             
             msg = get_summary(texts)
+
+            if convType == 'qa' and rag_type == 'faiss':
+                if isReady == False:   
+                    vectorstore = FAISS.from_documents( # create vectorstore from a document
+                        docs,  # documents
+                        bedrock_embeddings  # embeddings
+                    )
+                    isReady = True
+                else:
+                    vectorstore.add_documents(docs)
+                    print('vector store size: ', len(vectorstore.docstore._dict))
+
+            elif convType == 'qa' and rag_type == 'opensearch':    
+                new_vectorstore = OpenSearchVectorSearch(
+                    index_name="rag-index-"+userId+'-'+requestId,
+                    is_aoss = False,
+                    #engine="faiss",  # default: nmslib
+                    embedding_function = bedrock_embeddings,
+                    opensearch_url = opensearch_url,
+                    http_auth=(opensearch_account, opensearch_passwd),
+                )
+                new_vectorstore.add_documents(docs)      
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)

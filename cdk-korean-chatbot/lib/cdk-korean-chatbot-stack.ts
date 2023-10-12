@@ -18,7 +18,7 @@ const region = process.env.CDK_DEFAULT_REGION;
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
-const model_id = "anthropic.claude-v2"; // amazon.titan-tg1-large, amazon.titan-tg1-xlarge, anthropic.claude-v1, anthropic.claude-v2
+const model_id = "anthropic.claude-v2"; // anthropic.claude-v1, anthropic.claude-v2
 const projectName = `korean-chatbot`; 
 
 const bucketName = `storage-for-${projectName}-${region}`; 
@@ -26,12 +26,11 @@ const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2"
 const conversationMode = 'true'; 
 
 const rag_type = 'faiss';  // faiss, opensearch
-let rag_source = "all";   // all, opensearch, kendra
+let rag_source = 'faiss';   // all, opensearch, kendra, faiss
 
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
 const enableReference = 'false';
-const enableRAG = 'true';
 let opensearch_url = "";
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
@@ -475,7 +474,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         opensearch_passwd: opensearch_passwd,
         enableReference: enableReference,
         opensearch_url: opensearch_url,
-        enableRAG: enableRAG
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
