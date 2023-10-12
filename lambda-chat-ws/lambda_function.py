@@ -380,7 +380,7 @@ def get_reference(docs):
         url = doc.metadata['url']
     
         #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-        reference = reference + f"({page}page in <a href={url} target=_blank>{name}</a>\n"
+        reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
         
     return reference
 
@@ -462,7 +462,7 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, map, memory_chat, memory_chain, isReady, vectorstore
+    global modelId, llm, parameters, map, memory_chat, memory_chain, isReady, vectorstore, enableReference
 
     # create memory
     if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
@@ -521,7 +521,7 @@ def getResponse(connectionId, jsonBody):
             msg += f"{model['modelId']}\n"
         
         msg += f"current model: {modelId}"
-        print('model lists: ', msg)    
+        print('model lists: ', msg)            
     else:             
         if type == 'text':
             text = body
@@ -531,7 +531,13 @@ def getResponse(connectionId, jsonBody):
             textCount = len(text.split())
             print(f"query size: {querySize}, words: {textCount}")
 
-            if text == 'clearMemory':
+            if text == 'enableReference':
+                enableReference = 'true'
+                msg  = "Referece is enabled"
+            elif text == 'disableReference':
+                enableReference = 'false'
+                msg  = "Reference is disabled"
+            elif text == 'clearMemory':
                 memory_chat = ""
                 memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
                 map[userId] = memory_chat
