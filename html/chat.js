@@ -169,7 +169,7 @@ calleeId.textContent = "AWS";
 
 if(langstate=='korean') {
     addNotifyMessage("Amazon Bedrock을 이용하여 채팅을 시작합니다.");
-    addReceivedMessage(uuidv4(), "아마존 베드락을 이용하여 주셔서 감사합니다. 편안한 대화를 즐기실수 있으며, 파일을 업로드하면 요약을 할 수 있습니다.")
+    addReceivedMessage(uuidv4(), "Amazon Bedrock을 이용하여 주셔서 감사합니다. 편안한 대화를 즐기실수 있으며, 파일을 업로드하면 요약을 할 수 있습니다.")
 }
 else {
     addNotifyMessage("Start chat with Amazon Bedrock");             
