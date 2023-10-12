@@ -285,7 +285,12 @@ def load_chatHistory(userId, allowTime, convType):
 
             if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):
                 memory_chain.chat_memory.add_user_message(text)
-                memory_chain.chat_memory.add_ai_message(msg)                       
+                memory_chain.chat_memory.add_ai_message(msg)           
+            elif convType=='qa' and rag_type=='faise' and isReady==False:
+                memory_chain.chat_memory.add_user_message(text)
+                memory_chain.chat_memory.add_ai_message(msg)  
+
+                chat_memory.save_context({"input": text}, {"output": msg})
             else:
                 chat_memory.save_context({"input": text}, {"output": msg})       
                 
