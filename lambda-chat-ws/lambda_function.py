@@ -576,7 +576,7 @@ def getResponse(connectionId, jsonBody):
                             page_content=texts[i],
                             metadata={
                                 'name': object,
-                                'page':i+1,
+                                'row':i+1,
                                 'url': path+object
                             }
                         )
