@@ -290,9 +290,9 @@ def load_chatHistory(userId, allowTime, convType):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)  
 
-                chat_memory.save_context({"input": text}, {"output": msg})
+                memory_chat.save_context({"input": text}, {"output": msg})
             else:
-                chat_memory.save_context({"input": text}, {"output": msg})       
+                memory_chat.save_context({"input": text}, {"output": msg})       
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
@@ -418,7 +418,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
     msg = readStreamMsg(connectionId, requestId, stream)
 
     # extract chat history for debug
-    chats = chat_memory.load_memory_variables({})
+    chats = memory_chat.load_memory_variables({})
     chat_history_all = chats['history']
     print('chat_history_all: ', chat_history_all)
     return msg
@@ -447,7 +447,7 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, map, chat_memory, memory_chain, isReady, vectorstore
+    global modelId, llm, parameters, map, memory_chat, memory_chain, isReady, vectorstore
 
     # create memory
     if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
@@ -460,14 +460,14 @@ def getResponse(connectionId, jsonBody):
             print('memory_chain does not exist. create new one!')
     else:    
         if userId in map:  
-            chat_memory = map[userId]
-            print('chat_memory exist. reuse it!')
+            memory_chat = map[userId]
+            print('memory_chat exist. reuse it!')
         else:
-            chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            map[userId] = chat_memory
-            print('chat_memory does not exist. create new one!')
+            memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+            map[userId] = memory_chat
+            print('memory_chat does not exist. create new one!')
         
-        conversation = ConversationChain(llm=llm, verbose=False, memory=chat_memory)
+        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     allowTime = getAllowTime()
     load_chatHistory(userId, allowTime, convType)
@@ -517,9 +517,9 @@ def getResponse(connectionId, jsonBody):
             print(f"query size: {querySize}, words: {textCount}")
 
             if text == 'clearMemory':
-                chat_memory = ""
-                chat_memory = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                map[userId] = chat_memory
+                memory_chat = ""
+                memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+                map[userId] = memory_chat
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:          
@@ -643,6 +643,7 @@ def lambda_handler(event, context):
                         'msg': "The request was failed by the system: "+err_msg
                     }
                     sendMessage(connectionId, result)
+                    print('err_msg: ', err_msg)
                     raise Exception ("Not able to send a message")
                                     
                 result = {
