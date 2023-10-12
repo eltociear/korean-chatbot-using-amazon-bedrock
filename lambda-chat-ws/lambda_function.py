@@ -380,7 +380,7 @@ def get_reference(docs):
         url = doc.metadata['url']
     
         #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-        reference = reference + f"({page}page in <a href={url}>{name} target=_blank</a>\n"
+        reference = reference + f"({page}page in <a href={url} target=_blank>{name}</a>\n"
         
     return reference
 
