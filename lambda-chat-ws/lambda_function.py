@@ -474,7 +474,22 @@ def getResponse(connectionId, jsonBody):
             memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
             map[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
-    else:    
+    elif convType == 'qa' and rag_type == 'faiss' and isReady == False:
+        if userId in map:  
+            memory_chain = map[userId]
+            print('memory_chain exist. reuse it!')        
+
+            memory_chat = map[userId]
+            print('memory_chat exist. reuse it!')    
+        else: 
+            memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            map[userId] = memory_chain
+            print('memory_chain does not exist. create new one!')
+
+            memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+            map[userId] = memory_chat
+            print('memory_chat does not exist. create new one!')
+    else:    # normal 
         if userId in map:  
             memory_chat = map[userId]
             print('memory_chat exist. reuse it!')
