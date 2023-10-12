@@ -23,7 +23,6 @@ const projectName = `korean-chatbot`;
 
 const bucketName = `storage-for-${projectName}-${region}`; 
 const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2" 
-const conversationMode = 'true'; 
 
 const rag_type = 'faiss';  // faiss, opensearch
 let rag_source = 'faiss';   // all, opensearch, kendra, faiss
@@ -467,12 +466,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,
-        conversationMode: conversationMode,
         connection_url: connection_url,
         rag_type: rag_type,
+        enableReference: enableReference,
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd,
-        enableReference: enableReference,
         opensearch_url: opensearch_url,
       }
     });     
