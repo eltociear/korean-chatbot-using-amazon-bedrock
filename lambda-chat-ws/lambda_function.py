@@ -420,9 +420,12 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 
 def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     PROMPT = get_prompt_template(text, convType)
-    stream = llm(PROMPT.format(input=text))
+    print('PROMPT: ', PROMPT)
+    msg = llm(PROMPT.format(input=text))
 
-    msg = readStreamMsg(connectionId, requestId, stream)
+    print('msg from PROMPT: ', msg)
+
+    # msg = readStreamMsg(connectionId, requestId, stream)
     return msg
 
 def getResponse(connectionId, jsonBody):
@@ -516,10 +519,6 @@ def getResponse(connectionId, jsonBody):
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:          
-                querySize = len(text)
-                textCount = len(text.split())  
-                print(f"query size: {querySize}, workds: {textCount}")
-
                 if convType == 'qa':   # question & answering
                     if rag_type == 'faiss' and isReady == False: 
                         msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
