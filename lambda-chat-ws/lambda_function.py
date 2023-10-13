@@ -112,8 +112,6 @@ def get_prompt_template(query, convType):
     word_kor = pattern_hangul.search(str(query))
     print('word_kor: ', word_kor)
 
-    print('isReady: ', isReady)
-
     if word_kor:    
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
@@ -346,7 +344,7 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     print('length of relevant_documents: ', len(relevant_documents))
 
     PROMPT = get_prompt_template(query, convType)
-    print('PROMPT: ', PROMPT) 
+    #print('PROMPT: ', PROMPT) 
 
     qa = RetrievalQA.from_chain_type(
         llm=llm,
@@ -448,7 +446,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 
 def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     PROMPT = get_prompt_template(text, convType)
-    print('PROMPT: ', PROMPT)
+    #print('PROMPT: ', PROMPT)
     msg = llm(PROMPT.format(input=text))
 
     print('msg from PROMPT: ', msg)
