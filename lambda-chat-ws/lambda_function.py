@@ -180,8 +180,7 @@ def store_document(path, s3_file_name, requestId):
             "Key": s3_prefix+'/'+s3_file_name
         },
         "Title": s3_file_name,
-        "Id": requestId,
-        'Url': path+s3_file_name
+        "Id": requestId        
     }
 
     documents = [
@@ -417,12 +416,15 @@ def get_reference(docs, rag_type):
         reference = "\n\nFrom\n"
         for doc in docs:
             name = doc.metadata['title']
+            url = path+name
 
             if doc.metadata['document_attributes']:
                 page = doc.metadata['document_attributes']['_excerpt_page_number']
-                reference = reference + (str(page)+'page in '+name+'\n')
+                #reference = reference + (str(page)+'page in '+name+'\n')
+                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
             else:
-                reference = reference + name+'\n'
+                #reference = reference + name+'\n'
+                reference = reference + f"in <a href={url} target=_blank>{name}</a>\n"
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
