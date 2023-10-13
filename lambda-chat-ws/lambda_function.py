@@ -63,7 +63,7 @@ boto3_bedrock = boto3.client(
     region_name=bedrock_region,
     config=Config(
         retries = {
-            'max_attempts': 50
+            'max_attempts': 70
         }            
     )
 )
@@ -260,7 +260,7 @@ def get_summary(texts):
     docs = [
         Document(
             page_content=t
-        ) for t in texts[:3]
+        ) for t in texts[:5]
     ]
     summary = chain.run(docs)
     print('summary: ', summary)
