@@ -96,7 +96,7 @@ parameters = get_parameter(modelId)
 llm = Bedrock(
     model_id=modelId, 
     client=boto3_bedrock, 
-    streaming=False,
+    streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
     model_kwargs=parameters)
 
