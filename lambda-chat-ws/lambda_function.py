@@ -63,7 +63,7 @@ boto3_bedrock = boto3.client(
     region_name=bedrock_region,
     config=Config(
         retries = {
-            'max_attempts': 200
+            'max_attempts': 1024
         }            
     )
 )
@@ -100,7 +100,7 @@ llm = Bedrock(
 bedrock_embeddings = BedrockEmbeddings(
     client=boto3_bedrock,
     region_name = bedrock_region,
-    model_id = 'amazon.titan-embed-text-v1' # amazon.titan-e1t-medium, amazon.titan-embed-g1-text-02 amazon.titan-embed-text-v1
+    model_id = 'amazon.titan-embed-text-v1' 
 )
 
 map_chain = dict() # Conversation with RAG
