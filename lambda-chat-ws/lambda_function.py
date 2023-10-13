@@ -366,7 +366,7 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def get_answer_using_template(query, vectorstore, rag_type, convType, connectionId, requestId):        
+def get_answer_using_template(query, rag_type, convType, connectionId, requestId):        
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
@@ -475,10 +475,10 @@ def get_generated_prompt(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
-def get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId):
+def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
-    msg = get_answer_using_template(text, vectorstore, rag_type, convType, connectionId, requestId) 
+    msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
@@ -527,7 +527,8 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, vectorstore, enableReference, rag_type
+    global llm, modelId, vectorstore, enableReference, rag_type
+    global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady
 
     # create memory
     if convType=='qa':
@@ -548,7 +549,7 @@ def getResponse(connectionId, jsonBody):
                 map_chat[userId] = memory_chat
                 print('memory_chat does not exist. create new one!')        
             conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
-            
+
     else:    # normal 
         if userId in map_chat:  
             memory_chat = map_chat[userId]
@@ -635,7 +636,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)     
                     else: 
-                        msg = get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId)                
+                        msg = get_answer_using_RAG(text, convType, connectionId, requestId)                
 
                 elif convType == 'translation': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
