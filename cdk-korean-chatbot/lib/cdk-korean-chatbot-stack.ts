@@ -13,6 +13,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as kendra from 'aws-cdk-lib/aws-kendra';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -35,7 +36,7 @@ let opensearch_url = "";
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-
+    
     // s3 
     const s3Bucket = new s3.Bucket(this, `storage-${projectName}`,{
       bucketName: bucketName,
@@ -70,26 +71,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       });
     }
 
-    // DynamoDB for call log
-    const callLogTableName = `db-call-log-for-${projectName}`;
-    const callLogDataTable = new dynamodb.Table(this, `db-call-log-for-${projectName}`, {
-      tableName: callLogTableName,
-      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'request_time', type: dynamodb.AttributeType.STRING }, 
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    const callLogIndexName = `index-type-for-${projectName}`;
-    callLogDataTable.addGlobalSecondaryIndex({ // GSI
-      indexName: callLogIndexName,
-      partitionKey: { name: 'request_id', type: dynamodb.AttributeType.STRING },
-    });
-
     // copy web application files into s3 bucket
     new s3Deploy.BucketDeployment(this, `upload-HTML-for-${projectName}`, {
       sources: [s3Deploy.Source.asset("../html")],
       destinationBucket: s3Bucket,
-    });
+    });    
 
     // cloudfront
     const distribution = new cloudFront.Distribution(this, `cloudfront-for-${projectName}`, {
@@ -106,6 +92,115 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The domain name of the Distribution',
     });
 
+    // DynamoDB for call log
+    const callLogTableName = `db-call-log-for-${projectName}`;
+    const callLogDataTable = new dynamodb.Table(this, `db-call-log-for-${projectName}`, {
+      tableName: callLogTableName,
+      partitionKey: { name: 'user_id', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'request_time', type: dynamodb.AttributeType.STRING }, 
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    const callLogIndexName = `index-type-for-${projectName}`;
+    callLogDataTable.addGlobalSecondaryIndex({ // GSI
+      indexName: callLogIndexName,
+      partitionKey: { name: 'request_id', type: dynamodb.AttributeType.STRING },
+    });
+    
+    // Lambda - chat (websocket)
+    const roleLambdaWebsocket = new iam.Role(this, `role-lambda-chat-ws-for-${projectName}`, {
+      roleName: `role-lambda-chat-ws-for-${projectName}-${region}`,
+      assumedBy: new iam.CompositePrincipal(
+        new iam.ServicePrincipal("lambda.amazonaws.com"),
+        new iam.ServicePrincipal("bedrock.amazonaws.com"),
+        new iam.ServicePrincipal("kendra.amazonaws.com")
+      )
+    });
+    roleLambdaWebsocket.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+    });
+    const BedrockPolicy = new iam.PolicyStatement({  // policy statement for sagemaker
+      resources: ['*'],
+      actions: ['bedrock:*'],
+    });
+    roleLambdaWebsocket.attachInlinePolicy( // add bedrock policy
+      new iam.Policy(this, `bedrock-policy-lambda-chat-ws-for-${projectName}`, {
+        statements: [BedrockPolicy],
+      }),
+    );        
+    const apiInvokePolicy = new iam.PolicyStatement({ 
+      // resources: ['arn:aws:execute-api:*:*:*'],
+      resources: ['*'],
+      actions: [
+        'execute-api:Invoke',
+        'execute-api:ManageConnections'
+      ],
+    });        
+    roleLambdaWebsocket.attachInlinePolicy( 
+      new iam.Policy(this, `api-invoke-policy-for-${projectName}`, {
+        statements: [apiInvokePolicy],
+      }),
+    );  
+
+    // Kendra  
+    let kendraIndex = "";
+    if(deployed_rag_type=='kendra' || deployed_rag_type=='all') {        
+      const roleKendra = new iam.Role(this, `role-kendra-for-${projectName}`, {
+        roleName: `role-kendra-for-${projectName}-${region}`,
+        assumedBy: new iam.CompositePrincipal(
+          new iam.ServicePrincipal("kendra.amazonaws.com")
+        )
+      });
+      const cfnIndex = new kendra.CfnIndex(this, 'MyCfnIndex', {
+        edition: 'DEVELOPER_EDITION',  // ENTERPRISE_EDITION, 
+        name: `reg-kendra-${projectName}`,
+        roleArn: roleKendra.roleArn,
+      });     
+      new cdk.CfnOutput(this, `index-of-kendra-for-${projectName}`, {
+        value: cfnIndex.attrId,
+        description: 'The index of kendra',
+      }); 
+
+      const accountId = process.env.CDK_DEFAULT_ACCOUNT;
+      const kendraResourceArn = `arn:aws:kendra:${region}:${accountId}:index/${cfnIndex.attrId}`
+      if(debug) {
+        new cdk.CfnOutput(this, `resource-arn-of-kendra-for-${projectName}`, {
+          value: kendraResourceArn,
+          description: 'The arn of resource',
+        }); 
+      }           
+      
+      const kendraPolicy = new iam.PolicyStatement({  
+        resources: [kendraResourceArn],      
+        actions: ['kendra:*'],
+      });      
+      roleKendra.attachInlinePolicy( // add kendra policy
+        new iam.Policy(this, `kendra-inline-policy-for-${projectName}`, {
+          statements: [kendraPolicy],
+        }),
+      );      
+      kendraIndex = cfnIndex.attrId;
+
+      roleLambdaWebsocket.attachInlinePolicy( 
+        new iam.Policy(this, `lambda-inline-policy-for-kendra-in-${projectName}`, {
+          statements: [kendraPolicy],
+        }),
+      ); 
+
+      const passRoleResourceArn = roleLambdaWebsocket.roleArn;
+      const passRolePolicy = new iam.PolicyStatement({  
+        resources: [passRoleResourceArn],      
+        actions: ['iam:PassRole'],
+      });
+      
+      roleLambdaWebsocket.attachInlinePolicy( // add pass role policy
+        new iam.Policy(this, `pass-role-of-kendra-for-${projectName}`, {
+          statements: [passRolePolicy],
+        }), 
+      );  
+    }
+
+    // opensearch
     if(deployed_rag_type=='opensearch' || deployed_rag_type=='all') {
       // Permission for OpenSearch
       const domainName = projectName
@@ -129,7 +224,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         principals: [new iam.AnyPrincipal()],      
       });  
 
-      // OpenSearch
       const domain = new opensearch.Domain(this, 'Domain', {
         version: opensearch.EngineVersion.OPENSEARCH_2_3,
       
@@ -176,7 +270,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       opensearch_url = 'https://'+domain.domainEndpoint;
     }
 
-    // role
+    // api role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
       roleName: `api-role-for-${projectName}-${region}`,
       assumedBy: new iam.ServicePrincipal("apigateway.amazonaws.com")
@@ -419,41 +513,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The URL of connection',
     });
 
-    // Lambda - chat (websocket)
-    const roleLambdaWebsocket = new iam.Role(this, `role-lambda-chat-ws-for-${projectName}`, {
-      roleName: `role-lambda-chat-ws-for-${projectName}-${region}`,
-      assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal("lambda.amazonaws.com"),
-        new iam.ServicePrincipal("bedrock.amazonaws.com"),
-      )
-    });
-    roleLambdaWebsocket.addManagedPolicy({
-      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
-    });
-    const BedrockPolicy = new iam.PolicyStatement({  // policy statement for sagemaker
-      resources: ['*'],
-      actions: ['bedrock:*'],
-    });
-    roleLambdaWebsocket.attachInlinePolicy( // add bedrock policy
-      new iam.Policy(this, `bedrock-policy-lambda-chat-ws-for-${projectName}`, {
-        statements: [BedrockPolicy],
-      }),
-    );        
-
-    const apiInvokePolicy = new iam.PolicyStatement({ 
-      // resources: ['arn:aws:execute-api:*:*:*'],
-      resources: ['*'],
-      actions: [
-        'execute-api:Invoke',
-        'execute-api:ManageConnections'
-      ],
-    });        
-    roleLambdaWebsocket.attachInlinePolicy( 
-      new iam.Policy(this, `api-invoke-policy-for-${projectName}`, {
-        statements: [apiInvokePolicy],
-      }),
-    );  
-   
+    // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
       description: 'lambda for chat using websocket',
       functionName: `lambda-chat-ws-for-${projectName}`,
@@ -474,6 +534,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         opensearch_passwd: opensearch_passwd,
         opensearch_url: opensearch_url,
         path: 'https://'+distribution.domainName+'/docs/',   
+        kendraIndex: kendraIndex,
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
