@@ -88,7 +88,6 @@ def get_parameter(modelId):
         }
 parameters = get_parameter(modelId)
 
-
 # langchain for bedrock
 llm = Bedrock(
     model_id=modelId, 
@@ -104,7 +103,8 @@ bedrock_embeddings = BedrockEmbeddings(
     model_id = 'amazon.titan-embed-text-v1' # amazon.titan-e1t-medium, amazon.titan-embed-g1-text-02 amazon.titan-embed-text-v1
 )
 
-map = dict() # Conversation
+map_chain = dict() # Conversation with RAG
+map_chat = dict() # Conversation for normal 
 
 def get_prompt_template(query, convType):
     # check korean
@@ -390,6 +390,8 @@ _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
 def extract_chat_history_from_memory():
     chat_history = []
     chats = memory_chain.load_memory_variables({})    
+    print('chats: ', chats)
+
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
         chat_history.append(f"{role_prefix[2:]}{dialogue_turn.content}")
@@ -465,41 +467,42 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     # print('convType: ', convType)
 
-    global modelId, llm, parameters, map, memory_chat, memory_chain, isReady, vectorstore, enableReference
+    global modelId, llm, parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, vectorstore, enableReference
 
     # create memory
     if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
-        if userId in map:  
-            memory_chain = map[userId]
+        if userId in map_chain:  
+            memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
         else: 
             memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            map[userId] = memory_chain
+            map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
     elif convType == 'qa' and rag_type == 'faiss' and isReady == False:
-        if userId in map:  
-            memory_chain = map[userId]
-            print('memory_chain exist. reuse it!')        
-
-            memory_chat = map[userId]
-            print('memory_chat exist. reuse it!')    
+        if userId in map_chain:  
+            memory_chain = map_chain[userId]
+            print('memory_chain exist. reuse it!')            
         else: 
             memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            map[userId] = memory_chain
+            map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
+        if userId in map_chat:  
+            memory_chat = map_chat[userId]
+            print('memory_chat exist. reuse it!')    
+        else: 
             memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            map[userId] = memory_chat
+            map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
 
     else:    # normal 
         if userId in map:  
-            memory_chat = map[userId]
+            memory_chat = map_chat[userId]
             print('memory_chat exist. reuse it!')
         else:
             memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            map[userId] = memory_chat
+            map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
