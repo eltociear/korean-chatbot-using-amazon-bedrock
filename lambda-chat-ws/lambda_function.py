@@ -639,7 +639,7 @@ def getResponse(connectionId, jsonBody):
                 
         elif type == 'document':
             object = body
-        
+
             file_type = object[object.rfind('.')+1:len(object)]
             print('file_type: ', file_type)
             
@@ -669,7 +669,10 @@ def getResponse(connectionId, jsonBody):
             
             msg = get_summary(texts)
 
-            if convType == 'qa' and rag_type == 'faiss':
+            if convType == 'qa' and rag_type=='kendra':                 
+                store_document(object, requestId)  # store the object into kendra
+                
+            elif convType == 'qa' and rag_type == 'faiss':
                 if isReady == False:   
                     vectorstore = FAISS.from_documents( # create vectorstore from a document
                         docs,  # documents
