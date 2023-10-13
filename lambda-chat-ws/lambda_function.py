@@ -404,7 +404,7 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     print('source_documents: ', source_documents)
 
     if len(relevant_documents)>=1 and enableReference=='true':
-        reference = get_reference(source_documents)
+        reference = get_reference(source_documents, rag_type)
         #print('reference: ', reference)
 
         return msg+reference
@@ -671,7 +671,7 @@ def getResponse(connectionId, jsonBody):
 
             if convType == 'qa' and rag_type=='kendra':                 
                 store_document(object, requestId)  # store the object into kendra
-                
+
             elif convType == 'qa' and rag_type == 'faiss':
                 if isReady == False:   
                     vectorstore = FAISS.from_documents( # create vectorstore from a document
