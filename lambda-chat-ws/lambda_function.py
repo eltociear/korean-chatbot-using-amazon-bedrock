@@ -112,6 +112,8 @@ def get_prompt_template(query, convType):
     word_kor = pattern_hangul.search(str(query))
     print('word_kor: ', word_kor)
 
+    print('isReady: ', isReady)
+
     if word_kor:    
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):  
             # for RAG, context and question
