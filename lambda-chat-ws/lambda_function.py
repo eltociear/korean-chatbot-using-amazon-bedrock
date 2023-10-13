@@ -344,6 +344,7 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     print('length of relevant_documents: ', len(relevant_documents))
 
     PROMPT = get_prompt_template(query, convType)
+    print('PROMPT: ', PROMPT) 
 
     qa = RetrievalQA.from_chain_type(
         llm=llm,
