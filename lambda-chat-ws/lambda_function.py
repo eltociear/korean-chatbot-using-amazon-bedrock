@@ -323,16 +323,28 @@ def load_chatHistory(userId, allowTime, convType):
             print('text: ', text)
             print('msg: ', msg)        
 
-            if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):
-                memory_chain.chat_memory.add_user_message(text)
-                memory_chain.chat_memory.add_ai_message(msg)           
-            elif convType=='qa' and rag_type=='faiss' and isReady==False:
-                memory_chain.chat_memory.add_user_message(text)
-                memory_chain.chat_memory.add_ai_message(msg)  
+            #if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and #rag_type=='faiss' and isReady):
+            #    memory_chain.chat_memory.add_user_message(text)
+            #    memory_chain.chat_memory.add_ai_message(msg)           
+            #elif convType=='qa' and rag_type=='faiss' and isReady==False:
+            #    memory_chain.chat_memory.add_user_message(text)
+            #    memory_chain.chat_memory.add_ai_message(msg)  
 
-                memory_chat.save_context({"input": text}, {"output": msg})
+            #    memory_chat.save_context({"input": text}, {"output": msg})
+            #else:
+            #    memory_chat.save_context({"input": text}, {"output": msg})       
+
+            if convType=='qa':
+                if rag_type=='opensearch' or rag_type=='kendra' or (rag_type=='faiss' and isReady):
+                    memory_chain.chat_memory.add_user_message(text)
+                    memory_chain.chat_memory.add_ai_message(msg)           
+                elif rag_type=='faiss' and isReady==False:
+                    memory_chain.chat_memory.add_user_message(text)
+                    memory_chain.chat_memory.add_ai_message(msg)  
+
+                    memory_chat.save_context({"input": text}, {"output": msg})
             else:
-                memory_chat.save_context({"input": text}, {"output": msg})       
+                memory_chat.save_context({"input": text}, {"output": msg})   
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
