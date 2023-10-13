@@ -35,6 +35,7 @@ modelId = os.environ.get('model_id', 'anthropic.claude-v2')
 print('model_id: ', modelId)
 rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
+isDebugging = True
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -416,10 +417,10 @@ def get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
     msg = get_answer_using_template(text, vectorstore, rag_type, convType, connectionId, requestId) 
-    
-    # extract chat history for debug
-    chat_history_all = extract_chat_history_from_memory() 
-    print('chat_history_all: ', chat_history_all)
+        
+    if isDebugging:   # extract chat history for debug
+        chat_history_all = extract_chat_history_from_memory() 
+        print('chat_history_all: ', chat_history_all)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -433,10 +434,11 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
                         
     msg = readStreamMsg(connectionId, requestId, stream)
 
-    # extract chat history for debug
-    chats = memory_chat.load_memory_variables({})
-    chat_history_all = chats['history']
-    print('chat_history_all: ', chat_history_all)
+    if isDebugging:   # extract chat history for debug
+        chats = memory_chat.load_memory_variables({})
+        chat_history_all = chats['history']
+        print('chat_history_all: ', chat_history_all)
+
     return msg
 
 def get_answer_from_PROMPT(text, convType, connectionId, requestId):
@@ -562,10 +564,13 @@ def getResponse(connectionId, jsonBody):
                 msg  = "The chat memory was intialized in this session."
             else:          
                 if convType == 'qa':   # question & answering
-                    if rag_type == 'faiss' and isReady == False: 
-                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+                    if rag_type == 'faiss' and isReady==False:                               
+                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
+
+                        memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+                        memory_chain.chat_memory.add_ai_message(msg)     
                     else: 
-                        msg = get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId)
+                        msg = get_answer_using_RAG(text, vectorstore, convType, connectionId, requestId)                
 
                 elif convType == 'translation': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
