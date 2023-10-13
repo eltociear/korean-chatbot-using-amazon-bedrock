@@ -115,7 +115,7 @@ def get_prompt_template(query, convType):
     print('isReady: ', isReady)
 
     if word_kor:    
-        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):  
+        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
@@ -141,7 +141,7 @@ def get_prompt_template(query, convType):
             
             Assistant:"""
     else:  # English
-        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):  # for RAG
+        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
         
             {context}
@@ -296,10 +296,10 @@ def load_chatHistory(userId, allowTime, convType):
             print('text: ', text)
             print('msg: ', msg)        
 
-            if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faise' and isReady):
+            if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)           
-            elif convType=='qa' and rag_type=='faise' and isReady==False:
+            elif convType=='qa' and rag_type=='faiss' and isReady==False:
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)  
 
@@ -473,7 +473,7 @@ def getResponse(connectionId, jsonBody):
     global modelId, llm, parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, vectorstore, enableReference
 
     # create memory
-    if (convType == 'qa' and rag_type == 'opensearch') or (convType == 'qa' and rag_type == 'faiss' and isReady):
+    if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):
         if userId in map_chain:  
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
@@ -481,7 +481,7 @@ def getResponse(connectionId, jsonBody):
             memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
-    elif convType == 'qa' and rag_type == 'faiss' and isReady == False:
+    elif convType=='qa' and rag_type=='faiss' and isReady==False:
         if userId in map_chain:  
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
