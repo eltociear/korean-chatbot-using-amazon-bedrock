@@ -411,15 +411,26 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     else:
         return msg
 
-def get_reference(docs):
-    reference = "\n\nFrom\n"
-    for doc in docs:
-        name = doc.metadata['name']
-        page = doc.metadata['page']
-        url = doc.metadata['url']
-    
-        #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-        reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+def get_reference(docs, rag_type):
+    if rag_type == 'kendra':
+        reference = "\n\nFrom\n"
+        for doc in docs:
+            name = doc.metadata['title']
+
+            if doc.metadata['document_attributes']:
+                page = doc.metadata['document_attributes']['_excerpt_page_number']
+                reference = reference + (str(page)+'page in '+name+'\n')
+            else:
+                reference = reference + name+'\n'
+    else:
+        reference = "\n\nFrom\n"
+        for doc in docs:
+            name = doc.metadata['name']
+            page = doc.metadata['page']
+            url = doc.metadata['url']
+        
+            #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
+            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
         
     return reference
 
