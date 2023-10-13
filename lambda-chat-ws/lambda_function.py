@@ -25,6 +25,7 @@ from langchain.vectorstores import OpenSearchVectorSearch
 from langchain.embeddings import BedrockEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
+from langchain.retrievers import AmazonKendraRetriever
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -42,6 +43,9 @@ opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
+
+kendraIndex = os.environ.get('kendraIndex')
+roleArn = os.environ.get('roleArn')
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -106,6 +110,8 @@ bedrock_embeddings = BedrockEmbeddings(
 map_chain = dict() # Conversation with RAG
 map_chat = dict() # Conversation for normal 
 
+kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
+
 def get_prompt_template(query, convType):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
@@ -165,6 +171,29 @@ def get_prompt_template(query, convType):
         #claude_prompt = PromptTemplate.from_template("""The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
     
     return PromptTemplate.from_template(prompt_template)
+
+# store document into Kendra
+def store_document(s3_file_name, requestId):
+    documentInfo = {
+        "S3Path": {
+            "Bucket": s3_bucket,
+            "Key": s3_prefix+'/'+s3_file_name
+        },
+        "Title": s3_file_name,
+        "Id": requestId
+    }
+
+    documents = [
+        documentInfo
+    ]
+
+    kendra = boto3.client("kendra")
+    result = kendra.batch_put_document(
+        Documents = documents,
+        IndexId = kendraIndex,
+        RoleArn = roleArn
+    )
+    print(result)
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
@@ -334,6 +363,8 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore.similarity_search(query)
+    elif rag_type == 'kendra':
+        relevant_documents = kendraRetriever.get_relevant_documents(query)
 
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
@@ -346,16 +377,21 @@ def get_answer_using_template(query, vectorstore, rag_type, convType, connection
     PROMPT = get_prompt_template(query, convType)
     #print('PROMPT: ', PROMPT) 
 
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(
+    if rag_type=='kendra':
+        retriever = kendraRetriever
+    elif rag_type=='opensearch' or rag_type=='faiss':
+        retriever = vectorstore.as_retriever(
             search_type="similarity", 
             search_kwargs={
                 #"k": 3, 'score_threshold': 0.8
                 "k": 3
             }
-        ),
+        )
+
+    qa = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever,
         return_source_documents=True,
         chain_type_kwargs={"prompt": PROMPT}
     )
@@ -560,6 +596,15 @@ def getResponse(connectionId, jsonBody):
             elif text == 'disableReference':
                 enableReference = 'false'
                 msg  = "Reference is disabled"
+            elif text == 'useOpenSearch':
+                rag_type = 'opensearch'
+                msg  = "OpenSearch is selected for Knowledge Database"
+            elif text == 'useFaiss':
+                rag_type = 'faiss'
+                msg  = "Faiss is selected for Knowledge Database"
+            elif text == 'useKendra':
+                rag_type = 'kendra'
+                msg  = "Kendra is selected for Knowledge Database"
             elif text == 'clearMemory':
                 memory_chat = ""
                 memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')

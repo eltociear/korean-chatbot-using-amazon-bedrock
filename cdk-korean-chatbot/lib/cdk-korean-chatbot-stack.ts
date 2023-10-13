@@ -535,6 +535,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         opensearch_url: opensearch_url,
         path: 'https://'+distribution.domainName+'/docs/',   
         kendraIndex: kendraIndex,
+        roleArn: roleLambdaWebsocket.roleArn,
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
