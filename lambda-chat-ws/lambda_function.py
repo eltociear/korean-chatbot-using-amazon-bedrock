@@ -562,7 +562,7 @@ def getResponse(connectionId, jsonBody):
             elif text == 'clearMemory':
                 memory_chat = ""
                 memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                map[userId] = memory_chat
+                map_chat[userId] = memory_chat
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:          
