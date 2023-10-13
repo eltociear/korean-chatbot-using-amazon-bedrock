@@ -173,14 +173,15 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 # store document into Kendra
-def store_document(s3_file_name, requestId):
+def store_document(path, s3_file_name, requestId):
     documentInfo = {
         "S3Path": {
             "Bucket": s3_bucket,
             "Key": s3_prefix+'/'+s3_file_name
         },
         "Title": s3_file_name,
-        "Id": requestId
+        "Id": requestId,
+        'Url': path+s3_file_name
     }
 
     documents = [
@@ -669,8 +670,9 @@ def getResponse(connectionId, jsonBody):
             
             msg = get_summary(texts)
 
-            if convType == 'qa' and rag_type=='kendra':                 
-                store_document(object, requestId)  # store the object into kendra
+            if convType == 'qa' and rag_type=='kendra':      
+                print('upload to kendra: ', object)           
+                store_document(path, object, requestId)  # store the object into kendra
 
             elif convType == 'qa' and rag_type == 'faiss':
                 if isReady == False:   
