@@ -354,7 +354,7 @@ def readStreamMsg(connectionId, requestId, stream):
     msg = ""
     if stream:
         for event in stream:
-            print('event: ', event)
+            #print('event: ', event)
             msg = msg + event
 
             result = {
