@@ -521,7 +521,7 @@ def getResponse(connectionId, jsonBody):
     global modelId, llm, parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, vectorstore, enableReference, rag_type
 
     # create memory
-    if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):
+    if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):
         if userId in map_chain:  
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
