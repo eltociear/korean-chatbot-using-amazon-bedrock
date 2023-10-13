@@ -63,7 +63,7 @@ boto3_bedrock = boto3.client(
     region_name=bedrock_region,
     config=Config(
         retries = {
-            'max_attempts': 30
+            'max_attempts': 100
         }            
     )
 )
