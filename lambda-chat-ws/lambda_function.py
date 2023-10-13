@@ -145,7 +145,7 @@ def get_prompt_template(query, convType):
             
             Assistant:"""
     else:  # English
-        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
+        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
         
             {context}
@@ -335,13 +335,10 @@ def load_chatHistory(userId, allowTime, convType):
             #    memory_chat.save_context({"input": text}, {"output": msg})       
 
             if convType=='qa':
-                if rag_type=='opensearch' or rag_type=='kendra' or (rag_type=='faiss' and isReady):
-                    memory_chain.chat_memory.add_user_message(text)
-                    memory_chain.chat_memory.add_ai_message(msg)           
-                elif rag_type=='faiss' and isReady==False:
-                    memory_chain.chat_memory.add_user_message(text)
-                    memory_chain.chat_memory.add_ai_message(msg)  
-
+                memory_chain.chat_memory.add_user_message(text)
+                memory_chain.chat_memory.add_ai_message(msg)        
+                
+                if rag_type=='faiss' and isReady==False:
                     memory_chat.save_context({"input": text}, {"output": msg})
             else:
                 memory_chat.save_context({"input": text}, {"output": msg})   
@@ -533,15 +530,7 @@ def getResponse(connectionId, jsonBody):
     global modelId, llm, parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, vectorstore, enableReference, rag_type
 
     # create memory
-    if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):
-        if userId in map_chain:  
-            memory_chain = map_chain[userId]
-            print('memory_chain exist. reuse it!')            
-        else: 
-            memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            map_chain[userId] = memory_chain
-            print('memory_chain does not exist. create new one!')
-    elif convType=='qa' and rag_type=='faiss' and isReady==False:
+    if convType=='qa':
         if userId in map_chain:  
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
@@ -550,15 +539,16 @@ def getResponse(connectionId, jsonBody):
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
-        if userId in map_chat:  
-            memory_chat = map_chat[userId]
-            print('memory_chat exist. reuse it!')    
-        else: 
-            memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            map_chat[userId] = memory_chat
-            print('memory_chat does not exist. create new one!')        
-        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
-
+        if rag_type=='faiss' and isReady==False:        
+            if userId in map_chat:  
+                memory_chat = map_chat[userId]
+                print('memory_chat exist. reuse it!')    
+            else: 
+                memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+                map_chat[userId] = memory_chat
+                print('memory_chat does not exist. create new one!')        
+            conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+            
     else:    # normal 
         if userId in map_chat:  
             memory_chat = map_chat[userId]
@@ -684,31 +674,31 @@ def getResponse(connectionId, jsonBody):
             
             msg = get_summary(texts)
 
-            if convType == 'qa' and rag_type=='kendra':      
-                print('upload to kendra: ', object)           
-                store_document(path, object, requestId)  # store the object into kendra
+            if convType == 'qa':
+                if rag_type=='kendra':      
+                    print('upload to kendra: ', object)           
+                    store_document(path, object, requestId)  # store the object into kendra
 
-            elif convType == 'qa' and rag_type == 'faiss':
-                if isReady == False:   
-                    vectorstore = FAISS.from_documents( # create vectorstore from a document
-                        docs,  # documents
-                        bedrock_embeddings  # embeddings
+                elif rag_type == 'faiss':
+                    if isReady == False:   
+                        vectorstore = FAISS.from_documents( # create vectorstore from a document
+                            docs,  # documents
+                            bedrock_embeddings  # embeddings
+                        )
+                        isReady = True
+                    else:
+                        vectorstore.add_documents(docs)
+
+                elif rag_type == 'opensearch':    
+                    new_vectorstore = OpenSearchVectorSearch(
+                        index_name="rag-index-"+userId+'-'+requestId,
+                        is_aoss = False,
+                        #engine="faiss",  # default: nmslib
+                        embedding_function = bedrock_embeddings,
+                        opensearch_url = opensearch_url,
+                        http_auth=(opensearch_account, opensearch_passwd),
                     )
-                    isReady = True
-                else:
-                    vectorstore.add_documents(docs)
-                    print('vector store size: ', len(vectorstore.docstore._dict))
-
-            elif convType == 'qa' and rag_type == 'opensearch':    
-                new_vectorstore = OpenSearchVectorSearch(
-                    index_name="rag-index-"+userId+'-'+requestId,
-                    is_aoss = False,
-                    #engine="faiss",  # default: nmslib
-                    embedding_function = bedrock_embeddings,
-                    opensearch_url = opensearch_url,
-                    http_auth=(opensearch_account, opensearch_passwd),
-                )
-                new_vectorstore.add_documents(docs)      
+                    new_vectorstore.add_documents(docs)      
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
