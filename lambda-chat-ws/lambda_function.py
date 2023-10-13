@@ -498,7 +498,7 @@ def getResponse(connectionId, jsonBody):
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
 
     else:    # normal 
-        if userId in map:  
+        if userId in map_chat:  
             memory_chat = map_chat[userId]
             print('memory_chat exist. reuse it!')
         else:
