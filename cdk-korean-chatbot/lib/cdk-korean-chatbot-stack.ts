@@ -494,24 +494,24 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });  
     websocketapi.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY); // DESTROY, RETAIN
 
-    new cdk.CfnOutput(this, 'api-identifier', {
-      value: websocketapi.attrApiId,
-      description: 'The API identifier.',
-    });
-
     const wss_url = `wss://${websocketapi.attrApiId}.execute-api.${region}.amazonaws.com/${stage}`;
     new cdk.CfnOutput(this, 'web-socket-url', {
-      value: wss_url,
-      
+      value: wss_url,      
       description: 'The URL of Web Socket',
     });
 
     const connection_url = `https://${websocketapi.attrApiId}.execute-api.${region}.amazonaws.com/${stage}`;
-    new cdk.CfnOutput(this, 'connection-url', {
-      value: connection_url,
-      
-      description: 'The URL of connection',
-    });
+    if(debug) {
+      new cdk.CfnOutput(this, 'api-identifier', {
+        value: websocketapi.attrApiId,
+        description: 'The API identifier.',
+      });
+
+      new cdk.CfnOutput(this, 'connection-url', {
+        value: connection_url,        
+        description: 'The URL of connection',
+      });
+    }
 
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
@@ -542,11 +542,13 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     s3Bucket.grantRead(lambdaChatWebsocket); // permission for s3
     callLogDataTable.grantReadWriteData(lambdaChatWebsocket); // permission for dynamo 
     
-    new cdk.CfnOutput(this, 'function-chat-ws-arn', {
-      value: lambdaChatWebsocket.functionArn,
-      description: 'The arn of lambda webchat.',
-    }); 
-    
+    if(debug) {
+      new cdk.CfnOutput(this, 'function-chat-ws-arn', {
+        value: lambdaChatWebsocket.functionArn,
+        description: 'The arn of lambda webchat.',
+      }); 
+    }
+
     const integrationUri = `arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${lambdaChatWebsocket.functionArn}/invocations`;    
     const cfnIntegration = new apigatewayv2.CfnIntegration(this, `api-integration-for-${projectName}`, {
       apiId: websocketapi.attrApiId,
@@ -590,7 +592,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }); 
 
     // deploy components
-    new componentDeployment(scope, "deployment-korean-chatbot", websocketapi.attrApiId)  
+    new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)     
 
     //const wsOriginRequestPolicy = new cloudFront.OriginRequestPolicy(this, `webSocketPolicy`, {
     //  originRequestPolicyName: "webSocketPolicy",
@@ -613,7 +615,7 @@ export class componentDeployment extends cdk.Stack {
   constructor(scope: Construct, id: string, appId: string, props?: cdk.StackProps) {    
     super(scope, id, props);
 
-    new apigatewayv2.CfnDeployment(this, `api-deployment-for-${projectName}`, {
+    new apigatewayv2.CfnDeployment(this, `api-deployment-of-${projectName}`, {
       apiId: appId,
       description: "deploy api gateway using websocker",  // $default
       stageName: stage
