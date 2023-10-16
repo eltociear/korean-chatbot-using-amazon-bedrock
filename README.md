@@ -163,8 +163,9 @@ kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
 
 [kendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.kendra.AmazonKendraRetriever.html?highlight=kendraretriever#langchain.retrievers.kendra.AmazonKendraRetriever)를 이용해 아래와 같이 관련된 문서를 검색할 수 있습니다.
 
+```python
 relevant_documents = kendraRetriever.get_relevant_documents(query)
-
+```
 
 ### 관련된 문서를 포함한 RAG 구현
 
@@ -198,283 +199,65 @@ elif rag_type=='opensearch' or rag_type=='faiss':
 ```
 
 
-### 문서 읽어오기
+### Reference 표시하기
 
-[Client](https://github.com/kyopark2014/question-answering-chatbot-with-vector-store/blob/main/html/chat.js)에서 Upload API로 아래와 같이 업로드할 파일명과 Content-Type을 전달합니다.
-
-```java
-{
-    "filename":"gen-ai-wiki.pdf",
-    "contentType":"application/pdf"
-}
-```
-
-[Lambda-upload](./lambda-upload/index.js)에서는 용량이 큰 문서 파일도 S3에 업로드할 수 있도록 presigned url을 생성합니다. 아래와 같이 s3Params를 지정하고 [getSignedUrlPromise](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getSignedUrlPromise-property)을 이용하여 url 정보를 Client로 전달합니다.
-
-```java
-const URL_EXPIRATION_SECONDS = 300;
-const s3Params = {
-    Bucket: bucketName,
-    Key: s3_prefix+'/'+filename,
-    Expires: URL_EXPIRATION_SECONDS,
-    ContentType: contentType,
-};
-
-const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
-```
-
-Client에서 아래와 같은 응답을 얻으면 "UploadURL"을 추출하여 문서 파일을 업로드합니다.
-
-```java
-{
-   "statusCode":200,
-   "body":"{\"Bucket\":\"storage-for-qa-chatbot-with-rag\",\"Key\":\"docs/gen-ai-wiki.pdf\",\"Expires\":300,\"ContentType\":\"application/pdf\",\"UploadURL\":\"https://storage-for-qa-chatbot-with-rag.s3.ap-northeast-2.amazonaws.com/docs/gen-ai-wiki.pdf?Content-Type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAZ3KIXN5TBIBMQXTK%2F20230730%2Fap-northeast-2%2Fs3%2Faws4_request&X-Amz-Date=20230730T055129Z&X-Amz-Expires=300&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEAYaDmFwLW5vcnRoZWFzdC0yIkcwRQIhAP8or6Pr1lDHQpTIO7cTWPsB7kpkdkOdsrd2NbllPpsuAiBlV...(중략)..78d1b62f1285e8def&X-Amz-SignedHeaders=host\"}"
-}
-```
-
-파일 업로드가 끝나면, [Client](./html/chat.js)는 Chat API로 문서를 vector store에 등록하도록 아래와 같이 요청합니다. 
-
-```java
-{
-   "user-id":"f642fd39-8ef7-4a77-9911-1c50608c2831",
-   "request-id":"d9ab57ad-6950-412e-a492-1381eb1f2642",
-   "type":"document",
-   "body":"gen-ai-wiki.pdf"
-}
-```
-
-[Lambda-chat](./lambda-chat/lambda_function.py)에서는 type이 "document" 이라면, S3에서 아래와 같이 파일을 로드하여 text를 분리합니다.
+아래와 같이 kendra는 doc의 metadata에서 reference에 대한 정보를 추출합니다. 여기서 file의 이름은 doc.metadata['title']을 이용하고, 페이지는 doc.metadata['document_attributes']['_excerpt_page_number']을 이용해 얻습니다. URL은 cloudfront의 url과 S3 bucket의 key, object를 조합하여 구성합니다. opensearch와 faiss는 파일명, page 숫자, 경로(URL path)를 metadata의 'name', 'page', 'url'을 통해 얻습니다.
 
 ```python
-s3r = boto3.resource("s3")
-doc = s3r.Object(s3_bucket, s3_prefix + '/' + s3_file_name)
+def get_reference(docs, rag_type):
+    if rag_type == 'kendra':
+        reference = "\n\nFrom\n"
+        for doc in docs:
+            name = doc.metadata['title']
+            url = path+name
 
-if file_type == 'pdf':
-    contents = doc.get()['Body'].read()
-    reader = PyPDF2.PdfReader(BytesIO(contents))
-
-    raw_text = []
-    for page in reader.pages:
-        raw_text.append(page.extract_text())
-    contents = '\n'.join(raw_text)    
+            if doc.metadata['document_attributes']:
+                page = doc.metadata['document_attributes']['_excerpt_page_number']
+                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+            else:
+                reference = reference + f"in <a href={url} target=_blank>{name}</a>\n"
+    else:
+        reference = "\n\nFrom\n"
+        for doc in docs:
+            name = doc.metadata['name']
+            page = doc.metadata['page']
+            url = doc.metadata['url']
         
-elif file_type == 'txt':
-    contents = doc.get()['Body'].read()
-elif file_type == 'csv':
-    body = doc.get()['Body'].read()
-    reader = csv.reader(body)
-    contents = CSVLoader(reader)
+            #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
+            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+        
+    return reference
 ```
 
-이후 chunk size로 분리한 후에 Document를 이용하여 문서로 만듧니다.
+
+### Prompt의 생성
+
+RAG와 대화 이력(chat history)를 모두 이용해 질문의 답변을 얻기 위해서는 [ConversationalRetrievalChain](https://api.python.langchain.com/en/latest/chains/langchain.chains.conversational_retrieval.base.ConversationalRetrievalChain.html?highlight=conversationalretrievalchain#langchain.chains.conversational_retrieval.base.ConversationalRetrievalChain)을 이용하거나, history와 현재의 prompt로 새로운 prompt를 생성한 이후에 retrivalQA를 이용해 얻을수 있습니다.
+
+대화 이력(chat history)를 고려한 현재의 prompt를 생성하는 방법은 아래와 같습니다. 여기서는 prompt template에 "rephrase the follow up question"를 포함하여 새로운 질문을 생성합니다. 
 
 ```python
-from langchain.docstore.document import Document
+generated_prompt = get_generated_prompt(text)
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 100)
-texts = text_splitter.split_text(new_contents)
-print('texts[0]: ', texts[0])
+def get_generated_prompt(query):    
+    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
-docs = [
-    Document(
-        page_content = t
-    ) for t in texts[: 3]
-]
-return docs
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:"""
+    CONDENSE_QUESTION_PROMPT = PromptTemplate(
+        template = condense_template, input_variables = ["chat_history", "question"]
+    )
+    
+    chat_history = extract_chat_history_from_memory()
+    
+    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    return question_generator_chain.run({"question": query, "chat_history": chat_history})
 ```
 
+이후, 생성된 질문과 RetrievalQA를 이용해 RAG 적용한 결과를 얻을 수 있습니다.
 
-### Vector Store 
-
-Faiss와 OpenSearch 방식의 선택은 [cdk-qa-with-rag-stack.ts](./cdk-qa-with-rag/lib/cdk-qa-with-rag-stack.ts)에서 rag_type을 "faiss" 또는 "opensearch"로 변경할 수 있습니다. 기본값은 "opensearch"입니다.
-
-#### Faiss
-
-[Faiss](https://github.com/facebookresearch/faiss)는 Facebook에서 오픈소스로 제공하는 In-memory vector store로서 embedding과 document들을 저장할 수 있으며, [LangChain을 지원](https://python.langchain.com/docs/integrations/vectorstores/faiss)합니다. Faiss에서는 FAISS()를 이용하여 아래와 같이 vector store를 정의합니다. 
-
-```python
-from langchain.vectorstores import FAISS
-
-vectorstore = FAISS.from_documents( # create vectorstore from a document
-    docs, 
-    bedrock_embeddings  
-)
-```
-
-이후, vectorstore를 이용하여 관계된 문서를 조회합니다. 이때 Faiss는 embedding된 query를 이용하여 [similarity_search_by_vector()](https://python.langchain.com/docs/modules/data_connection/vectorstores/)로 조회합니다.
-
-```python
-relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-```
-
-
-#### OpenSearch
-
-[Amazon OpenSearch persistent store로는 vector store](https://python.langchain.com/docs/integrations/vectorstores/opensearch)를 구성할 수 있습니다. 비슷한 역할을 하는 persistent store로는 [Amazon RDS Postgres with pgVector](https://aws.amazon.com/about-aws/whats-new/2023/05/amazon-rds-postgresql-pgvector-ml-model-integration/), ChromaDB, Pinecone과 Weaviate가 있습니다. 
-
-[Lambda-chat](./lambda-chat/lambda_function.py)에서 OpenSearch를 사용을 위해서는 Lambda의 Role에 아래의 퍼미션을 추가합니다.
-
-```java
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "es:*",
-            "Resource": "arn:aws:es:[region]:[account-id]:domain/[domain-name]/*"
-        }
-    ]
-}
-```
-
-이것은 [cdk-qa-with-rag-stack.ts](./cdk-qa-with-rag/lib/cdk-qa-with-rag-stack.ts)에서 아래와 같이 구현할 수 있습니다.
-
-```typescript
-const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
-const OpenSearchPolicy = new iam.PolicyStatement({
-    resources: [resourceArn],
-    actions: ['es:*'],
-});
-
-roleLambda.attachInlinePolicy( 
-    new iam.Policy(this, `opensearch-policy-for-${projectName}`, {
-        statements: [OpenSearchPolicy],
-    }),
-); 
-```
-
-OpenSearch에 대한 access policy는 아래와 같습니다.
-
-```java
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": "es:*",
-      "Resource": "arn:aws:es:[region]:[account-id]:domain/[domain-name]/*"
-    }
-  ]
-}
-```
-
-[cdk-qa-with-rag-stack.ts](./cdk-qa-with-rag/lib/cdk-qa-with-rag-stack.ts)에서 아래와 같이 정의하여 OpenSearch 생성시 활용합니다.
-
-```typescript
-const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
-const OpenSearchAccessPolicy = new iam.PolicyStatement({
-    resources: [resourceArn],
-    actions: ['es:*'],
-    effect: iam.Effect.ALLOW,
-    principals: [new iam.AnyPrincipal()],
-});
-```
-
-
-aoss(Amazon OpenSearch Service Serverless)는 False 입니다.
-
-```python
-vectorstore = OpenSearchVectorSearch(
-    index_name = "*",
-    is_aoss = False,
-    embedding_function = bedrock_embeddings,
-    opensearch_url = endpoint_url,
-    http_auth = ("admin", "Wifi1234!"),
-)
-```
-
-#### Similarity Search
-OpenSearch by default supports Approximate Search powered by nmslib, faiss and lucene engines recommended for large datasets. Also supports brute force search through Script Scoring and Painless Scripting.
-
-### Search Options
-
-지원하는 Search 방식: “nmslib” (default), “faiss”, “lucene”
-
-Approximate k-NN: faiss
-
-Script Scoring: search_type을 아래와 같이 script_scoring로 지정합니다.
-- search_type="script_scoring",
-
-Painless Scripting: search_type을 아래와 같이 painless_scripting로 지정합니다.
-search_type="painless_scripting",
-
-#### Vector Store 정의  
-
-[OpenSearchVectorSearch()](https://python.langchain.com/docs/integrations/vectorstores/opensearch)로 아래와 같이 vector store를 정의합니다. 
-
-```python
-from langchain.vectorstores import OpenSearchVectorSearch
-
-vectorstore = OpenSearchVectorSearch.from_documents(
-    docs,
-    bedrock_embeddings,
-    opensearch_url = endpoint_url,
-    http_auth = ("admin", "password"),
-)
-```
-
-아래와 같이 OpenSearch는 [vector store로 부터 similarity_search()](https://python.langchain.com/docs/integrations/vectorstores/opensearch)를 이용하여 관련된 문서를 조회할 수 있습니다.
-
-```python
-relevant_documents = vectorstore.similarity_search(query)
-```
-
-### Question/Answering
-
-아래와 같이 vector store에 직접 Query 하는 방식과, Template를 이용하는 2가지 방법으로 Question/Answering 구현하는 것을 설명합니다.
-
-#### Vector Store에서 query를 이용하는 방법
-
-embedding한 query를 가지고 vectorstore에서 검색한 후에 vectorstore의 query()를 이용하여 답변을 얻습니다.
-
-```python
-wrapper_store = VectorStoreIndexWrapper(vectorstore = vectorstore)
-query_embedding = vectorstore.embedding_function(query)
-
-relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-answer = wrapper_store.query(question = query, llm = llm)
-```
-
-#### Template를 이용하는 방법
-
-Template를 이용하는 방법은 [RetrievalQA](https://python.langchain.com/docs/use_cases/question_answering/how_to/vector_db_qa)을 이용하여, 일반적으로 vectorstore에서 query를 이용하는 방법보다 나은 결과를 얻습니다.
-
-```python
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-
-query_embedding = vectorstore.embedding_function(query)
-relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-
-    from langchain.chains import RetrievalQA
-    from langchain.prompts import PromptTemplate
-
-    prompt_template = """Human: Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-{ context }
-
-Question: { question }
-Assistant: """
-PROMPT = PromptTemplate(
-    template = prompt_template, input_variables = ["context", "question"]
-)
-
-qa = RetrievalQA.from_chain_type(
-    llm = llm,
-    chain_type = "stuff",
-    retriever = vectorstore.as_retriever(
-        search_type = "similarity", search_kwargs = { "k": 3 }
-    ),
-    return_source_documents = True,
-    chain_type_kwargs = { "prompt": PROMPT }
-)
-result = qa({ "query": query })
-
-return result['result']
-```
 
 ### AWS CDK로 인프라 구현하기
 
