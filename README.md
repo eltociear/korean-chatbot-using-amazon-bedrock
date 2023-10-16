@@ -43,7 +43,7 @@ llm = Bedrock(
 
 여기서 파라메터는 아래와 같습니다.
 
-```pyhton
+```python
 def get_parameter(modelId):
     if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge': 
         return {
