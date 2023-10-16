@@ -78,11 +78,14 @@ print('models: ', modelInfo)
 
 ### Embedding
 
-[BedrockEmbeddings](https://python.langchain.com/docs/integrations/text_embedding/bedrock)을 이용하여 Embedding을 합니다.
+[BedrockEmbeddings](https://python.langchain.com/docs/integrations/text_embedding/bedrock)을 이용하여 Embedding을 합니다. 'amazon.titan-embed-text-v1'은 Titan Embeddings Generation 1 (G1)을 의미하며 8k token을 지원합니다.
 
 ```python
-from langchain.embeddings import BedrockEmbeddings
-bedrock_embeddings = BedrockEmbeddings(client=boto3_bedrock)
+bedrock_embeddings = BedrockEmbeddings(
+    client=boto3_bedrock,
+    region_name = bedrock_region,
+    model_id = 'amazon.titan-embed-text-v1' 
+)
 ```
 
 ### 문서 읽어오기
