@@ -15,24 +15,65 @@ Vector store는 이미지, 문서(text document), 오디오와 같은 구조화 
 
 ### Bedrock을 LangChain으로 연결
 
-현재(2023년 7월) Bedrock은 Preview 상태이므로, Bedrock 사용을 위해서는 AWS를 통해 사용권한을 획득하여야 합니다. 사용 권한 받으면 특정 region의 endpoint를 사용할 수 있도록 허용하는데, 아래와 같이 bedrock client에서 관련 정보를 설정할 수 있습니다. 이후 [Bedrock](https://python.langchain.com/docs/integrations/providers/bedrock)을 import하여 LangChain로 application을 개발할 수 있습니다. 
+현재(2023년 9월) Bedrock의 상용으로 제한없이 AWS Bedrock을 사용할 수 있습니다. [Bedrock](https://python.langchain.com/docs/integrations/providers/bedrock)을 import하여 LangChain로 application을 개발할 수 있습니다. 여기서는 bedrock_region으로 us-east-1을 사용합니다. 
+
+아래와 같이 bedrock client를 정의합니다. 서비스이름은 "bedrock-runtime"입니다.
 
 ```python
+import boto3
 from langchain.llms.bedrock import Bedrock
 
-bedrock_region = "us-west-2" 
-bedrock_config = {
-    "region_name":bedrock_region,
-    "endpoint_url":"https://prod.us-west-2.frontend.bedrock.aws.dev"
-}
-    
-boto3_bedrock = bedrock.get_bedrock_client(
-    region=bedrock_config["region_name"],
-    url_override=bedrock_config["endpoint_url"])
+boto3_bedrock = boto3.client(
+    service_name='bedrock-runtime',
+    region_name=bedrock_region,
+    config=Config(
+        retries = {
+            'max_attempts': 30
+        }            
+    )
+)
 
-modelId = 'amazon.titan-tg1-large'  # anthropic.claude-v1
-llm = Bedrock(model_id=modelId, client=boto3_bedrock)    
+llm = Bedrock(
+    model_id=modelId, 
+    client=boto3_bedrock, 
+    streaming=True,
+    callbacks=[StreamingStdOutCallbackHandler()],
+    model_kwargs=parameters)
 ```
+
+여기서 파라메터는 아래와 같습니다.
+
+```pyhton
+def get_parameter(modelId):
+    if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge': 
+        return {
+            "maxTokenCount":1024,
+            "stopSequences":[],
+            "temperature":0,
+            "topP":0.9
+        }
+    elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2':
+        return {
+            "max_tokens_to_sample":8191, # 8k
+            "temperature":0.1,
+            "top_k":250,
+            "top_p": 0.9,
+            "stop_sequences": [HUMAN_PROMPT]            
+        }
+parameters = get_parameter(modelId)
+```
+
+Bedrock의 지원모델은 [service name이 "bedrock"](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock.html)의 list_foundation_models()을 이용하여 조회합니다. 
+
+```python
+bedrock_client = boto3.client(
+    service_name='bedrock',
+    region_name=bedrock_region,
+)
+modelInfo = bedrock_client.list_foundation_models()    
+print('models: ', modelInfo)
+```
+
 
 
 ### Embedding
