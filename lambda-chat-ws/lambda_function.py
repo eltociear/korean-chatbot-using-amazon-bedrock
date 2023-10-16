@@ -433,7 +433,7 @@ def get_reference(docs, rag_type):
                 reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
             else:
                 #reference = reference + name+'\n'
-                reference = reference + f"in <a href={url} target=_blank>{name}</a>\n"
+                reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
