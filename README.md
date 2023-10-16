@@ -310,17 +310,28 @@ def readStreamMsg(connectionId, requestId, stream):
     msg = ""
     if stream:
         for event in stream:
-            #print('event: ', event)
             msg = msg + event
 
             result = {
                 'request_id': requestId,
                 'msg': msg
             }
-            #print('result: ', json.dumps(result))
             sendMessage(connectionId, result)
     print('msg: ', msg)
     return msg
+```
+
+여기서 client로 메시지를 보내는 sendMessage()는 아래와 같습니다. 여기서는 boto3의 [post_to_connection(https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/apigatewaymanagementapi/client/post_to_connection.html)를 이용하여 메시지를 WebSocket의 endpoint인 API Gateway로 전송합니다.
+
+```python
+def sendMessage(id, body):
+    try:
+        client.post_to_connection(
+            ConnectionId=id, 
+            Data=json.dumps(body)
+        )
+    except: 
+        raise Exception ("Not able to send a message")
 ```
 
 ### AWS CDK로 인프라 구현하기
