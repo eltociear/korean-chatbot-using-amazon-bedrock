@@ -88,6 +88,116 @@ bedrock_embeddings = BedrockEmbeddings(
 )
 ```
 
+## Knowledge Database 정의
+
+여기서는 Knowledge Database로 OpenSearch, Faiss, Kendra에 대해 알아봅니다.
+
+### OpenSearch
+
+[OpenSearchVectorSearch](https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.html)을 이용해 vector store를 정의합니다. 여기서 engine은 기본값이 nmslib이지만 필요에 따라 faiss나 lucene를 선택할 수 있습니다.
+
+```python
+from langchain.vectorstores import OpenSearchVectorSearch
+
+vectorstore = OpenSearchVectorSearch(
+    index_name = 'rag-index-'+userId+'-*',
+    is_aoss = False,
+    ef_search = 1024, # 512(default)
+    m=48,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
+    opensearch_url=opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+)
+```
+
+OpenSearch를 이용한 vector store에 데이터는 아래와 같이 add_documents()로 넣을 수 있습니다. 여기서는 index를 이용해 개인화된 RAG를 적용하기 위하여 아래와 같이 index를 userId와 requestId로 정의한 후에 new vector store를 정의하여 이용합니다.
+
+```python
+new_vectorstore = OpenSearchVectorSearch(
+    index_name="rag-index-"+userId+'-'+requestId,
+    is_aoss = False,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
+    opensearch_url = opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd),
+)
+new_vectorstore.add_documents(docs)      
+```
+
+관련된 문서(relevant docs)는 아래처럼 검색할 수 있습니다.
+
+```python
+relevant_documents = vectorstore.similarity_search(query)
+```
+
+### Faiss
+
+아래와 같이 Faiss를 vector store로 정의합니다. 여기서 Faiss는 in-memory vectore store로 인스턴스가 유지될 동안만 사용할 수 있습니다. 또한 faiss vector store에 데이터를 넣기 위해 add_documents()를 이용합니다. 데이터를 넣은 상태에서 검색을 할 수 있으므로, 아래와 같이 isReady를 체크합니다. 
+
+```python
+vectorstore = FAISS.from_documents( # create vectorstore from a document
+    docs,  # documents
+    bedrock_embeddings  # embeddings
+)
+isReady = True
+
+vectorstore.add_documents(docs)
+```
+
+관련된 문서(relevant docs)는 아래처럼 검색할 수 있습니다.
+
+```python
+query_embedding = vectorstore.embedding_function(query)
+relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
+```
+
+### Kendra
+
+Kendra는 embedding이 필요하지 않으므로 아래와 같이 index_id를 설정하여 retriever를 지정합니다.
+
+```python
+from langchain.retrievers import AmazonKendraRetriever
+kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
+```
+
+[kendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.kendra.AmazonKendraRetriever.html?highlight=kendraretriever#langchain.retrievers.kendra.AmazonKendraRetriever)를 이용해 아래와 같이 관련된 문서를 검색할 수 있습니다.
+
+relevant_documents = kendraRetriever.get_relevant_documents(query)
+
+
+### 관련된 문서를 포함한 RAG 구현
+
+실제 결과는 [RetrievalQA](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval_qa.base.RetrievalQA.html?highlight=retrievalqa#langchain.chains.retrieval_qa.base.RetrievalQA)을 이용해 얻습니다.
+
+relevant_documents = vectorstore.similarity_search(query)
+
+```python
+qa = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",
+    retriever=retriever,
+    return_source_documents=True,
+    chain_type_kwargs={"prompt": PROMPT}
+)
+result = qa({"query": query})    
+```
+
+여기서 retriever는 아래와 같이 정의합니다. 여기서 kendra의 retriever는 [AmazonKendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.kendra.AmazonKendraRetriever.html?highlight=kendraretriever#langchain.retrievers.kendra.AmazonKendraRetriever)로 정의하고, opensearch와 faiss는 [VectorStore](https://api.python.langchain.com/en/latest/schema/langchain.schema.vectorstore.VectorStore.html?highlight=as_retriever#langchain.schema.vectorstore.VectorStore.as_retriever)을 이용합니다.
+
+```python
+if rag_type=='kendra':
+    retriever = kendraRetriever
+elif rag_type=='opensearch' or rag_type=='faiss':
+    retriever = vectorstore.as_retriever(
+        search_type="similarity", 
+        search_kwargs={
+            "k": 3
+        }
+    )
+```
+
+
 ### 문서 읽어오기
 
 [Client](https://github.com/kyopark2014/question-answering-chatbot-with-vector-store/blob/main/html/chat.js)에서 Upload API로 아래와 같이 업로드할 파일명과 Content-Type을 전달합니다.
