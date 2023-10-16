@@ -294,9 +294,34 @@ msg = get_answer_from_conversation(text, conversation, convType, connectionId, r
 
 memory_chain.chat_memory.add_user_message(text)  # append new diaglog
 memory_chain.chat_memory.add_ai_message(msg)
+
+def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
+    conversation.prompt = get_prompt_template(text, convType)
+    stream = conversation.predict(input=text)                        
+    msg = readStreamMsg(connectionId, requestId, stream)
+
+    return msg
 ```
 
+여기서 stream은 아래와 같은 방식으로 WebSocket을 사용하는 client에 메시지를 전달할 수 있습니다.
 
+```python
+def readStreamMsg(connectionId, requestId, stream):
+    msg = ""
+    if stream:
+        for event in stream:
+            #print('event: ', event)
+            msg = msg + event
+
+            result = {
+                'request_id': requestId,
+                'msg': msg
+            }
+            #print('result: ', json.dumps(result))
+            sendMessage(connectionId, result)
+    print('msg: ', msg)
+    return msg
+```
 
 ### AWS CDK로 인프라 구현하기
 
