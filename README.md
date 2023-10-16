@@ -258,6 +258,45 @@ def get_generated_prompt(query):
 
 이후, 생성된 질문과 RetrievalQA를 이용해 RAG 적용한 결과를 얻을 수 있습니다.
 
+## 메모리에 대화 저장
+
+### RAG를 사용하지 않는 경우
+
+lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chat에 기저장된 대화 이력(memory_chat)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)로 memory_chat을 설정합니다. 여기서, Anhropic Claude는 human과 ai의 이름으로 "Human"과 "Assistant"로 설정합니다. LLM에 응답을 요청할때에는 ConversationChain을 이용합니다.
+
+```python
+map_chat = dict()
+
+if userId in map_chat:  
+    memory_chat = map_chat[userId]
+else:
+    memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+    map_chat[userId] = memory_chat
+conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+```
+
+여기서는 Faiss를 이용할때 대화이력이 없는 경우에는 RAG를 쓸수 없으므로 위와 같이 적용합니다.
+
+### RAG를 이용할때 
+
+RAG를 이용할때는 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)을 이용해 아래와 같이 채팅 메모리를 지정합니다. 대화가 끝난후에는 add_user_message()와 add_ai_message()를 이용하여 새로운 chat diaglog를 업데이트 합니다.
+
+```python
+map_chain = dict()
+
+if userId in map_chain:  
+    memory_chain = map_chain[userId]
+else: 
+    memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    map_chain[userId] = memory_chain
+
+msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
+
+memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+memory_chain.chat_memory.add_ai_message(msg)
+```
+
+
 
 ### AWS CDK로 인프라 구현하기
 
