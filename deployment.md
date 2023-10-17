@@ -51,13 +51,6 @@ git clone https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock
 cd korean-chatbot-using-amazon-bedrock/cdk-chatbot-with-rag/ && npm install
 ```
 
-6) bedrock-sdk를 설치합니다.
-
-```java
-cd ../lambda-chat && wget https://preview.documentation.bedrock.aws.dev/Documentation/SDK/bedrock-python-sdk.zip
-unzip bedrock-python-sdk.zip -d bedrock-sdk && python3 -m pip install -U ./bedrock-sdk/boto3-1.26.162-py3-none-any.whl -t . && python3 -m pip install -U ./bedrock-sdk/awscli-1.27.162-py3-none-any.whl -t . && cd ../cdk-chatbot-with-rag/
-```
-
 6) CDK 사용을 위해 Boostraping을 수행합니다.
 
 아래 명령어로 Account ID를 확인합니다.
@@ -75,7 +68,7 @@ cdk bootstrap aws://account-id/ap-northeast-2
 8) 인프라를 설치합니다.
 
 ```java
-cdk deploy
+cdk deploy --all
 ```
 9) 설치가 완료되면 브라우저에서 아래와 같이 WebUrl를 확인하여 브라우저를 이용하여 접속합니다.
 
