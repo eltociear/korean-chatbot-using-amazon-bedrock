@@ -4,6 +4,54 @@ let webSocket
 let isConnected = false;
 webSocket = connect(endpoint, 'initial');
 
+// Documents
+const title = document.querySelector('#title');
+const sendBtn = document.querySelector('#sendBtn');
+const message = document.querySelector('#chatInput')
+const chatPanel = document.querySelector('#chatPanel');
+
+HashMap = function() {
+    this.map = new Array();
+};
+
+HashMap.prototype = {
+    put: function(key, value) {
+        this.map[key] = value;
+    },
+    get: function(key) {
+        return this.map[key];
+    },
+    getAll: function() {
+        return this.map;
+    },
+    clear: function() {
+        return this.map;
+    },
+    isEmpty: function() {
+        return (this.map.size()==0);
+    },
+    remove: function(key) {
+        delete this.map[key];
+    },
+    getKeys: function() {
+        var keys = new Array();
+        for(i in this.map) {
+            keys.push(i);
+        }
+        return keys;
+    }
+};
+
+let isResponsed = new HashMap();
+let indexList = new HashMap();
+let retryNum = new HashMap();
+
+// message log list
+let msglist = [];
+let maxMsgItems = 200;
+// let msgHistory = new HashMap();
+let sentTime = new HashMap();
+
 function sendMessage(message) {
     if(!isConnected) {
         console.log('reconnect...'); 
@@ -58,9 +106,20 @@ function connect(endpoint, type) {
         else {
             response = JSON.parse(event.data)
 
+            console.log('response: ', response);
+
             if(response.request_id) {
-                console.log('received message: ', response.msg);
-                addReceivedMessage(response.request_id, response.msg);
+                if(!indexList.get(response.request_id+':receive')) { // the first received message
+                    let current = new Date();
+                    let elapsed = (current - sentTime.get(response.request_id))/1000;
+                    console.log('elapsed time: ', elapsed);
+                }
+
+                if(response.status == 'completed') {
+                    console.log('received message: ', response.msg);                    
+                }
+
+                addReceivedMessage(response.request_id, response.msg);                
             }
             else {
                 console.log('system message: ', event.data);
@@ -88,52 +147,6 @@ function connect(endpoint, type) {
     return ws;
 }
 
-// Documents
-const title = document.querySelector('#title');
-const sendBtn = document.querySelector('#sendBtn');
-const message = document.querySelector('#chatInput')
-const chatPanel = document.querySelector('#chatPanel');
-
-HashMap = function() {
-    this.map = new Array();
-};
-
-HashMap.prototype = {
-    put: function(key, value) {
-        this.map[key] = value;
-    },
-    get: function(key) {
-        return this.map[key];
-    },
-    getAll: function() {
-        return this.map;
-    },
-    clear: function() {
-        return this.map;
-    },
-    isEmpty: function() {
-        return (this.map.size()==0);
-    },
-    remove: function(key) {
-        delete this.map[key];
-    },
-    getKeys: function() {
-        var keys = new Array();
-        for(i in this.map) {
-            keys.push(i);
-        }
-        return keys;
-    }
-};
-
-let isResponsed = new HashMap();
-let indexList = new HashMap();
-let retryNum = new HashMap();
-
-// message log list
-let msglist = [];
-let maxMsgItems = 200;
-let msgHistory = new HashMap();
 let callee = "AWS";
 let index=0;
 
@@ -233,7 +246,9 @@ function onSend(e) {
             "type": "text",
             "body": message.value,
             "convType": conversationType
-        })                    
+        })
+        
+        sentTime.put(requestId, current);
     }
     message.value = "";
 
@@ -250,8 +265,8 @@ function uuidv4() {
     window.addEventListener("focus", function() {
 //        console.log("Back to front");
 
-        if(msgHistory.get(callee))
-            updateCallLogToDisplayed();
+        // if(msgHistory.get(callee))
+        //    updateCallLogToDisplayed();
     })
 })();
 
@@ -280,7 +295,7 @@ function addSentMessage(requestId, timestr, text) {
         msglist[index].innerHTML = 
             `<div class="chat-sender20 chat-sender--right"><h1>${timestr}</h1>${text}&nbsp;<h2 id="status${index}"></h2></div>`;   
     }
-    else if(length < 14) {
+    else if(length < 13) {
         msglist[index].innerHTML = 
             `<div class="chat-sender25 chat-sender--right"><h1>${timestr}</h1>${text}&nbsp;<h2 id="status${index}"></h2></div>`;   
     }
@@ -364,7 +379,7 @@ function addReceivedMessage(requestId, msg) {
     if(length < 10) {
         msglist[index].innerHTML = `<div class="chat-receiver20 chat-receiver--left"><h1>${sender}</h1>${msg}&nbsp;</div>`;  
     }
-    else if(length < 14) {
+    else if(length < 13) {
         msglist[index].innerHTML = `<div class="chat-receiver25 chat-receiver--left"><h1>${sender}</h1>${msg}&nbsp;</div>`;  
     }
     else if(length < 17) {

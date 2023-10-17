@@ -359,7 +359,8 @@ def readStreamMsg(connectionId, requestId, stream):
 
             result = {
                 'request_id': requestId,
-                'msg': msg
+                'msg': msg,
+                'status': 'proceeding'
             }
             #print('result: ', json.dumps(result))
             sendMessage(connectionId, result)
@@ -741,7 +742,7 @@ def lambda_handler(event, context):
             body = event.get("body", "")
             #print("data[0:8]: ", body[0:8])
             if body[0:8] == "__ping__":
-                print("ping!.....")                
+                print("keep alive!")                
                 sendMessage(connectionId, "__pong__")
             else:
                 jsonBody = json.loads(body)
@@ -754,7 +755,8 @@ def lambda_handler(event, context):
                     err_msg = traceback.format_exc()
                     result = {
                         'request_id': requestId,
-                        'msg': "The request was failed by the system: "+err_msg
+                        'msg': "The request was failed by the system: "+err_msg,
+                        'status': 'failed'
                     }
                     sendMessage(connectionId, result)
                     print('err_msg: ', err_msg)
@@ -762,7 +764,8 @@ def lambda_handler(event, context):
                                     
                 result = {
                     'request_id': requestId,
-                    'msg': msg
+                    'msg': msg,
+                    'status': 'completed'
                 }
                 #print('result: ', json.dumps(result))
                 sendMessage(connectionId, result)
