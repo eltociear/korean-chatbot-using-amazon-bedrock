@@ -105,9 +105,7 @@ function connect(endpoint, type) {
         }
         else {
             response = JSON.parse(event.data)
-
-            console.log('response: ', response);
-
+                        
             if(response.request_id) {
                 if(!indexList.get(response.request_id+':receive')) { // the first received message
                     let current = new Date();
@@ -116,7 +114,9 @@ function connect(endpoint, type) {
                 }
 
                 if(response.status == 'completed') {
-                    console.log('received message: ', response.msg);                    
+                    console.log('response: ', response);
+
+                    // console.log('received message: ', response.msg);                    
                 }
 
                 addReceivedMessage(response.request_id, response.msg);                
@@ -367,13 +367,13 @@ function addReceivedMessage(requestId, msg) {
     }
     else {
         index = indexList.get(requestId+':receive');
-        console.log("reused index="+index+', id='+requestId+':receive');        
+        // console.log("reused index="+index+', id='+requestId+':receive');        
     }
-    console.log("index:", index);   
+    // console.log("index:", index);   
 
     msg = msg.replaceAll("\n", "<br/>");
 
-    var length = msg.length;
+    let length = msg.length;
     // console.log("length: ", length);
 
     if(length < 10) {

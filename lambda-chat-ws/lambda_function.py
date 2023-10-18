@@ -123,52 +123,83 @@ def get_prompt_template(query, convType):
             # for RAG, context and question
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
-            {context}
+{context}
             
-            Question: {question}
+Question: {question}
 
-            Assistant:"""
+Assistant:"""
         elif convType == "translation":  # for translation, input
             prompt_template = """
             
-            Human: 다음을 영어로 번역해줘:{input}
+Human: 다음을 영어로 번역해줘:{input}
             
-            Assistant:"""
+Assistant:"""
+
+        elif convType == "sentiment":  # for sentiment, input
+            prompt_template = """아래의 <example> review와 Extracted Topic and sentiment 인 <result>가 있습니다.
+<example>
+객실은 작지만 깨끗하고 편안합니다. 프론트 데스크는 정말 분주했고 체크인 줄도 길었지만, 직원들은 프로페셔널하고 매우 유쾌하게 각 사람을 응대했습니다. 우리는 다시 거기에 머물것입니다.
+</example>
+<result>
+{“청소”: 긍정적, “서비스”: “긍정적”}
+</result>
+
+아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요.
+
+<review>
+{input}
+</review>"""
         
         else: # for normal, history, input
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다.
 
-            Current conversation:
-            {history}
+Current conversation:
+{history}
             
-            Human: {input}
+Human: {input}
             
-            Assistant:"""
+Assistant:"""
     else:  # English
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
         
-            {context}
+{context}
             
-            Question: {question}
+Question: {question}
 
-            Assistant:"""
+Assistant:"""
         elif convType=="translation": 
             prompt_template = """
             
-            Human: 다음을 한국어로 번역해줘:{input}
+Human: 다음을 영어로 번역해줘:{input}
+            
+Assistant:"""
+        
+        elif convType == "sentiment":  # for sentiment, input
+            prompt_template = """Here is <example> review and then extracted topics and sentiments <result>:
 
-            Assistant:"""
+<example>
+The room was small but clean and comfortable. The front desk was really busy and the check-in line was long, but the staff were professional and very pleasant with each person they helped. We will stay there again.
+</example>
+
+<result>
+{"Cleanliness": Positive, "Service": Positive}
+</result>
+
+<review>
+{input}
+</review>"""
+
         else: # normal
             prompt_template = """Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
-            {history}
+{history}
             
-            Human: {input}
+Human: {input}
 
-            Assistant:"""
+Assistant:"""
 
-        #claude_prompt = PromptTemplate.from_template("""The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+            #claude_prompt = PromptTemplate.from_template("""The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
     
     return PromptTemplate.from_template(prompt_template)
 
@@ -641,6 +672,10 @@ def getResponse(connectionId, jsonBody):
 
                 elif convType == 'translation': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+
+                elif convType == 'sentiment': 
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+    
                 else:     # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                 
