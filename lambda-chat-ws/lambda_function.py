@@ -678,6 +678,9 @@ def getResponse(connectionId, jsonBody):
 
                 elif convType == 'sentiment': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+                
+                elif convType == 'none':   # no prompt
+                    msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
     
                 else:     # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
