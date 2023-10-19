@@ -141,10 +141,8 @@ def get_prompt_template(query, convType):
             객실은 작지만 깨끗하고 편안합니다. 프론트 데스크는 정말 분주했고 체크인 줄도 길었지만, 직원들은 프로페셔널하고 매우 유쾌하게 각 사람을 응대했습니다. 우리는 다시 거기에 머물것입니다.
             </example>
             <result>
-            \{
-                청소: 긍정적, 
-                서비스: 긍정적
-            \}
+            청소: 긍정적, 
+            서비스: 긍정적
             </result>
 
             아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요.
@@ -157,7 +155,7 @@ def get_prompt_template(query, convType):
             prompt_template = """다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 다른 말은 하지 마세요.
 
             {input}
-            """
+            Assistant: """
         
         else: # for normal, history, input
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다.
@@ -167,7 +165,7 @@ def get_prompt_template(query, convType):
                         
             Human: {input}
             
-Assistant:"""
+            Assistant:"""
     else:  # English
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -197,22 +195,25 @@ Assistant:"""
 
             <review>
             {input}
-            </review>"""
+            </review>
+            
+            Assistant:"""
 
         elif convType == "extraction":  # for sentiment, input
             prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.
 
-            "{input}"
-            """
+            {input}
+
+            Assistant:"""
 
         else: # normal
             prompt_template = """Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
-{history}
+            {history}
             
-Human: {input}
+            Human: {input}
 
-Assistant:"""
+            Assistant:"""
 
             #claude_prompt = PromptTemplate.from_template("""The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
     
