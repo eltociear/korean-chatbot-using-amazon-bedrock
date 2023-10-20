@@ -131,7 +131,7 @@ def get_prompt_template(query, convType):
         elif convType == "translation":  # for translation, input
             prompt_template = """
             
-            Human: 다음을 영어로 번역해줘:{input}
+            Human: 다음을 영어로 번역해줘. 머리말은 건너뛰고 본론으로 바로들어가줘:{input}
                         
             Assistant:"""
 
@@ -179,7 +179,7 @@ def get_prompt_template(query, convType):
         elif convType=="translation": 
             prompt_template = """
             
-            Human: 다음을 한국어로 번역해줘:{input}
+            Human: 다음을 한국어로 번역해줘. 머리말은 건너뛰고 본론으로 바로들어가줘:{input}
                         
             Assistant:"""
         
