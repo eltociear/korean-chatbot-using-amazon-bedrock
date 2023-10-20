@@ -118,7 +118,7 @@ def get_prompt_template(query, convType):
     word_kor = pattern_hangul.search(str(query))
     print('word_kor: ', word_kor)
 
-    if word_kor:    
+    if word_kor and word_kor != 'None':
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
@@ -149,7 +149,8 @@ def get_prompt_template(query, convType):
 
             <review>
             {input}
-            </review>"""
+            </review>
+            Assistant:"""
 
         elif convType == "extraction":  # information extraction
             prompt_template = """다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 다른 말은 하지 마세요.
@@ -178,12 +179,12 @@ def get_prompt_template(query, convType):
         elif convType=="translation": 
             prompt_template = """
             
-            Human: 다음을 영어로 번역해줘:{input}
+            Human: 다음을 한국어로 번역해줘:{input}
                         
             Assistant:"""
         
         elif convType == "sentiment":  # for sentiment, input
-            prompt_template = """Here is <example> review and then extracted topics and sentiments <result>:
+            prompt_template = """Here is <example> review and extracted topics and sentiments as <result>.
 
             <example>
             The room was small but clean and comfortable. The front desk was really busy and the check-in line was long, but the staff were professional and very pleasant with each person they helped. We will stay there again.
