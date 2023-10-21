@@ -156,7 +156,7 @@ def get_prompt_template(query, convType):
             prompt_template = """다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요.
 
             {input}
-            Assistant: <result>"""
+            Assistant: """
         
         else: # for normal, history, input
             prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다.
@@ -201,11 +201,11 @@ def get_prompt_template(query, convType):
             Assistant:"""
 
         elif convType == "extraction":  # for sentiment, input
-            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.
+            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <sentiment> tags
 
             {input}
 
-            Assistant:"""
+            Assistant:<result>"""
 
         else: # normal
             prompt_template = """Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
