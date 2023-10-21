@@ -191,7 +191,8 @@ def get_prompt_template(query, convType):
             </example>
 
             <result>
-            {"Cleanliness": Positive, "Service": Positive}
+            Cleanliness: Positive, 
+            Service: Positive
             </result>
 
             <review>
@@ -201,11 +202,11 @@ def get_prompt_template(query, convType):
             Assistant:"""
 
         elif convType == "extraction":  # for sentiment, input
-            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <sentiment> tags
+            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags
 
             {input}
 
-            Assistant:<result>"""
+            Assistant:"""
 
         else: # normal
             prompt_template = """Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
