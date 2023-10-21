@@ -145,8 +145,7 @@ def get_prompt_template(query, convType):
             서비스: 긍정적
             </result>
 
-            아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요. 또한 Put it in <sentiment> tags.
-
+            아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요..
 
             <review>
             {input}
