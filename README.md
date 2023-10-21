@@ -27,7 +27,7 @@ Vector store는 이미지, 문서(text document), 오디오와 같은 구조화 
 
 이때의 Sequence diagram은 아래와 같습니다.
 
-![seq-chat](./sequence/seq-chat.png)
+![seq-chat](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/13818855-0a63-4d5e-9f9b-1b98245f80b6)
 
 
 ## 주요 구성
