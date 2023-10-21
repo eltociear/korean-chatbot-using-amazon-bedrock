@@ -556,11 +556,9 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     PROMPT = get_prompt_template(text, convType)
     #print('PROMPT: ', PROMPT)
-    msg = llm(PROMPT.format(input=text))
+    stream = llm(PROMPT.format(input=text))
 
-    print('msg from PROMPT: ', msg)
-
-    # msg = readStreamMsg(connectionId, requestId, stream)
+    msg = readStreamMsg(connectionId, requestId, stream)
     return msg
 
 def getResponse(connectionId, jsonBody):
