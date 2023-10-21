@@ -145,12 +145,13 @@ def get_prompt_template(query, convType):
             서비스: 긍정적
             </result>
 
-            아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요.
+            아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요. 또한 Put it in <sentiment> tags.
+
 
             <review>
             {input}
             </review>
-            Assistant:"""
+            Assistant: <sentiment>"""
 
         elif convType == "extraction":  # information extraction
             prompt_template = """다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 다른 말은 하지 마세요.
