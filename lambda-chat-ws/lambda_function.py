@@ -58,7 +58,9 @@ def sendMessage(id, body):
             ConnectionId=id, 
             Data=json.dumps(body)
         )
-    except: 
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('err_msg: ', err_msg)
         raise Exception ("Not able to send a message")
 
 # bedrock   
