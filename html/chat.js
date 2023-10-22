@@ -93,7 +93,7 @@ function connect(endpoint, type) {
         isConnected = true;
 
         if(type == 'initial')
-            setInterval(ping, 57000);  // ping interval: 57 seconds
+            setInterval(ping, 40000);  // ping interval: 40 seconds
     };
 
     // message 
@@ -105,7 +105,7 @@ function connect(endpoint, type) {
         }
         else {
             response = JSON.parse(event.data)
-                        
+
             if(response.request_id) {
                 if(!indexList.get(response.request_id+':receive')) { // the first received message
                     let current = new Date();

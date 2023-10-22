@@ -179,7 +179,11 @@ def get_prompt_template(query, convType):
         elif convType=="translation": 
             prompt_template = """
             
-            Human: 다음을 한국어로 번역해줘. 머리말은 건너뛰고 본론으로 바로들어가줘:{input}
+            Human: 다음의 <translation>를 한국어로 번역해줘. 머리말은 건너뛰고 본론으로 바로들어가줘. 또한 결과는 <result> tag를 붙여주세요.
+            
+            <translation>
+            {input}
+            </translation>
                         
             Assistant:"""
         
