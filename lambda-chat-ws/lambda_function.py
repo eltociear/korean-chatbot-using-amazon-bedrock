@@ -121,7 +121,7 @@ def get_prompt_template(query, convType):
     if word_kor and word_kor != 'None':
         if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
-            prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
         
             {context}
                         
@@ -131,7 +131,7 @@ def get_prompt_template(query, convType):
         elif convType == "translation":  # for translation, input
             prompt_template = """
             
-            Human: 다음을 영어로 번역해줘. 머리말은 건너뛰고 본론으로 바로들어가줘:{input}
+            Human: 다음을 영어로 번역해줘. 머리말은 건너뛰고 본론으로 바로 들어가줘:{input}
                         
             Assistant:"""
 
@@ -159,7 +159,7 @@ def get_prompt_template(query, convType):
             Assistant: """
         
         else: # for normal, history, input
-            prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다.
+            prompt_template = """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
 
             Current conversation:
             {history}
