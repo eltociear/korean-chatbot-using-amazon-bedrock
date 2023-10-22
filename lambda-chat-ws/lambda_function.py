@@ -131,7 +131,11 @@ def get_prompt_template(query, convType):
         elif convType == "translation":  # for translation, input
             prompt_template = """
             
-            Human: 다음을 영어로 번역해줘. 머리말은 건너뛰고 본론으로 바로 들어가줘:{input}
+            Human: 다음의 <translation>를 영어로 번역하세요. 머리말은 건너뛰고 본론으로 바로들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
+
+            <translation>
+            {input}
+            </translation>
                         
             Assistant:"""
 
@@ -206,7 +210,7 @@ def get_prompt_template(query, convType):
             Assistant:"""
 
         elif convType == "extraction":  # for sentiment, input
-            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags
+            prompt_template = """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags.
 
             {input}
 
