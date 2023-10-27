@@ -787,7 +787,7 @@ def getResponse(connectionId, jsonBody):
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
 
                 elif convType == 'step-by-step': 
-                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
                                     
                 elif convType == 'none':   # no prompt
                     msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
