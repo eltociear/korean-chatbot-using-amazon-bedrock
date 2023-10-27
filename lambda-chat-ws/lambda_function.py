@@ -264,7 +264,7 @@ def get_prompt_template(query, convType):
             {input}
             </article>
 
-            Please identify any grammatical errors in the article. 
+            Please identify any grammatical errors in the article. Also, add the fixed article in <result> tages at the end of answer.
             
             Assistant: """
 
