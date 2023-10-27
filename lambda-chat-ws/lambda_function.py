@@ -195,9 +195,9 @@ def get_prompt_template(query, convType):
 
             Human: {input}
 
-            Assistant: Can I think step-by-step?
+            Assistant: 단계별로 생각할까요?
 
-            Human: Yes, please do.
+            Human: 예, 그렇게하세요.
             
             Assistant:"""
         
@@ -779,7 +779,16 @@ def getResponse(connectionId, jsonBody):
 
                 elif convType == 'extraction': 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-                
+
+                elif convType == 'pii': 
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+
+                elif convType == 'grammar': 
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+
+                elif convType == 'step-by-step': 
+                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+                                    
                 elif convType == 'none':   # no prompt
                     msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
     
