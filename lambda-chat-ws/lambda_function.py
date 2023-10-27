@@ -179,13 +179,11 @@ def get_prompt_template(query, convType):
             Assistant: """
 
         elif convType == "grammar":  # Checking Grammatical Errors
-            prompt_template = """\n\nHuman: Here is an article, contained in <article> tags:
+            prompt_template = """\n\nHuman: 다음의 <article>에서 문장의 오류를 찾아서 설명하고, 오류가 수정된 문장을 답변 마지막에 추가하여 주세요.
 
             <article>
             {input}
             </article>
-
-            Please identify any grammatical errors in the article.
             
             Assistant: """
         
@@ -264,7 +262,7 @@ def get_prompt_template(query, convType):
             {input}
             </article>
 
-            Please identify any grammatical errors in the article. Also, add the fixed article in the end of answer. Put it in <result> tags.
+            Please identify any grammatical errors in the article. Also, add the fixed article at the end of answer.
             
             Assistant: """
 
