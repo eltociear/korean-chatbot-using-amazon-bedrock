@@ -282,7 +282,7 @@ def get_prompt_template(query, convType):
             
             Human: {input}
 
-            Assistant: Can I think step-by-step?
+            Assistant: Can I think step by step?
 
             Human: Yes, please do.
 
