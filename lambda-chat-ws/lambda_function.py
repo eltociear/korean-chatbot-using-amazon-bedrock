@@ -185,13 +185,7 @@ def get_prompt_template(query, convType):
             {input}
             </article>
 
-            Please identify any grammatical errors in the article that are missing from the following list:
-            <list>
-            1. There is a missing fullstop in the first sentence.
-            2. The word "their" is misspelled as "they're" in the third sentence.
-            </list>
-
-            If there are no errors in the article that are missing from the list, say "There are no additional errors."
+            Please identify any grammatical errors in the article.
             
             Assistant: """
         
@@ -270,13 +264,7 @@ def get_prompt_template(query, convType):
             {input}
             </article>
 
-            Please identify any grammatical errors in the article that are missing from the following list:
-            <list>
-            1. There is a missing fullstop in the first sentence.
-            2. The word "their" is misspelled as "they're" in the third sentence.
-            </list>
-
-            If there are no errors in the article that are missing from the list, say "There are no additional errors."
+            Please identify any grammatical errors in the article. 
             
             Assistant: """
 
