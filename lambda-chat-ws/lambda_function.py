@@ -169,12 +169,9 @@ def get_prompt_template(query, convType):
 
             Assistant: """
 
-        elif convType == "pii":  # removing PII containing name, phone number, address
-            prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
-            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. 또한 결과는 <result> tag를 붙여주세요.
-
-            Here is the text you should process:
-
+        elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
+            prompt_template = """\n\nHuman: 아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요.
+            
             <text>
             {input}
             </text>
@@ -230,11 +227,11 @@ def get_prompt_template(query, convType):
             
             Assistant:"""
 
-        elif convType == "pii":  # removing PII containing name, phone number, address
+        elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
             prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
             It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. Put it in <result> tags.
 
-            Here is the text you should process:
+            Here is the text, inside <text></text> XML tags.
 
             <text>
             {input}
