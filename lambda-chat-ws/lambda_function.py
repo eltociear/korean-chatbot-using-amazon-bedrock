@@ -168,6 +168,19 @@ def get_prompt_template(query, convType):
             </text>
 
             Assistant: """
+
+        elif convType == "pii":  # removing PII containing name, phone number, address
+            prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
+
+            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX.
+
+            Here is the text you should process:
+
+            <text>
+            {input}
+            </text>
+
+            Assistant: """
         
         else: # for normal, history, input
             prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
@@ -217,6 +230,19 @@ def get_prompt_template(query, convType):
             </review>
             
             Assistant:"""
+
+        elif convType == "pii":  # removing PII containing name, phone number, address
+            prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
+
+            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX.
+
+            Here is the text you should process:
+
+            <text>
+            {input}
+            </text>
+
+            Assistant: """
 
         elif convType == "extraction":  # for sentiment, input
             prompt_template = """\n\nHuman: Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags.
