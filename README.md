@@ -417,7 +417,7 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 "To have a smoth conversation with a chatbot, it is better for usabilities to show responsesess in a stream-like, conversational maner rather than waiting until the complete answer."로 오류가 있는 문장을 입력합니다.
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/a9424194-d074-492e-ab55-2f146533205d)
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/a28142f8-36a1-4855-af43-8dcd15880ade)
 
 
 ## 리소스 정리하기 
