@@ -171,8 +171,7 @@ def get_prompt_template(query, convType):
 
         elif convType == "pii":  # removing PII containing name, phone number, address
             prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
-
-            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX.
+            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. 또한 결과는 <result> tag를 붙여주세요.
 
             Here is the text you should process:
 
@@ -233,8 +232,7 @@ def get_prompt_template(query, convType):
 
         elif convType == "pii":  # removing PII containing name, phone number, address
             prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
-
-            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX.
+            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. Put it in <result> tags.
 
             Here is the text you should process:
 
