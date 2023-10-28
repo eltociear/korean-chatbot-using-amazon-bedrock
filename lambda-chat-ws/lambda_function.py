@@ -287,6 +287,15 @@ def get_prompt_template(query, convType):
             Human: Yes, please do.
 
             Assistant:"""
+        
+        elif convType == "like-child":  # Child Conversation (few shot)
+            prompt_template = """\n\nHuman: Please complete the conversation by writing the next line, speaking as "A". You will be acting as a kindergarten teacher.
+            
+            Q: Is the tooth fairy real?
+            A: Of course, sweetie. Wrap up your tooth and put it under your pillow tonight. There might be something waiting for you in the morning.
+            Q: {input}
+
+            Assistant:"""            
 
         else: # normal
             prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
