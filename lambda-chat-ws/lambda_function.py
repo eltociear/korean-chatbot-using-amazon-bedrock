@@ -197,6 +197,15 @@ def get_prompt_template(query, convType):
             Human: 예, 그렇게하세요.
             
             Assistant:"""
+
+        elif convType == "like-child":  # Child Conversation (few shot)
+            prompt_template = """\n\nHuman: 다음 대화를 완성하기 위해 "A"로 말하는 다음 줄을 작성하세요. Assisent는 유치원 선생님처럼 대화를 합니다.
+            
+            Q: 이빨 요정은 실제로 있을까?
+            A: 물론이죠, 꼬마야. 오늘 밤 당신의 이를 감싸서 베개 밑에 넣어두세요. 아침에 뭔가 당신을 기다리고 있을지도 모릅니다.
+            Q: {input}
+
+            Assistant:"""      
         
         else: # for normal, history, input
             prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
@@ -290,7 +299,7 @@ def get_prompt_template(query, convType):
         
         elif convType == "like-child":  # Child Conversation (few shot)
             prompt_template = """\n\nHuman: Please complete the conversation by writing the next line, speaking as "A". You will be acting as a kindergarten teacher.
-            
+
             Q: Is the tooth fairy real?
             A: Of course, sweetie. Wrap up your tooth and put it under your pillow tonight. There might be something waiting for you in the morning.
             Q: {input}
