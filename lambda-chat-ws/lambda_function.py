@@ -41,6 +41,8 @@ isDebugging = True
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
+debugMessageMode = os.environ.get('debugMessageMode', 'False')
+
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 
@@ -62,6 +64,15 @@ def sendMessage(id, body):
         err_msg = traceback.format_exc()
         print('err_msg: ', err_msg)
         raise Exception ("Not able to send a message")
+    
+def sendDebugMessage(connectionId, requestId, msg):
+    debugMsg = {
+        'request_id': requestId,
+        'msg': msg,
+        'status': 'debug'
+    }
+    #print('debug: ', json.dumps(debugMsg))
+    sendMessage(connectionId, debugMsg)
 
 # bedrock   
 boto3_bedrock = boto3.client(
@@ -219,6 +230,31 @@ def get_prompt_template(query, convType):
             Q: {input}
 
             Assistant:"""      
+
+        elif convType == "get-weather":  # getting weather (function calling)
+            prompt_template = """\n\nHuman: In this environment you have access to a set of tools you can use to answer the user's question.
+
+            You may call them like this. Only invoke one function at a time and wait for the results before invoking another function:
+            
+            <function_calls>
+            <invoke>
+            <tool_name>$TOOL_NAME</tool_name>
+            <parameters>
+            <$PARAMETER_NAME>$PARAMETER_VALUE</$PARAMETER_NAME>
+            ...
+            </parameters>
+            </invoke>
+            </function_calls>
+
+            Here are the tools available:
+            <tools>
+            {tools_string}
+            </tools>
+
+            Human:
+            {user_input}
+
+            Assistant:"""                  
                 
         else:
             prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다. 
@@ -648,6 +684,9 @@ def get_generated_prompt(query):
 def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
+    if(debugMessageMode):
+        sendDebugMessage(connectionId, requestId, f'generated_prompt: {generated_prompt}')
+
     msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
     if isDebugging:   # extract chat history for debug
@@ -696,7 +735,7 @@ def getResponse(connectionId, jsonBody):
     # print('convType: ', convType)
 
     global llm, modelId, vectorstore, enableReference, rag_type
-    global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady
+    global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
 
     # create memory
     if convType=='qa':
@@ -790,6 +829,12 @@ def getResponse(connectionId, jsonBody):
             elif text == 'useKendra':
                 rag_type = 'kendra'
                 msg  = "Kendra is selected for Knowledge Database"
+            elif text == 'enableDebug':
+                debugMessageMode = True
+                msg  = "Debug messages will be delivered to the client."
+            elif text == 'disableDebug':
+                debugMessageMode = False
+                msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
                 memory_chat = ""
                 memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')

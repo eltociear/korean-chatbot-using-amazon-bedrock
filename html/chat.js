@@ -112,14 +112,19 @@ function connect(endpoint, type) {
                     let elapsed = (current - sentTime.get(response.request_id))/1000;
                     console.log('elapsed time: ', elapsed);
                 }
-
-                if(response.status == 'completed') {
-                    console.log('response: ', response);
-
-                    // console.log('received message: ', response.msg);                    
-                }
-
-                addReceivedMessage(response.request_id, response.msg);                
+                // console.log('response: ', response);
+                
+                if(response.status == 'completed') {                    
+                    console.log('received message: ', response.msg);                         
+                    addReceivedMessage(response.request_id, response.msg);  
+                }                
+                else if(response.status == 'proceeding') {
+                    addReceivedMessage(response.request_id, response.msg);  
+                }                
+                else if(response.status == 'debug') {
+                    console.log('debug: ', response.msg);
+                    addNotifyMessage(response.msg);
+                }           
             }
             else {
                 console.log('system message: ', event.data);
