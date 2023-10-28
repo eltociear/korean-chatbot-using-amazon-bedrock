@@ -121,7 +121,19 @@ def get_prompt_template(query, convType):
     print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
-        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
+        if convType == "normal": # for General Conversation
+            prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
+
+            Current conversation:
+            {history}
+
+            <question>            
+            {input}
+            </question>
+            
+            Assistant:"""
+
+        elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다. Please read the below <context>. Then, in <scratchpad> tags, pull the most relevant quote from the document and consider whether it answers the user's question or whether it lacks sufficient detail. Then write a brief numerical answer in <answer> tags.
         
@@ -134,6 +146,7 @@ def get_prompt_template(query, convType):
             </question>
 
             Assistant:"""
+                
         elif convType == "translation":  # for translation, input
             prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
 
@@ -206,20 +219,28 @@ def get_prompt_template(query, convType):
             Q: {input}
 
             Assistant:"""      
+                
+        else:
+            prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant는 모르는 질문을 받으면 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다. 
         
-        else: # for normal, history, input
-            prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
+            <question>            
+            {question}
+            </question>
+
+            Assistant:"""
+
+    else:  # English
+        if convType == "normal": # for General Conversation
+            prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
             Current conversation:
             {history}
-
-            <question>            
-            {input}
-            </question>
             
+            Human: {input}
+
             Assistant:"""
-    else:  # English
-        if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
+
+        elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """\n\nHuman: Use the following pieces of context to provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Please read the below <context>. Then, in <scratchpad> tags, pull the most relevant quote from the document and consider whether it answers the user's question or whether it lacks sufficient detail. Then write a brief numerical answer in <answer> tags.
 
             {context}
@@ -309,8 +330,6 @@ def get_prompt_template(query, convType):
         else: # normal
             prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
-            {history}
-            
             Human: {input}
 
             Assistant:"""
@@ -514,7 +533,7 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def get_answer_using_template(query, rag_type, convType, connectionId, requestId):        
+def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
@@ -598,7 +617,7 @@ _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
 def extract_chat_history_from_memory():
     chat_history = []
     chats = memory_chain.load_memory_variables({})    
-    print('chats: ', chats)
+    # print('chats: ', chats)
 
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
@@ -618,7 +637,7 @@ def get_generated_prompt(query):
     )
     
     chat_history = extract_chat_history_from_memory()
-    #print('chat_history: ', chat_history)
+    print('chat_history: ', chat_history)
     
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
@@ -782,35 +801,47 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)     
                     else: 
-                        msg = get_answer_using_RAG(text, convType, connectionId, requestId)                
-
-                elif convType == 'translation': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-
-                elif convType == 'sentiment': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-
-                elif convType == 'extraction': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-
-                elif convType == 'pii': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-
-                elif convType == 'grammar': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-
-                elif convType == 'step-by-step': 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
-                                    
+                        msg = get_answer_using_RAG(text, convType, connectionId, requestId)     
+                
+                elif convType == 'normal':      # normal
+                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+                
                 elif convType == 'none':   # no prompt
                     msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
-    
-                else:     # normal
-                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+
+                else: 
+                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
                 
         elif type == 'document':
             object = body
 
+            if convType == 'qa':
+                if rag_type=='kendra':      
+                    print('upload to kendra: ', object)           
+                    store_document(path, object, requestId)  # store the object into kendra
+
+                elif rag_type == 'faiss':
+                    if isReady == False:   
+                        vectorstore = FAISS.from_documents( # create vectorstore from a document
+                            docs,  # documents
+                            bedrock_embeddings  # embeddings
+                        )
+                        isReady = True
+                    else:
+                        vectorstore.add_documents(docs)
+
+                elif rag_type == 'opensearch':    
+                    new_vectorstore = OpenSearchVectorSearch(
+                        index_name="rag-index-"+userId+'-'+requestId,
+                        is_aoss = False,
+                        #engine="faiss",  # default: nmslib
+                        embedding_function = bedrock_embeddings,
+                        opensearch_url = opensearch_url,
+                        http_auth=(opensearch_account, opensearch_passwd),
+                    )
+                    new_vectorstore.add_documents(docs)                  
+
+            # summary
             file_type = object[object.rfind('.')+1:len(object)]
             print('file_type: ', file_type)
             
@@ -839,32 +870,6 @@ def getResponse(connectionId, jsonBody):
                 print('docs size: ', len(docs))
             
             msg = get_summary(texts)
-
-            if convType == 'qa':
-                if rag_type=='kendra':      
-                    print('upload to kendra: ', object)           
-                    store_document(path, object, requestId)  # store the object into kendra
-
-                elif rag_type == 'faiss':
-                    if isReady == False:   
-                        vectorstore = FAISS.from_documents( # create vectorstore from a document
-                            docs,  # documents
-                            bedrock_embeddings  # embeddings
-                        )
-                        isReady = True
-                    else:
-                        vectorstore.add_documents(docs)
-
-                elif rag_type == 'opensearch':    
-                    new_vectorstore = OpenSearchVectorSearch(
-                        index_name="rag-index-"+userId+'-'+requestId,
-                        is_aoss = False,
-                        #engine="faiss",  # default: nmslib
-                        embedding_function = bedrock_embeddings,
-                        opensearch_url = opensearch_url,
-                        http_auth=(opensearch_account, opensearch_passwd),
-                    )
-                    new_vectorstore.add_documents(docs)      
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
@@ -889,14 +894,12 @@ def getResponse(connectionId, jsonBody):
     return msg
 
 def lambda_handler(event, context):
-    print('event: ', event)
+    # print('event: ', event)
     
     msg = ""
     if event['requestContext']: 
-        connectionId = event['requestContext']['connectionId']
-        print('connectionId: ', connectionId)
+        connectionId = event['requestContext']['connectionId']        
         routeKey = event['requestContext']['routeKey']
-        print('routeKey: ', routeKey)
         
         if routeKey == '$connect':
             print('connected!')
@@ -906,9 +909,12 @@ def lambda_handler(event, context):
             body = event.get("body", "")
             #print("data[0:8]: ", body[0:8])
             if body[0:8] == "__ping__":
-                print("keep alive!")                
+                # print("keep alive!")                
                 sendMessage(connectionId, "__pong__")
             else:
+                print('connectionId: ', connectionId)
+                print('routeKey: ', routeKey)
+        
                 jsonBody = json.loads(body)
                 print('body: ', jsonBody)
 

@@ -25,7 +25,7 @@ const projectName = `korean-chatbot`;
 const bucketName = `storage-for-${projectName}-${region}`; 
 const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2" 
 
-const rag_type = 'kendra';  // faiss, opensearch
+const rag_type = 'kendra';  // faiss, opensearch, kendra
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
 const opensearch_account = "admin";
