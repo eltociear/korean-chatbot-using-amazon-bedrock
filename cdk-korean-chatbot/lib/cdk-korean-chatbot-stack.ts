@@ -32,7 +32,7 @@ const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
 const enableReference = 'true';
 let opensearch_url = "";
-const debugMessageMode = 'False'; // if True, debug messages will be delivered to the client.
+const debugMessageMode = 'false'; // if true, debug messages will be delivered to the client.
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

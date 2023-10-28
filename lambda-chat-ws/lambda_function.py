@@ -41,7 +41,7 @@ isDebugging = True
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
-debugMessageMode = os.environ.get('debugMessageMode', 'False')
+debugMessageMode = os.environ.get('debugMessageMode', 'false')
 
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
@@ -684,7 +684,7 @@ def get_generated_prompt(query):
 def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
-    if(debugMessageMode):
+    if debugMessageMode=='true':
         sendDebugMessage(connectionId, requestId, f'generated_prompt: {generated_prompt}')
 
     msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
@@ -830,10 +830,10 @@ def getResponse(connectionId, jsonBody):
                 rag_type = 'kendra'
                 msg  = "Kendra is selected for Knowledge Database"
             elif text == 'enableDebug':
-                debugMessageMode = True
+                debugMessageMode = 'true'
                 msg  = "Debug messages will be delivered to the client."
             elif text == 'disableDebug':
-                debugMessageMode = False
+                debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
                 memory_chat = ""
