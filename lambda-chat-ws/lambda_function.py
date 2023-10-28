@@ -131,7 +131,7 @@ def get_prompt_template(query, convType):
             {input}
             </question>
             
-            Assistant:"""
+            Assistant: [서연]"""
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
@@ -330,7 +330,7 @@ def get_prompt_template(query, convType):
             Assistant:"""            
 
         else: # normal
-            prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
+            prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor named Seoyeon.
 
             Human: {input}
 
