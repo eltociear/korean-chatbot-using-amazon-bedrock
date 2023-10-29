@@ -584,10 +584,11 @@ def get_answer_using_template(query, rag_type, convType, connectionId, requestId
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
     for i, rel_doc in enumerate(relevant_documents):
-        print(f'## Document {i+1}: {rel_doc.page_content}.......')
-
         if debugMessageMode=='true':
-            sendDebugMessage(connectionId, requestId, f'[debugg] relevant_docs[{i+1}]: {rel_doc.page_content}')
+            print(f'## Document {i+1}: {rel_doc}.......')
+            sendDebugMessage(connectionId, requestId, f'[debug] relevant_docs[{i+1}]: {rel_doc.page_content}')
+        else:
+            print(f'## Document {i+1}: {rel_doc.page_content}.......')
     print('---')
     
     print('length of relevant_documents: ', len(relevant_documents))
@@ -688,7 +689,7 @@ def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
     if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, f'[debugg] enerated_prompt: {generated_prompt}')
+        sendDebugMessage(connectionId, requestId, f'[debug] generated_prompt: {generated_prompt}')
 
     msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
