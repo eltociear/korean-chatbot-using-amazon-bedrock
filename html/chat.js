@@ -1,4 +1,4 @@
-const endpoint = 'wss://stb6uim8p0.execute-api.us-west-2.amazonaws.com/dev';
+const endpoint = 'wss://l0f3oo32fe.execute-api.us-west-2.amazonaws.com/dev';
 const langstate = 'korean'; // korean or english
 let webSocket
 let isConnected = false;
@@ -113,7 +113,7 @@ function connect(endpoint, type) {
                     console.log('elapsed time: ', elapsed);
                 }
                 // console.log('response: ', response);
-                
+
                 if(response.status == 'completed') {                    
                     console.log('received message: ', response.msg);                         
                     addReceivedMessage(response.request_id, response.msg);  

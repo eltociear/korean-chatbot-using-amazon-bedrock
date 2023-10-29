@@ -975,13 +975,15 @@ def lambda_handler(event, context):
                     msg = getResponse(connectionId, jsonBody)
                 except Exception as ex:
                     err_msg = traceback.format_exc()
+                    print('err_msg: ', err_msg)
+                    
                     result = {
                         'request_id': requestId,
                         'msg': "The request was failed by the system: "+err_msg,
                         'status': 'failed'
                     }
+                    print('result: ', result)
                     sendMessage(connectionId, result)
-                    print('err_msg: ', err_msg)
                     raise Exception ("Not able to send a message")
                                     
                 result = {
