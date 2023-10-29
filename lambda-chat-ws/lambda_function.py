@@ -689,7 +689,9 @@ def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
     if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, f'[debug] generated_prompt: {generated_prompt}')
+        # sendDebugMessage(connectionId, requestId, f'[debug] generated_prompt: {generated_prompt}')
+        sendDebugMessage(connectionId, requestId, generated_prompt)
+        
 
     msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
