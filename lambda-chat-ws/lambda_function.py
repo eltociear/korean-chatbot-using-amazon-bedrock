@@ -572,7 +572,7 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def get_answer_using_template(vectorstore, query, rag_type, convType, connectionId, requestId):
+def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
@@ -685,13 +685,13 @@ def get_generated_prompt(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
-def get_answer_using_RAG(vectorstore, text, convType, connectionId, requestId):
+def get_answer_using_RAG(text, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
     if debugMessageMode=='true':
         sendDebugMessage(connectionId, requestId, '[Debug]: '+generated_prompt)
         
-    msg = get_answer_using_template(vectorstore, text, rag_type, convType, connectionId, requestId) 
+    msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
@@ -853,7 +853,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)     
                     else: 
-                        msg = get_answer_using_RAG(vectorstore, text, convType, connectionId, requestId)     
+                        msg = get_answer_using_RAG(text, convType, connectionId, requestId)     
                 
                 elif convType == 'normal':      # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
