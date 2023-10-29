@@ -586,7 +586,7 @@ def get_answer_using_template(vectorstore, query, rag_type, convType, connection
     for i, rel_doc in enumerate(relevant_documents):
         if debugMessageMode=='true':
             print(f'## Document {i+1}: {rel_doc}.......')
-            sendDebugMessage(connectionId, requestId, '[Debug] relevant_docs['+str(i+1)+']: '+rel_doc.page_content')
+            sendDebugMessage(connectionId, requestId, '[Debug] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
         else:
             print(f'## Document {i+1}: {rel_doc.page_content}.......')
     print('---')
