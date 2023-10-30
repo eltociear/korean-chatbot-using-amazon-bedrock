@@ -868,6 +868,36 @@ def getResponse(connectionId, jsonBody):
         elif type == 'document':
             object = body
 
+            file_type = object[object.rfind('.')+1:len(object)]
+            print('file_type: ', file_type)
+
+            if file_type == 'csv':
+                docs = load_csv_document(object)
+                texts = []
+                for doc in docs:
+                    texts.append(doc.page_content)
+                print('texts: ', texts)
+            else:
+                texts = load_document(file_type, object)
+
+                docs = []
+                for i in range(len(texts)):
+                    docs.append(
+                        Document(
+                            page_content=texts[i],
+                            metadata={
+                                'name': object,
+                                'page':i+1,
+                                'url': path+object
+                            }
+                        )
+                    )        
+                print('docs[0]: ', docs[0])    
+                print('docs size: ', len(docs))
+
+            # summary
+            msg = get_summary(texts)
+
             if convType == 'qa':
                 if rag_type=='kendra':      
                     print('upload to kendra: ', object)           
@@ -892,37 +922,7 @@ def getResponse(connectionId, jsonBody):
                         opensearch_url = opensearch_url,
                         http_auth=(opensearch_account, opensearch_passwd),
                     )
-                    new_vectorstore.add_documents(docs)                  
-
-            # summary
-            file_type = object[object.rfind('.')+1:len(object)]
-            print('file_type: ', file_type)
-            
-            if file_type == 'csv':
-                docs = load_csv_document(object)
-                texts = []
-                for doc in docs:
-                    texts.append(doc.page_content)
-                print('texts: ', texts)
-            else:
-                texts = load_document(file_type, object)
-
-                docs = []
-                for i in range(len(texts)):
-                    docs.append(
-                        Document(
-                            page_content=texts[i],
-                            metadata={
-                                'name': object,
-                                'page':i+1,
-                                'url': path+object
-                            }
-                        )
-                    )        
-                print('docs[0]: ', docs[0])    
-                print('docs size: ', len(docs))
-            
-            msg = get_summary(texts)
+                    new_vectorstore.add_documents(docs)                              
                 
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
