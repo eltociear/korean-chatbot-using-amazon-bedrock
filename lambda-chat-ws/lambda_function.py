@@ -586,7 +586,7 @@ def get_answer_using_template(query, rag_type, convType, connectionId, requestId
     for i, rel_doc in enumerate(relevant_documents):
         if debugMessageMode=='true':
             print(f'## Document {i+1}: {rel_doc}.......')
-            sendDebugMessage(connectionId, requestId, '[Debug] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
+            sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
         else:
             print(f'## Document {i+1}: {rel_doc.page_content}.......')
     print('---')
@@ -685,7 +685,7 @@ def get_generated_prompt(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
-def get_answer_using_RAG(text, convType, connectionId, requestId):
+def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
     print('generated_prompt: ', generated_prompt)
     if debugMessageMode=='true':
@@ -847,13 +847,14 @@ def getResponse(connectionId, jsonBody):
                 msg  = "The chat memory was intialized in this session."
             else:          
                 if convType == 'qa':   # question & answering
+                    print('rag_type: ', rag_type)
                     if rag_type == 'faiss' and isReady==False:                               
                         msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)     
                     else: 
-                        msg = get_answer_using_RAG(text, convType, connectionId, requestId)     
+                        msg = get_answer_using_RAG(text, rag_type, convType, connectionId, requestId)     
                 
                 elif convType == 'normal':      # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
