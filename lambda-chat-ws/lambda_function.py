@@ -588,7 +588,7 @@ def extract_chat_history_from_memory():
 
     return chat_history
 
-def get_generated_prompt(query):    
+def get_revised_question(query):    
     condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
     Chat History:
@@ -759,10 +759,10 @@ def get_reference(docs, rag_type):
     return reference
 
 def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
-    print('generated_prompt: ', generated_prompt)
+    revised_question = get_revised_question(text) # generate new prompt using chat history
+    print('revised_question: ', revised_question)
     if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, '[Debug]: '+generated_prompt)
+        sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
         
     # debug
     if rag_type == 'faiss':
@@ -787,7 +787,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     if rag_type == 'kendra':
         retrieve_from_Kendra(query=text, top_k=3)
 
-    PROMPT = get_prompt_template(text, convType)
+    PROMPT = get_prompt_template(revised_question, convType)
     #print('PROMPT: ', PROMPT) 
 
     if rag_type=='kendra':
@@ -809,7 +809,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             return_source_documents=True,
             chain_type_kwargs={"prompt": PROMPT}
         )
-        result = qa({"query": query})    
+        result = qa({"query": revised_question})    
         print('result: ', result)
 
         msg = readStreamMsg(connectionId, requestId, result['result'])
