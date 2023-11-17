@@ -573,14 +573,22 @@ def readStreamMsg(connectionId, requestId, stream):
     return msg
 
 def get_retrieve_using_Kendra(query):
-    kendra_client = boto3.client('kendra')
+    kendra_client = boto3.client('kendra, region_name='us-west-2')
+    page_size = 10
+    page_number = 10
+
+    print('index: ', kendraIndex)
+    print('query: ', query)
+
     try:
         resp =  kendra_client.retrieve(
             IndexId = kendraIndex,
-            QueryText = query
+            QueryText = query,
+            PageSize = page_size,
+            PageNumber = page_number
         )
     except: 
-        raise Exception ("Not able to write into dynamodb")        
+        raise Exception ("Not able to retrieve to Kendra")        
     print('resp, ', resp)
 
 def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
