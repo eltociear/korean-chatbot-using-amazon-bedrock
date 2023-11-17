@@ -25,20 +25,63 @@ Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/
 결과를 가져오기
 
 ```python
-if query_result["Type"] == "ANSWER" or query_result["Type"] == "QUESTION_ANSWER":
-   answer_text = query_result["DocumentExcerpt"]["Text"]
-   print(answer_text)
+def get_retrieve_using_Kendra(index_id, query, top_k):
+    config = Config(
+        retries=dict(
+            max_attempts=10
+        )
+    )
+    kendra_client = boto3.client('kendra', config=config)
 
-if query_result["Type"] == "DOCUMENT":
-   document_text = query_result["DocumentExcerpt"]["Text"]
-   print(document_text)
+    attributeFilter = {
+        "AndAllFilters": [
+            {
+                "EqualsTo": {
+                    "Key": '_language_code',
+                    "Value": {
+                        "StringValue": 'en',
+                    },
+                },
+            },
+        ],
+    }
 
-   if "DocumentTitle" in query_result:
-      document_title = query_result["DocumentTitle"]["Text"]
-      print("Title: " + document_title)
+    try:
+        resp =  kendra_client.query(
+            IndexId = index_id,
+            QueryText = query,
+            PageSize = top_k,
+            #PageNumber = page_number,
+            #AttributeFilter = attributeFilter,
+            #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER'
+        )
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)
+        
+        raise Exception ("Not able to retrieve to Kendra")        
+    print('resp, ', resp)
+    print('resp[ResultItems], ', resp['ResultItems'])
+    
+    for query_result in resp["ResultItems"]:
+        print("-------------------")
+        print("Type: " + str(query_result["Type"]))
+            
+        if query_result["Type"]=="ANSWER" or query_result["Type"]=="QUESTION_ANSWER":
+            answer_text = query_result["DocumentExcerpt"]["Text"]
+            print(answer_text)
+    
+        if query_result["Type"]=="DOCUMENT":
+            if "DocumentTitle" in query_result:
+                document_title = query_result["DocumentTitle"]["Text"]
+                print("Title: " + document_title)
+            document_text = query_result["DocumentExcerpt"]["Text"]
+            print(document_text)
+    
+        print("------------------\n\n")      
 ```
 
-Type은 query결과에서 "Format"으로 구분할 수 있습니다.
+
 
 ## Score
 
