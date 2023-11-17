@@ -574,23 +574,76 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def show_relevant_docs(resp):
-    for query_result in resp["ResultItems"]:
-        print("-------------------")
-        print("Type: " + str(query_result["Type"]))
-            
-        if query_result["Type"]=="ANSWER" or query_result["Type"]=="QUESTION_ANSWER":
-            answer_text = query_result["DocumentExcerpt"]["Text"]
-            print(answer_text)
-    
-        if query_result["Type"]=="DOCUMENT":
+def extract_relevant_docs(apiType, resp):
+    relevant_docs = []
+
+    if(apiType == 'retrieve'):
+        print('Retrieve result: ')
+        for query_result in resp["ResultItems"]:
+            type = str(query_result["Type"])
+            print("Type: ", type)
+
+            confidence = str(query_result["ScoreAttributes"]['ScoreConfidence'])
+            print("Confidence: ", confidence)        
+                
+            document_title = ""
             if "DocumentTitle" in query_result:
                 document_title = query_result["DocumentTitle"]["Text"]
-                print("Title: " + document_title)
-            document_text = query_result["DocumentExcerpt"]["Text"]
-            print(document_text)
-        print("------------------\n\n")
+                print("Title: ", document_title)
+            
+            document_uri = ""
+            if "DocumentURI" in query_result:
+                document_uri = query_result["DocumentURI"]
+                print("Uri: ", document_uri)
 
+            excerpt = query_result["DocumentExcerpt"]["Text"]
+            print('document_text: ', excerpt)
+
+            relevant_docs.append({
+                "api": 'retrieve',
+                "type": type,
+                "confidence": confidence,
+                "excerpt": excerpt,
+                "title": document_title,
+                "uri": document_uri
+            })
+    else: 
+        print('Query result: ')
+        for query_result in resp["ResultItems"]:
+            type = str(query_result["Type"])
+            print("Type: ", type)
+
+            confidence = str(query_result["ScoreAttributes"]['ScoreConfidence'])
+            print("Confidence: ", confidence)        
+                
+            if query_result["Type"]=="ANSWER" or query_result["Type"]=="QUESTION_ANSWER":
+                excerpt = query_result["DocumentExcerpt"]["Text"]
+                print('answer_text: ', excerpt)            
+            
+            if query_result["Type"]=="DOCUMENT":
+                document_title = ""
+                if "DocumentTitle" in query_result:
+                    document_title = query_result["DocumentTitle"]["Text"]
+                    print("Title: ", document_title)
+
+                document_uri = ""       
+                if "DocumentURI" in query_result:
+                    document_uri = query_result["DocumentURI"]
+                    print("Uri: ", document_uri)
+
+                excerpt = query_result["DocumentExcerpt"]["Text"]
+                print('document_text: ', excerpt)                
+            
+            relevant_docs.append({
+                "api": 'query',
+                "type": type,
+                "confidence": confidence,
+                "excerpt": excerpt,
+                "title": document_title,
+                "uri": document_uri
+            })
+    return relevant_docs
+        
 def get_retrieve_from_Kendra(query, top_k):
     index_id = kendraIndex    
     config = Config(
@@ -607,11 +660,11 @@ def get_retrieve_from_Kendra(query, top_k):
             PageSize = top_k,            
         )
 
-        if len(resp["ResultItems"]) >= 1:
-            print('Retrieve result: ')
-            show_relevant_docs(resp)
+        if len(resp["ResultItems"]) >= 1:            
+            relevant_docs = extract_relevant_docs(apiType="retrieve", resp=resp)
+            print('relevant_docs: ', relevant_docs)
         else:  # falback using query API
-            print('Not available for retrieve API!')
+            print('No result for Retrieve API!')
             try:
                 resp =  kendra_client.query(
                     IndexId = index_id,
@@ -620,22 +673,21 @@ def get_retrieve_from_Kendra(query, top_k):
                     #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER'
                 )
 
-                if len(resp["ResultItems"]) >= 1:
-                    print('Query result: ')
-                    show_relevant_docs(resp)
+                if len(resp["ResultItems"]) >= 1:                    
+                    relevant_docs = extract_relevant_docs(apiType="query", resp=resp)
+                    print('relevant_docs: ', relevant_docs)
                 else: 
-                    print('No retrieve docs!')
+                    print('No relevant docs!')
 
             except Exception as ex:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)
-                raise Exception ("Not able to retrieve to Kendra")        
+                raise Exception ("Not able to query from Kendra")                
 
     except Exception as ex:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)
-        
-        raise Exception ("Not able to retrieve to Kendra")        
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to retrieve from Kendra")        
     
 def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
