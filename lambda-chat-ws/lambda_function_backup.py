@@ -38,8 +38,6 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = True
 
-method_for_kendra = 'useRetrievalQA' # usePromptQA
-
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
@@ -576,7 +574,7 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def extract_relevant_docs_from_kendra(apiType, resp):
+def extract_relevant_docs(apiType, resp):
     relevant_docs = []
 
     if(apiType == 'retrieve'):
@@ -646,7 +644,7 @@ def extract_relevant_docs_from_kendra(apiType, resp):
             })
     return relevant_docs
         
-def retrieve_from_Kendra(query, top_k):
+def get_retrieve_from_Kendra(query, top_k):
     index_id = kendraIndex    
     config = Config(
         retries=dict(
@@ -663,7 +661,7 @@ def retrieve_from_Kendra(query, top_k):
         )
 
         if len(resp["ResultItems"]) >= 1:            
-            relevant_docs = extract_relevant_docs_from_kendra(apiType="retrieve", resp=resp)
+            relevant_docs = extract_relevant_docs(apiType="retrieve", resp=resp)
             print('relevant_docs: ', relevant_docs)
         else:  # falback using query API
             print('No result for Retrieve API!')
@@ -676,7 +674,7 @@ def retrieve_from_Kendra(query, top_k):
                 )
 
                 if len(resp["ResultItems"]) >= 1:                    
-                    relevant_docs = extract_relevant_docs_from_kendra(apiType="query", resp=resp)
+                    relevant_docs = extract_relevant_docs(apiType="query", resp=resp)
                     print('relevant_docs: ', relevant_docs)
                 else: 
                     print('No relevant docs!')
@@ -690,52 +688,19 @@ def retrieve_from_Kendra(query, top_k):
     except Exception as ex:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
-        raise Exception ("Not able to retrieve from Kendra")     
+        raise Exception ("Not able to retrieve from Kendra")       
 
-    for i, rel_doc in enumerate(relevant_docs):
-        print(f'## Document {i+1}: {json.dumps(rel_doc)}')
+    return relevant_docs 
     
-def get_answer_using_kendra(query, convType, connectionId, requestId):    
-    retrieve_from_Kendra(query=query, top_k=3)
-
-    PROMPT = get_prompt_template(query, convType)
-    #print('PROMPT: ', PROMPT) 
-
-    if method_for_kendra == 'useRetrievalQA': # usePromptQA
-        retriever = kendraRetriever
-    
-        qa = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": PROMPT}
-        )
-        result = qa({"query": query})    
-        print('result: ', result)
-
-        msg = readStreamMsg(connectionId, requestId, result['result'])
-
-        source_documents = result['source_documents']
-        print('source_documents: ', source_documents)
-
-        #if len(relevant_documents)>=1 and enableReference=='true':
-        #    reference = get_reference(source_documents, rag_type)
-            #print('reference: ', reference)
-
-        #    return msg+reference
-        #else:
-        #    return msg
-        return msg
-    else:
-        return ""
-
-def get_answer_using_vectorstore(query, rag_type, convType, connectionId, requestId):
+def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore.similarity_search(query)
+    elif rag_type == 'kendra':
+        # relevant_documents = kendraRetriever.get_relevant_documents(query)
+        get_retrieve_from_Kendra(query=query, top_k=3)
 
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
@@ -752,13 +717,16 @@ def get_answer_using_vectorstore(query, rag_type, convType, connectionId, reques
     PROMPT = get_prompt_template(query, convType)
     #print('PROMPT: ', PROMPT) 
 
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", 
-        search_kwargs={
-            #"k": 3, 'score_threshold': 0.8
-            "k": 3
-        }
-    )
+    if rag_type=='kendra':
+        retriever = kendraRetriever
+    elif rag_type=='opensearch' or rag_type=='faiss':
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", 
+            search_kwargs={
+                #"k": 3, 'score_threshold': 0.8
+                "k": 3
+            }
+        )
 
     qa = RetrievalQA.from_chain_type(
         llm=llm,
@@ -851,10 +819,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     if debugMessageMode=='true':
         sendDebugMessage(connectionId, requestId, '[Debug]: '+generated_prompt)
         
-    if rag_type == 'kendra':
-        msg = get_answer_using_kendra(text, convType, connectionId, requestId) 
-    else:
-         msg = get_answer_using_vectorstore(text, rag_type, convType, connectionId, requestId) 
+    msg = get_answer_using_template(text, rag_type, convType, connectionId, requestId) 
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
