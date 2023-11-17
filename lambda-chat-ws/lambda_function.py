@@ -574,44 +574,69 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
-def get_retrieve_using_Kendra(query):
+def show_relevant_docs(resp):
+    for query_result in resp["ResultItems"]:
+        print("-------------------")
+        print("Type: " + str(query_result["Type"]))
+            
+        if query_result["Type"]=="ANSWER" or query_result["Type"]=="QUESTION_ANSWER":
+            answer_text = query_result["DocumentExcerpt"]["Text"]
+            print(answer_text)
+    
+        if query_result["Type"]=="DOCUMENT":
+            if "DocumentTitle" in query_result:
+                document_title = query_result["DocumentTitle"]["Text"]
+                print("Title: " + document_title)
+            document_text = query_result["DocumentExcerpt"]["Text"]
+            print(document_text)
+        print("------------------\n\n")
+
+def get_retrieve_from_Kendra(query, top_k):
+    index_id = kendraIndex    
     config = Config(
         retries=dict(
             max_attempts=10
         )
     )
     kendra_client = boto3.client('kendra', config=config)
-    page_size = 10
-    page_number = 10
-
-    print('index: ', kendraIndex)
-    print('query: ', query)
-
-    attributeFilter = {
-        "AndAllFilters": [
-            {
-                "EqualsTo": {
-                "Key": '_language_code',
-                "Value": {
-                    "StringValue": 'kr',
-                },
-                },
-            },
-        ],
-    }
 
     try:
-        resp =  kendra_client.query(
-            IndexId = kendraIndex,
+        resp =  kendra_client.retrieve(
+            IndexId = index_id,
             QueryText = query,
-            PageSize = page_size,
-            PageNumber = page_number,
-            # AttributeFilter = attributeFilter
+            PageSize = top_k,            
         )
-    except: 
-        raise Exception ("Not able to retrieve to Kendra")        
-    print('resp, ', resp)
 
+        if len(resp["ResultItems"]) >= 1:
+            print('Retrieve result: ')
+            show_relevant_docs(resp)
+        else:  # falback using query API
+            print('Not available for retrieve API!')
+            try:
+                resp =  kendra_client.query(
+                    IndexId = index_id,
+                    QueryText = query,
+                    PageSize = top_k,
+                    #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER'
+                )
+
+                if len(resp["ResultItems"]) >= 1:
+                    print('Query result: ')
+                    show_relevant_docs(resp)
+                else: 
+                    print('No retrieve docs!')
+
+            except Exception as ex:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)
+                raise Exception ("Not able to retrieve to Kendra")        
+
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)
+        
+        raise Exception ("Not able to retrieve to Kendra")        
+    
 def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
@@ -620,7 +645,7 @@ def get_answer_using_template(query, rag_type, convType, connectionId, requestId
         relevant_documents = vectorstore.similarity_search(query)
     elif rag_type == 'kendra':
         relevant_documents = kendraRetriever.get_relevant_documents(query)
-        get_retrieve_using_Kendra(query)
+        get_retrieve_from_Kendra(query=query, top_k=3)
 
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
@@ -992,7 +1017,9 @@ def getResponse(connectionId, jsonBody):
         client = boto3.client('dynamodb')
         try:
             resp =  client.put_item(TableName=callLogTableName, Item=item)
-        except: 
+        except Exception as ex:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
 
