@@ -675,6 +675,13 @@ def get_generated_prompt(query):
     {chat_history}
     Follow Up Input: {question}
     Standalone question:"""
+
+    # other sample for condense template
+    # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
+    # Answer only with the new question.
+    # Human: How would you ask the question considering the previous conversation: {question}
+    # Assistant: Question:""")
+
     CONDENSE_QUESTION_PROMPT = PromptTemplate(
         template = condense_template, input_variables = ["chat_history", "question"]
     )
@@ -757,6 +764,10 @@ def getResponse(connectionId, jsonBody):
                 print('memory_chat exist. reuse it!')    
             else: 
                 memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+                #from langchain.memory import ConversationSummaryBufferMemory
+                #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
+                #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
+   
                 map_chat[userId] = memory_chat
                 print('memory_chat does not exist. create new one!')        
             conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
