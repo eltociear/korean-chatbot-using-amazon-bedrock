@@ -38,7 +38,7 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = True
 
-method_for_kendra = 'useRetrievalQA' # usePromptQA
+method_for_RAG = 'useRetrievalQA' # usePromptQA
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -576,6 +576,43 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
+_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
+def extract_chat_history_from_memory():
+    chat_history = []
+    chats = memory_chain.load_memory_variables({})    
+    # print('chats: ', chats)
+
+    for dialogue_turn in chats['chat_history']:
+        role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+        chat_history.append(f"{role_prefix[2:]}{dialogue_turn.content}")
+
+    return chat_history
+
+def get_generated_prompt(query):    
+    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:"""
+
+    # other sample for condense template
+    # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
+    # Answer only with the new question.
+    # Human: How would you ask the question considering the previous conversation: {question}
+    # Assistant: Question:""")
+
+    CONDENSE_QUESTION_PROMPT = PromptTemplate(
+        template = condense_template, input_variables = ["chat_history", "question"]
+    )
+    
+    chat_history = extract_chat_history_from_memory()
+    print('chat_history: ', chat_history)
+    
+    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    return question_generator_chain.run({"question": query, "chat_history": chat_history})
+
+
 def extract_relevant_docs_from_kendra(apiType, resp):
     relevant_docs = []
 
@@ -693,17 +730,78 @@ def retrieve_from_Kendra(query, top_k):
         raise Exception ("Not able to retrieve from Kendra")     
 
     for i, rel_doc in enumerate(relevant_docs):
-        print(f'## Document {i+1}: {json.dumps(rel_doc)}')
-    
-def get_answer_using_kendra(query, convType, connectionId, requestId):    
-    retrieve_from_Kendra(query=query, top_k=3)
+        print(f'## Document {i+1}: {json.dumps(rel_doc)}')    
 
-    PROMPT = get_prompt_template(query, convType)
+def get_reference(docs, rag_type):
+    if rag_type == 'kendra':
+        reference = "\n\nFrom\n"
+        #for doc in docs:
+        #    name = doc.metadata['title']
+        #    url = path+name
+
+        #    if doc.metadata['document_attributes']:
+        #        page = doc.metadata['document_attributes']['_excerpt_page_number']
+        #        #reference = reference + (str(page)+'page in '+name+'\n')
+        #        reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+        #    else:
+                #reference = reference + name+'\n'
+        #        reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
+    else:
+        reference = "\n\nFrom\n"
+        for doc in docs:
+            name = doc.metadata['name']
+            page = doc.metadata['page']
+            url = doc.metadata['url']
+        
+            #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
+            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+        
+    return reference
+
+def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
+    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
+    print('generated_prompt: ', generated_prompt)
+    if debugMessageMode=='true':
+        sendDebugMessage(connectionId, requestId, '[Debug]: '+generated_prompt)
+        
+    # debug
+    if rag_type == 'faiss':
+        query_embedding = vectorstore.embedding_function(query)
+        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
+    elif rag_type == 'opensearch':
+        relevant_documents = vectorstore.similarity_search(query)
+
+    if rag_type == 'faiss' or rag_type == 'opensearch':
+        print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
+        print('----')
+        for i, rel_doc in enumerate(relevant_documents):
+            if debugMessageMode=='true':
+                print(f'## Document {i+1}: {rel_doc}.......')
+                sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
+            else:
+                print(f'## Document {i+1}: {rel_doc.page_content}.......')
+        print('---')
+        
+        print('length of relevant_documents: ', len(relevant_documents))
+
+    if rag_type == 'kendra':
+        retrieve_from_Kendra(query=text, top_k=3)
+
+    PROMPT = get_prompt_template(text, convType)
     #print('PROMPT: ', PROMPT) 
 
-    if method_for_kendra == 'useRetrievalQA': # usePromptQA
+    if rag_type=='kendra':
         retriever = kendraRetriever
-    
+    elif rag_type=='opensearch' or rag_type=='faiss':
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", 
+            search_kwargs={
+                #"k": 3, 'score_threshold': 0.8
+                "k": 3
+            }
+        )
+
+    if method_for_RAG == 'useRetrievalQA': # usePromptQA
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -719,139 +817,9 @@ def get_answer_using_kendra(query, convType, connectionId, requestId):
         source_documents = result['source_documents']
         print('source_documents: ', source_documents)
 
-        #if len(relevant_documents)>=1 and enableReference=='true':
-        #    reference = get_reference(source_documents, rag_type)
-            #print('reference: ', reference)
-
-        #    return msg+reference
-        #else:
-        #    return msg
-        return msg
-    else:
-        return ""
-
-def get_answer_using_vectorstore(query, rag_type, convType, connectionId, requestId):
-    if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-    elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
-
-    print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-    print('----')
-    for i, rel_doc in enumerate(relevant_documents):
-        if debugMessageMode=='true':
-            print(f'## Document {i+1}: {rel_doc}.......')
-            sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
-        else:
-            print(f'## Document {i+1}: {rel_doc.page_content}.......')
-    print('---')
-    
-    print('length of relevant_documents: ', len(relevant_documents))
-
-    PROMPT = get_prompt_template(query, convType)
-    #print('PROMPT: ', PROMPT) 
-
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", 
-        search_kwargs={
-            #"k": 3, 'score_threshold': 0.8
-            "k": 3
-        }
-    )
-
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": PROMPT}
-    )
-    result = qa({"query": query})    
-    print('result: ', result)
-
-    msg = readStreamMsg(connectionId, requestId, result['result'])
-
-    source_documents = result['source_documents']
-    print('source_documents: ', source_documents)
-
-    if len(relevant_documents)>=1 and enableReference=='true':
-        get_reference(source_documents, rag_type)
-
-    return msg
-
-def get_reference(docs, rag_type):
-    if rag_type == 'kendra':
-        reference = "\n\nFrom\n"
-        for doc in docs:
-            name = doc.metadata['title']
-            url = path+name
-
-            if doc.metadata['document_attributes']:
-                page = doc.metadata['document_attributes']['_excerpt_page_number']
-                #reference = reference + (str(page)+'page in '+name+'\n')
-                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-            else:
-                #reference = reference + name+'\n'
-                reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
-    else:
-        reference = "\n\nFrom\n"
-        for doc in docs:
-            name = doc.metadata['name']
-            page = doc.metadata['page']
-            url = doc.metadata['url']
-        
-            #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-        
-    return reference
-
-_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
-def extract_chat_history_from_memory():
-    chat_history = []
-    chats = memory_chain.load_memory_variables({})    
-    # print('chats: ', chats)
-
-    for dialogue_turn in chats['chat_history']:
-        role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-        chat_history.append(f"{role_prefix[2:]}{dialogue_turn.content}")
-
-    return chat_history
-
-def get_generated_prompt(query):    
-    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
-
-    Chat History:
-    {chat_history}
-    Follow Up Input: {question}
-    Standalone question:"""
-
-    # other sample for condense template
-    # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
-    # Answer only with the new question.
-    # Human: How would you ask the question considering the previous conversation: {question}
-    # Assistant: Question:""")
-
-    CONDENSE_QUESTION_PROMPT = PromptTemplate(
-        template = condense_template, input_variables = ["chat_history", "question"]
-    )
-    
-    chat_history = extract_chat_history_from_memory()
-    print('chat_history: ', chat_history)
-    
-    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
-    return question_generator_chain.run({"question": query, "chat_history": chat_history})
-
-def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    generated_prompt = get_generated_prompt(text) # generate new prompt using chat history
-    print('generated_prompt: ', generated_prompt)
-    if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, '[Debug]: '+generated_prompt)
-        
-    if rag_type == 'kendra':
-        msg = get_answer_using_kendra(text, convType, connectionId, requestId) 
-    else:
-         msg = get_answer_using_vectorstore(text, rag_type, convType, connectionId, requestId) 
+        if enableReference=='true':
+            reference = get_reference(source_documents, rag_type)
+            msg = msg+reference
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
@@ -1114,8 +1082,6 @@ def getResponse(connectionId, jsonBody):
 
 def lambda_handler(event, context):
     # print('event: ', event)
-    global reference
-    reference = ""  
     
     msg = ""
     if event['requestContext']: 
@@ -1153,26 +1119,15 @@ def lambda_handler(event, context):
                     }
                     print('result: ', result)
                     sendMessage(connectionId, result)
-                    raise Exception ("Not able to send a message")                             
-                         
-                if jsonBody['convType']=='qa' and enableReference=='true':
-                    result = {
-                        'request_id': requestId,
-                        'msg': msg,
-                        'reference': reference,
-                        'status': 'completed'                        
-                    }
-                else:
-                    result = {
-                        'request_id': requestId,
-                        'msg': msg,
-                        'reference': "",
-                        'status': 'completed'
-                    }
-                    #print('result: ', json.dumps(result))
-                
+                    raise Exception ("Not able to send a message")
+                                    
+                result = {
+                    'request_id': requestId,
+                    'msg': msg,
+                    'status': 'completed'
+                }
+                #print('result: ', json.dumps(result))
                 sendMessage(connectionId, result)
-
 
     return {
         'statusCode': 200
