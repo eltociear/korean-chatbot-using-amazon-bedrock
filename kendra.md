@@ -10,12 +10,17 @@ Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/
 
 ## Query API
 
-[Query](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_Query.html)의 결과는 "DOCUMENT", "QUESTION_ANSWER", "ANSWER"의 Type이 있습니다. QueryResultTypeFilter로 type을 지정할 수 있습니다.
+[Query](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_Query.html)의 결과는 "DOCUMENT", "QUESTION_ANSWER", "ANSWER"의 Type이 있습니다. 
 
 - ANSWER: 관련 제안된 답변(Relevant suggested answers)으로 text나 table의 발취(excerpt)로서 강조 표시(highlight)를 지원합니다. 
 - QUESTION_ANSWER: 관련된 FAQ(Matching FAQs) 또는 FAQ 파일에서 얻은 question-answer입니다.
 - DOCUMENT: 관련된 문서(Relevant documents)로서 문서의 발취(excerpt)와 title을 포하한 결고로서 강조 표시(hightlight)를 지원합니다.
 
+관련 파라메터는 아래와 같습니다.
+
+- QueryResultTypeFilter로 type을 지정할 수 있습니다.
+- PageSize: 관련된 문장을 몇개까지 가져올지 지정합니다.
+- PageNumber: 기본값은 결과의 첫페이지입니다. 첫페이지 이후의 결과를 가져올때 지정합니다.
 
 
 Type은 query결과에서 "Format"으로 구분할 수 있습니다.
