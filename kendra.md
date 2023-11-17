@@ -2,6 +2,10 @@
 
 Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)를 이용합니다.
 
+## Retrieve API
+
+[Retrieve](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)는 Default Quota 기준으로 200 개의 token으로 된 단어 100개의  
+
 ## Type 
 
 Type의 종류에는 "DOCUMENT", "QUESTION_ANSWER", "ANSWER"가 있습니다.
