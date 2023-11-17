@@ -48,7 +48,7 @@ git clone https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock
 5) cdk 폴더로 이동하여 필요한 라이브러리를 설치합니다.
 
 ```java
-cd korean-chatbot-using-amazon-bedrock/cdk-chatbot-with-rag/ && npm install
+cd korean-chatbot-using-amazon-bedrock/cdk-korean-chatbot/ && npm install
 ```
 
 6) CDK 사용을 위해 Boostraping을 수행합니다.
