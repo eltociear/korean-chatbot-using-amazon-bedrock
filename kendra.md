@@ -4,7 +4,12 @@ Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/
 
 ## Retrieve API
 
-[Retrieve](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)는 Default Quota 기준으로 200 개의 token으로 된 단어 100개의  
+[Retrieve](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)는 Default Quota 기준으로 하나의 발췌문(passges)는 200개의 token으로 구성될 수 있고, 최대 100개(PageSize)까지 이런 발췌문을 얻을 수 있습니다. 200 개의 token으로 구성된 발췌문(passage)과 최대 100개의 의미론적으로 관련된 발췌문을 검색할 수 있습니다. Query API와 다르게 qustion/answer와 FAG는 포함되지 않습니다. 
+
+
+
+## Query API
+
 
 ## Type 
 
