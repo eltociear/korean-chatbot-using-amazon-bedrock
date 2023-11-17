@@ -572,6 +572,17 @@ def readStreamMsg(connectionId, requestId, stream):
     print('msg: ', msg)
     return msg
 
+def get_retrieve_using_Kendra(query):
+    kendra_client = boto3.client('kendra')
+    try:
+        resp =  kendra_client.retrieve(
+            IndexId = kendraIndex,
+            QueryText = query
+        )
+    except: 
+        raise Exception ("Not able to write into dynamodb")        
+    print('resp, ', resp)
+
 def get_answer_using_template(query, rag_type, convType, connectionId, requestId):
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
@@ -580,6 +591,7 @@ def get_answer_using_template(query, rag_type, convType, connectionId, requestId
         relevant_documents = vectorstore.similarity_search(query)
     elif rag_type == 'kendra':
         relevant_documents = kendraRetriever.get_relevant_documents(query)
+        get_retrieve_using_Kendra(query)
 
     print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
     print('----')
