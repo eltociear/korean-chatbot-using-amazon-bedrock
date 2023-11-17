@@ -573,7 +573,7 @@ def readStreamMsg(connectionId, requestId, stream):
     return msg
 
 def get_retrieve_using_Kendra(query):
-    kendra_client = boto3.client('kendra, region_name='us-west-2')
+    kendra_client = boto3.client('kendra')
     page_size = 10
     page_number = 10
 
