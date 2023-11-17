@@ -735,17 +735,17 @@ def retrieve_from_Kendra(query, top_k):
 def get_reference(docs, rag_type):
     if rag_type == 'kendra':
         reference = "\n\nFrom\n"
-        #for doc in docs:
-        #    name = doc.metadata['title']
-        #    url = path+name
+        for doc in docs:
+            name = doc.metadata['title']
+            url = path+name
 
-        #    if doc.metadata['document_attributes']:
-        #        page = doc.metadata['document_attributes']['_excerpt_page_number']
-        #        #reference = reference + (str(page)+'page in '+name+'\n')
-        #        reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-        #    else:
+            if doc.metadata['document_attributes']:
+                page = doc.metadata['document_attributes']['_excerpt_page_number']
+                #reference = reference + (str(page)+'page in '+name+'\n')
+                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+            else:
                 #reference = reference + name+'\n'
-        #        reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
+                reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
