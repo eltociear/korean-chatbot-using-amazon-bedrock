@@ -588,7 +588,7 @@ def extract_relevant_docs(apiType, resp):
                 
             document_title = ""
             if "DocumentTitle" in query_result:
-                document_title = query_result["DocumentTitle"]["Text"]
+                document_title = query_result["DocumentTitle"]
                 print("Title: ", document_title)
             
             document_uri = ""
@@ -596,7 +596,7 @@ def extract_relevant_docs(apiType, resp):
                 document_uri = query_result["DocumentURI"]
                 print("Uri: ", document_uri)
 
-            excerpt = query_result["DocumentExcerpt"]["Text"]
+            excerpt = query_result["Content"]
             print('document_text: ', excerpt)
 
             relevant_docs.append({
