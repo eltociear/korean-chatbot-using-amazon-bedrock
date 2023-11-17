@@ -124,6 +124,8 @@ map_chain = dict() # Conversation with RAG
 map_chat = dict() # Conversation for normal 
 
 kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
+#kendra_regin = 'us-west-2'
+#kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5,region_name=kendra_regin)
 
 def get_prompt_template(query, convType):
     # check korean
@@ -573,19 +575,38 @@ def readStreamMsg(connectionId, requestId, stream):
     return msg
 
 def get_retrieve_using_Kendra(query):
-    kendra_client = boto3.client('kendra')
+    config = Config(
+        retries=dict(
+            max_attempts=10
+        )
+    )
+    kendra_client = boto3.client('kendra', config=config)
     page_size = 10
     page_number = 10
 
     print('index: ', kendraIndex)
     print('query: ', query)
 
+    attributeFilter = {
+        "AndAllFilters": [
+            {
+                "EqualsTo": {
+                "Key": '_language_code',
+                "Value": {
+                    "StringValue": 'kr',
+                },
+                },
+            },
+        ],
+    }
+
     try:
-        resp =  kendra_client.retrieve(
+        resp =  kendra_client.query(
             IndexId = kendraIndex,
             QueryText = query,
             PageSize = page_size,
-            PageNumber = page_number
+            PageNumber = page_number,
+            # AttributeFilter = attributeFilter
         )
     except: 
         raise Exception ("Not able to retrieve to Kendra")        
