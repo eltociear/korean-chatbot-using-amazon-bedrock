@@ -30,11 +30,12 @@ if query_result["Type"] == "ANSWER" or query_result["Type"] == "QUESTION_ANSWER"
    print(answer_text)
 
 if query_result["Type"] == "DOCUMENT":
+   document_text = query_result["DocumentExcerpt"]["Text"]
+   print(document_text)
+
    if "DocumentTitle" in query_result:
       document_title = query_result["DocumentTitle"]["Text"]
       print("Title: " + document_title)
-   document_text = query_result["DocumentExcerpt"]["Text"]
-   print(document_text)
 ```
 
 Type은 query결과에서 "Format"으로 구분할 수 있습니다.
