@@ -2,9 +2,15 @@
 
 Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)를 이용합니다.
 
+## Type 
+
 Type의 종류에는 "DOCUMENT", "QUESTION_ANSWER", "ANSWER"가 있습니다.
 
 Type은 query결과에서 "Format"으로 구분할 수 있습니다.
+
+## Score
+
+[ScoreAttributes](https://docs.aws.amazon.com/kendra/latest/APIReference/API_ScoreAttributes.html)와 같이 "VERY_HIGH", "HIGH", "MEDIUM", "LOW", "NOT_AVAILABLE"로 결과의 신뢰도를 확인할 수 있습니다.
 
 ```text
 [
