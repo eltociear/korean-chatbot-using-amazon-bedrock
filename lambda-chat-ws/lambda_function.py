@@ -679,7 +679,7 @@ def retrieve_from_Kendra(query, top_k):
                     relevant_docs = extract_relevant_docs_from_kendra(apiType="query", resp=resp)
                     print('relevant_docs: ', relevant_docs)
                 else: 
-                    print('No relevant docs!')
+                    print('No result for Query API. Finally, no relevant docs!')
                     relevant_docs = []
 
             except Exception as ex:
@@ -776,12 +776,9 @@ def get_answer_using_vectorstore(query, rag_type, convType, connectionId, reques
     print('source_documents: ', source_documents)
 
     if len(relevant_documents)>=1 and enableReference=='true':
-        reference = get_reference(source_documents, rag_type)
-        #print('reference: ', reference)
+        get_reference(source_documents, rag_type)
 
-        return msg+reference
-    else:
-        return msg
+    return msg
 
 def get_reference(docs, rag_type):
     if rag_type == 'kendra':
@@ -1117,6 +1114,8 @@ def getResponse(connectionId, jsonBody):
 
 def lambda_handler(event, context):
     # print('event: ', event)
+    global reference
+    reference = ""  
     
     msg = ""
     if event['requestContext']: 
@@ -1154,15 +1153,26 @@ def lambda_handler(event, context):
                     }
                     print('result: ', result)
                     sendMessage(connectionId, result)
-                    raise Exception ("Not able to send a message")
-                                    
-                result = {
-                    'request_id': requestId,
-                    'msg': msg,
-                    'status': 'completed'
-                }
-                #print('result: ', json.dumps(result))
+                    raise Exception ("Not able to send a message")                             
+                         
+                if jsonBody['convType']=='qa' and enableReference=='true':
+                    result = {
+                        'request_id': requestId,
+                        'msg': msg,
+                        'reference': reference,
+                        'status': 'completed'                        
+                    }
+                else:
+                    result = {
+                        'request_id': requestId,
+                        'msg': msg,
+                        'reference': "",
+                        'status': 'completed'
+                    }
+                    #print('result: ', json.dumps(result))
+                
                 sendMessage(connectionId, result)
+
 
     return {
         'statusCode': 200

@@ -115,8 +115,12 @@ function connect(endpoint, type) {
                 // console.log('response: ', response);
 
                 if(response.status == 'completed') {                    
-                    console.log('received message: ', response.msg);                         
-                    addReceivedMessage(response.request_id, response.msg);  
+                    console.log('received message: ', response.msg);         
+                    
+                    if(!response.reference)                    
+                        addReceivedMessage(response.request_id, response.msg);  
+                    else
+                        addReceivedMessage(response.request_id, response.msg+response.reference);  
                 }                
                 else if(response.status == 'proceeding') {
                     addReceivedMessage(response.request_id, response.msg);  
