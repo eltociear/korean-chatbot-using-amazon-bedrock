@@ -772,7 +772,7 @@ def get_reference(docs, rag_type):
 
                 #<a href="#" onClick="alert('{excerpt}')" target=_blank>FAQ</a>
 
-                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('안녕하세요')\" target=_blank>FAQ</a>\n"
+                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert({excerpt})\">FAQ ({confidence})</a>\n"
 
                 
 
