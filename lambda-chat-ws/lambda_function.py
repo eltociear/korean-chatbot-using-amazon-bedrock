@@ -749,7 +749,7 @@ def get_reference(docs, rag_type):
             url = path+name
 
             #if doc.metadata['document_attributes']:
-            if "document_attributes" in doc.metadata:
+            if "_excerpt_page_number" in doc.metadata['document_attributes']:
                 page = doc.metadata['document_attributes']['_excerpt_page_number']
                 #reference = reference + (str(page)+'page in '+name+'\n')
                 reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
@@ -800,18 +800,20 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     PROMPT = get_prompt_template(revised_question, convType)
     #print('PROMPT: ', PROMPT) 
 
-    if rag_type=='kendra':
-        retriever = kendraRetriever
-    elif rag_type=='opensearch' or rag_type=='faiss':
-        retriever = vectorstore.as_retriever(
-            search_type="similarity", 
-            search_kwargs={
-                #"k": 3, 'score_threshold': 0.8
-                "k": 3
-            }
-        )
+    
 
     if method_for_RAG == 'useRetrievalQA': # usePromptQA
+        if rag_type=='kendra':
+            retriever = kendraRetriever
+        elif rag_type=='opensearch' or rag_type=='faiss':
+            retriever = vectorstore.as_retriever(
+                search_type="similarity", 
+                search_kwargs={
+                    #"k": 3, 'score_threshold': 0.8
+                    "k": 10
+                }
+            )
+
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
