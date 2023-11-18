@@ -611,7 +611,15 @@ def get_revised_question(query):
     # print('chat_history: ', chat_history)
     
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
-    return question_generator_chain.run({"question": query, "chat_history": chat_history})
+    try:         
+        revised_question = question_generator_chain.run({"question": query, "chat_history": chat_history})
+
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to request to LLM")    
+    
+    return revised_question
 
 def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
     rag_type = "kendra"
@@ -761,7 +769,7 @@ def get_reference(docs, rag_type):
         for doc in docs:
             confidence = doc['confidence']
             if doc['metadata']['type'] == "QUESTION_ANSWER":
-                excerpt = str(doc['metadata']['excerpt']).replace('"'," ")                 
+                excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
                 reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
             else:
                 url = ""
@@ -866,8 +874,13 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         #print('---')        
         #print('length of relevant_documents: ', len(relevant_documents))
 
-        stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-        msg = readStreamMsg(connectionId, requestId, stream)
+        try: 
+            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+            msg = readStreamMsg(connectionId, requestId, stream)
+        except Exception as ex:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)        
+            raise Exception ("Not able to request to LLM")    
 
         #source_documents = result['source_documents']
         #print('source_documents: ', source_documents)
@@ -902,9 +915,15 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     PROMPT = get_prompt_template(text, convType)
     #print('PROMPT: ', PROMPT)
-    stream = llm(PROMPT.format(input=text))
 
-    msg = readStreamMsg(connectionId, requestId, stream)
+    try: 
+        stream = llm(PROMPT.format(input=text))
+        msg = readStreamMsg(connectionId, requestId, stream)
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to request to LLM")    
+    
     return msg
 
 def getResponse(connectionId, jsonBody):
@@ -1047,8 +1066,12 @@ def getResponse(connectionId, jsonBody):
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                 
                 elif convType == 'none':   # no prompt
-                    msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
-
+                    try: 
+                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
+                    except Exception as ex:
+                        err_msg = traceback.format_exc()
+                        print('error message: ', err_msg)        
+                        raise Exception ("Not able to request to LLM")    
                 else: 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
                 
