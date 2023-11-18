@@ -766,11 +766,13 @@ def get_reference(docs, rag_type):
                 excerpt = str(doc['metadata']['excerpt'])
                 # reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
                 #reference = reference + f"{number}. <a herf=\"#\"><p onclick=\"alert('{excerpt}')\"> FAQ ({confidence})</p></a>\n"
-                reference = reference + f"{number}. <a href=\"#:alert('준비중입니다.');\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
+                #reference = reference + f"{number}. <a href=\"#:alert('준비중입니다.');\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
                 #reference = reference + f"{number}. <a href=\"javascript\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
                 #reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
 
                 #<a href="#" onClick="alert('{excerpt}')" target=_blank>FAQ</a>
+
+                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('안녕하세요')\" target=_blank>FAQ</a>\n"
 
                 
 
