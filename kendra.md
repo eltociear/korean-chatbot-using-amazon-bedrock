@@ -198,34 +198,39 @@ def get_retrieve_using_Kendra(index_id, query, top_k):
    "QueryId":"cab6a783-5daf-40b6-a3d9-4df51f3ec812",
    "ResultItems":[
       {
-         "Id":"cab6a783-5daf-40b6-a3d9-4df51f3ec812-406002d2-7bd5-4dca-a2f7-2edceecd70a6",
+         "Id":"0732b19c-333b-4f60-9724-323b54928f52-3f4bf464-5098-4463-b14d-eee05828fe0e",
          "Type":"DOCUMENT",
          "Format":"TEXT",
          "AdditionalAttributes":[
             
          ],
-         "DocumentId":"4fc78d8c-b9d8-4abb-8e8c-c99523e2f1d5",
+         "DocumentId":"e3f2af36-f76b-4775-a5ed-863910bc7a64",
          "DocumentTitle":{
-            "Text":"fsi_faq_ko.csv",
+            "Text":"book_smmdinlm239.pdf",
             "Highlights":[
                
             ]
          },
          "DocumentExcerpt":{
-            "Text":"...인증서는 어디서 발급 하나요?\t인증서는 서울은행에 인터넷뱅킹서비스가 가입되어 있으시면 서울은행 홈페이지 또는 서울 모바일앱의 인증센터에서 발급 가능합니다. ※ 개인은 주민번호로 금융기관 통합하여 발급기관별, 용도별로 한 개의 인증서만 발급이 가능합니다. 예) 타은행에서 은행/신용카드/보험용(결제원) 인증서를 발급받은 경우 → 당행 은행/신용카드/보험용(결제원) 인증서 발급 불가\t인터넷뱅킹\t서울은행\n\t개인정보 변경은 어디서 해야 하나요...",
+            "Text":"...있으며, 가입자는 가입에 앞서 이에 대한 충분한 설명을 받으시기 바랍니다.\n\n\n•가입할 때 보험계약의 기본사항[보험상품명, 보험기간, 납입기간, 피보험자 등]을 반드시 확인하시기 바랍니다.\n\n\n• 보험계약 청약서에서 질문한 사항(계약 전 알릴 의무 사항)에 대해 고의 또는 중대한 과실로 사실과 다르게 알린 경우에는  \n\n\n보험계약이 해지되거나 보장이 제한될 수 있습니다...",
             "Highlights":[
                
             ]
          },
          "DocumentURI":"",
          "DocumentAttributes":[
-            
+            {
+               "Key":"_excerpt_page_number",
+               "Value":{
+                  "LongValue":5
+               }
+            }
          ],
          "ScoreAttributes":{
             "ScoreConfidence":"MEDIUM"
          },
-         "FeedbackToken":"AYADeEIT0ORSX08Sv-t8hqDFj2UAXwABABVhd3MtY3J5cHRvLXB1YmxpYy1rZXkAREF1VzA4b1FGeEIwbDhVL0R2Y2s3RllvVHphcXI5ZG1hVVdMVU5hVWl2RllRaW5ZeUg5SDdQbC8zVlYwNmJuRUN0UT09AAEAB2F3cy1rbXMAS2Fybjphd3M6a21zOnVzLXdlc3QtMjoxNDk0MDA5NDM5NTk6a2V5LzUyN2YwMjRhLTUyMDktNDI4NC1iOTYwLTJhMjYxMzQxNWNkNgC4AQIBAHhoFIrDBc0sA_W0qqJvieboGJWYBK_hEm739PftPtfwZwHBaXKzCFbOpmHzKOt9tucTAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMj2BQ8y0RoHFXVV1AAgEQgDtMdfOimJQuRZVIhoS9xaeORWplKcm2xX_spfBtv10z2USf9Wl3xSV_1twmqnJ7WWh3BgCXlqcCylQZPgIAAAAADAAAEAAAAAAAAAAAAAAAAABnOJofpWuq2r-4USU4fu9A_____wAAAAEAAAAAAAAAAAAAAAEAAAF24b73mqfm5Unxu25vRMlukIUI1i3trLzFlnyfCvCin8J7GsN3pu25FiI0Hu3VLAXusFfik00Gp7kzT8ZcFVUgp0m9FZXeG2SlFkTssFxIn8QLWPeW1ea8TgZr0eeCk6bjmtVfQSjv5JP8Gk2Trk0cC2D20jH_aWsZ1Ri78bY5H0NOsS2LsV1CHEkDacfNIyhwMaiDpYWyn8sCIV2a7OmkdZOwTkEutbD69McCISGGhlh5c8ZFJaXESjtJCZuPf4EFQHH5oIBHSNzivaXD4tGGzSa1XabMD36rvYqYykbG09UE12eRB-Gvy8BuEaPIsAP0Ib5rPBNbTImCiw10nDm4oTnB9LsW6lPT-x_DI8qoxEdrj0sH5WjdQKhvEt1g33-6w0AlIQNMiNaw-CziK-PgK8YQFlnL2HLPdmPCZBCH_W18nM2oyAMjAzySgq3KCExKyaqylFn5DsPXLjh46J60ZMxf1DhQ9U82DiQCuJ5G1Z9rxdMASmRHWFSOKxXolyMwTCShOI5vAGcwZQIxAKd5oE-KmuivvmQmDQl-PtQRzhpWaUWthnu-NP6serOPYvVjmYdxNvNtbyZy-3pJ_AIwLszR3dnL6GPu_ed2QlY6r2yVs_l-O3hNKB7WMv8P23cajHEX8qNbr_I_yafIFFoG.cab6a783-5daf-40b6-a3d9-4df51f3ec812-406002d2-7bd5-4dca-a2f7-2edceecd70a6"
-      },
+         "FeedbackToken":"AYADeOHYuP8KBBZVDtqxvB8JoHoAXwABABVhd3MtY3J5cHRvLXB1YmxpYy1rZXkAREF6K2JUSmJlM0hHU2Y2SktqdXhwaDNsOFEyTWdtYjRzQ2UvTElvdDZ3dElaczFDV21sc1dZYzhhSDdwaitNQmF0dz09AAEAB2F3cy1rbXMAS2Fybjphd3M6a21zOnVzLXdlc3QtMjoxNDk0MDA5NDM5NTk6a2V5LzUyN2YwMjRhLTUyMDktNDI4NC1iOTYwLTJhMjYxMzQxNWNkNgC4AQIBAHhoFIrDBc0sA_W0qqJvieboGJWYBK_hEm739PftPtfwZwHTuiBoobRJuvQ0u6-6abBiAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMYJMTvVwth6_ptw6pAgEQgDsrzR_f7IbDgqT5XrW3v5Da-aTNFw2v7fpcIra8PD02pQ5feUAw_JkXR81MXrqrbQ7fKsEexQPdTsx3JAIAAAAADAAAEAAAAAAAAAAAAAAAAACbC35XEBh-MXfq3LU5gDvR_____wAAAAEAAAAAAAAAAAAAAAEAAAF2PUZ0ZVJdz40rYWthpb1aYMLWCD1h3sVB6aXfhcUKwnKyilNtQ6Sr-yq_B0Daajd5P7PEwDeuPRmwAh164ukTXwP9qJIiaADhiCYTD0BZrtCC_JdH9wudYz0ximAEWA4pi1A0NSucA6RxmJRK16VXfYLxp7JIooWL4SLyoCxmRIM1ZwNs38YmnwEh5XA-crpcaQBTBgjkVejsmCCbNh1RVylDpmkMUxzYZZh2uIOYFAmjocr9IbFJKQz1IQNktcq-_uUdaO6jvNNUTUsCoJMMM4A4H4yczVD3RpJGNzatYHYRq8zhhmF6B9PGaVbDD26FrH9uyryyY9XhdL4GMBm1C4DPCDmWBEqfD9dCgfn32784tSJklA8xp9C_46hq_UyYy8uSWjbmJYNu0rRoueGJrkmcRV1sA9gUDbriYr4Ij249GahhRsF8nsDWtkmOzZbBU0CXsmklH4A7K7MBnBBsEcFDQE9Wxi-VNPHcgjmAL-ilMHNY6B0IYiDB_w9lNp6eebc8LZ4bAGcwZQIxAPRf5aJNC67fcRlu61G66HRAQ6m-rvg3eWw4GqrZ4WvtBuZ_GTxDvve-CYWpGtedpwIwLJHMr9WZLpByNqsyLhQk3ztG4eIA830nRg4rz9Odzp9mVlD2-bh8aOHx-r0JXz23.0732b19c-333b-4f60-9724-323b54928f52-3f4bf464-5098-4463-b14d-eee05828fe0e"
+      }
    ],
    "FacetResults":[
       
