@@ -835,7 +835,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         relevant_context = ""
         for document in relevant_documents:
-            relevant_context = relevant_context + document['metadata']['excerp'] + '\n\n'
+            relevant_context = relevant_context + document['metadata']['excerpt'] + '\n\n'
         print('relevant_context: ', relevant_context)
 
 
