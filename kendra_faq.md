@@ -1,4 +1,4 @@
-# Kendra에서 FAQ의 활용
+# Kendra에서 FAQ (Frequently Asked Questions) 의 활용
 
 FAQ에 있는 "How many free clinics are in Spokane WA?"의 Answer는 13이고 아래와 같은 reference를 가지고 있습니다.
 
