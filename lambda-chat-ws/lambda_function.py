@@ -760,7 +760,24 @@ def get_reference(docs, rag_type):
             print('doc: ', json.dumps(doc))
 
             if doc['metadata']['type'] == "QUESTION_ANSWER":
-                reference = reference + f"<aFAQ</a>\n"
+                #reference = reference + f"<aFAQ</a>\n"
+                reference = reference + f"<a href=ABCD target=_blank>FAQ</a>\n"
+
+                # DescribeFaq
+                #config = Config(
+                #    retries=dict(
+                #        max_attempts=10
+                #    )
+                #)
+                #kendra_client = boto3.client('kendra', config=config)
+                
+                #resp =  kendra_client.describe_faq(
+                #    Id = document_id,
+                #    IndexId = kendraIndex,
+                #)
+                #print('describe_faq:', resp)
+
+
             else:
                 url = ""
                 if "title" in doc['metadata']:
