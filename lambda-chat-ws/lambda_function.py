@@ -660,7 +660,8 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             for attribute in additional_attributes:
                 if attribute["Key"] == "QuestionText":
                     question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
-            excerpt = "Question: "+question_text+"\nAnswer: "+query_result["DocumentExcerpt"]["Text"]
+            answer = query_result["DocumentExcerpt"]["Text"]
+            excerpt = f"Question: {question_text} \nAnswer: {answer}"
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
 
