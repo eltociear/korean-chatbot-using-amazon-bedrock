@@ -6,6 +6,7 @@ FAQ에 있는 "How many free clinics are in Spokane WA?"의 Answer는 13이고 �
 
 아래는 "How many clinics are in Spokane WA?"으로 Kenra에 Query 했을때의 결과입니다. 여기서 FAQ의 "free"가 있고 없음에 따라 결과는 매우 다름에도 불구하고 아래와 같이, Kendra의 응답은 "ScoreConfidence"를 "VERY_HIGH"로 응답하고 있습니다.
 
+따라서, 응답의 Type이 "QUESTION_ANSWER"인 경우에는 발췌를 할때에 "AdditionalAttributes"의 "QuestionText"을 같이 사용하여야 합니다. 즉 "How many free clinics are in Spokane WA? 13"으로 사용합니다.
 
 ```python
 {
