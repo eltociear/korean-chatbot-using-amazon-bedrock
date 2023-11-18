@@ -26,6 +26,7 @@ const bucketName = `storage-for-${projectName}-${region}`;
 const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2" 
 
 const rag_type = 'kendra';  // faiss, opensearch, kendra
+const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
 const opensearch_account = "admin";
@@ -537,7 +538,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         path: 'https://'+distribution.domainName+'/docs/',   
         kendraIndex: kendraIndex,
         roleArn: roleLambdaWebsocket.roleArn,
-        debugMessageMode: debugMessageMode
+        debugMessageMode: debugMessageMode,
+        rag_method: rag_method
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  

@@ -38,7 +38,7 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = False
 
-method_of_RAG = 'useRetrievePrompt' # useRetrievePrompt, useRetrievalQA
+rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -824,7 +824,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     #print('PROMPT: ', PROMPT)         
     
     top_k = 10    
-    if method_of_RAG == 'useRetrievalQA': # useRetrievalQA
+    if rag_method == 'RetrievalQA': # RetrievalQA
         if rag_type=='kendra':
             retriever = kendraRetriever
         elif rag_type=='opensearch' or rag_type=='faiss':
@@ -852,7 +852,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(source_documents)>=1 and enableReference=='true':
             msg = msg+get_reference(source_documents, rag_type)
-    else: # useRetrievePrompt
+    else: # RetrievalPrompt
         if rag_type == 'kendra':
             relevant_documents = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
