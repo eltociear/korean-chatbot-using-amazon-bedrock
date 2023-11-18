@@ -824,7 +824,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     PROMPT = get_prompt_template(revised_question, convType)
     #print('PROMPT: ', PROMPT)         
     
-    top_k = 10    
+    top_k = 5
     if rag_method == 'RetrievalQA': # RetrievalQA
         if rag_type=='kendra':
             retriever = kendraRetriever
