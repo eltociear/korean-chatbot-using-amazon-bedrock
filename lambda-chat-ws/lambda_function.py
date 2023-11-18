@@ -765,7 +765,7 @@ def get_reference(docs, rag_type):
             if doc['metadata']['type'] == "QUESTION_ANSWER":
                 excerpt = doc['metadata']['excerpt']                
                 #reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
-                reference = reference + f"{number}. <a href=\"#\" onClick=\"<html><body><p>{excerpt}</p></body></html>\" target=_blank>FAQ ({confidence})</a>\n"
+                reference = reference + f"{number}. <a onClick=\"<html><body><p>{excerpt}</p></body></html>\" target=_blank>FAQ ({confidence})</a>\n"
 
             else:
                 url = ""
