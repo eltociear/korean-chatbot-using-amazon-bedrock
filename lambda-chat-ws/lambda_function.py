@@ -510,7 +510,7 @@ def get_summary(texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chatHistory(userId, allowTime, convType):
+def load_chat_history(userId, allowTime, convType):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -529,8 +529,9 @@ def load_chatHistory(userId, allowTime, convType):
         type = item['type']['S']
 
         if type == 'text':
-            print('Human: ', text)
-            print('Assistant: ', msg)        
+            if isDebugging==True:
+                print('Human: ', text)
+                print('Assistant: ', msg)        
 
             #if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and #rag_type=='faiss' and isReady):
             #    memory_chain.chat_memory.add_user_message(text)
@@ -856,8 +857,8 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         #source_documents = result['source_documents']
         #print('source_documents: ', source_documents)
 
-        #if len(source_documents)>=1 and enableReference=='true':
-        #    msg = msg+get_reference(source_documents, rag_type)
+        if len(relevant_documents)>=1 and enableReference=='true':
+            msg = msg+get_reference(relevant_documents, rag_type)
 
         
     if isDebugging==True:   # extract chat history for debug
@@ -943,7 +944,7 @@ def getResponse(connectionId, jsonBody):
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     allowTime = getAllowTime()
-    load_chatHistory(userId, allowTime, convType)
+    load_chat_history(userId, allowTime, convType)
 
     # rag sources
     if convType == 'qa' and rag_type == 'opensearch':
