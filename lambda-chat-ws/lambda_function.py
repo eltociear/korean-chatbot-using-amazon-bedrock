@@ -38,7 +38,7 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = False
 
-method_for_RAG = 'useRetrievalQA' # usePromptQA
+method_of_RAG = 'useRetrievePrompt' # useRetrievePrompt, useRetrievalQA
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -607,7 +607,7 @@ def get_revised_question(query):
     )
     
     chat_history = extract_chat_history_from_memory()
-    print('chat_history: ', chat_history)
+    # print('chat_history: ', chat_history)
     
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
@@ -799,7 +799,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     #print('PROMPT: ', PROMPT)         
     
     top_k = 10    
-    if method_for_RAG == 'useRetrievalQA': # usePromptQA
+    if method_of_RAG == 'useRetrievalQA': # useRetrievalQA
         if rag_type=='kendra':
             retriever = kendraRetriever
         elif rag_type=='opensearch' or rag_type=='faiss':
@@ -827,7 +827,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(source_documents)>=1 and enableReference=='true':
             msg = msg+get_reference(source_documents, rag_type)
-    else:
+    else: # useRetrievePrompt
         if rag_type == 'kendra':
             relevant_documents = retrieve_from_Kendra(query=text, top_k=top_k)
         else:
@@ -860,7 +860,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         #    msg = msg+get_reference(source_documents, rag_type)
 
         
-    if isDebugging:   # extract chat history for debug
+    if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
         print('chat_history_all: ', chat_history_all)
 
@@ -876,7 +876,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
                         
     msg = readStreamMsg(connectionId, requestId, stream)
 
-    if isDebugging:   # extract chat history for debug
+    if isDebugging==True:   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
         chat_history_all = chats['history']
         print('chat_history_all: ', chat_history_all)
