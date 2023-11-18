@@ -845,9 +845,9 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             msg = msg+get_reference(source_documents, rag_type)
     else: # useRetrievePrompt
         if rag_type == 'kendra':
-            relevant_documents = retrieve_from_Kendra(query=text, top_k=top_k)
+            relevant_documents = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
-            relevant_documents = retrieve_from_vectorstore(query=text, top_k=top_k, rag_type=rag_type)
+            relevant_documents = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
 
         relevant_context = ""
         for document in relevant_documents:
@@ -866,7 +866,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         #print('---')        
         #print('length of relevant_documents: ', len(relevant_documents))
 
-        stream = llm(PROMPT.format(context=relevant_context, question=text))
+        stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
         msg = readStreamMsg(connectionId, requestId, stream)
 
         #source_documents = result['source_documents']
