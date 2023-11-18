@@ -651,7 +651,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             for attribute in additional_attributes:
                 if attribute["Key"] == "QuestionText":
                     question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
-            excerpt = question_text + ' ' + query_result["DocumentExcerpt"]["Text"]
+            excerpt = "Question: "+question_text+"\nAnswer: "+query_result["DocumentExcerpt"]["Text"]
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
 
@@ -835,7 +835,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         relevant_context = ""
         for document in relevant_documents:
-            relevant_context = relevant_context + document['metadata']['excerpt'] + '\n\n'
+            relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
 
 
