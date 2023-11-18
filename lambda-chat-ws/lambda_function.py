@@ -759,26 +759,27 @@ def get_reference(docs, rag_type):
         for doc in docs:
             print('doc: ', json.dumps(doc))
 
-            url = ""
-            if "title" in doc['metadata']:
-                print('metadata: ', json.dumps(doc['metadata']))
-                name = doc['metadata']['title']
-                if name: 
-                    url = path+name
-
-            page = ""
-            if "document_attributes" in doc['metadata']:
-                if "_excerpt_page_number" in doc['metadata']['document_attributes']:
-                    page = doc['metadata']['document_attributes']['_excerpt_page_number']
-                                    
-            if url and page: 
-                #reference = reference + (str(page)+'page in '+name+'\n')
-                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-            elif url:
-                #reference = reference + name+'\n'
-                reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
+            if doc['metadata']['type'] == "QUESTION_ANSWER":
+                reference = reference + "FAQ\n"
             else:
-                reference = ""
+                url = ""
+                if "title" in doc['metadata']:
+                    #print('metadata: ', json.dumps(doc['metadata']))
+                    name = doc['metadata']['title']
+                    if name: 
+                        url = path+name
+
+                page = ""
+                if "document_attributes" in doc['metadata']:
+                    if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                        page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                                        
+                if url and page: 
+                    #reference = reference + (str(page)+'page in '+name+'\n')
+                    reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+                elif url:
+                    #reference = reference + name+'\n'
+                    reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
