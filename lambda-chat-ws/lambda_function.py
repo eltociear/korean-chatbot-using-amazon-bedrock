@@ -759,24 +759,11 @@ def get_reference(docs, rag_type):
 
         number = 1
         for doc in docs:
-            print('doc: ', json.dumps(doc))
-
             confidence = doc['confidence']
             if doc['metadata']['type'] == "QUESTION_ANSWER":
-                excerpt = str(doc['metadata']['excerpt'])
-                print('excerpt: ', excerpt)
-                # reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
-                #reference = reference + f"{number}. <a herf=\"#\"><p onclick=\"alert('{excerpt}')\"> FAQ ({confidence})</p></a>\n"
-                #reference = reference + f"{number}. <a href=\"#:alert('준비중입니다.');\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
-                #reference = reference + f"{number}. <a href=\"javascript\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
-                #reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
-
-                #<a href="#" onClick="alert('{excerpt}')" target=_blank>FAQ</a>
+                excerpt = doc['metadata']['excerpt']
 
                 reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
-                print('reference: ', f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n")
-                
-
             else:
                 url = ""
                 if "title" in doc['metadata']:
