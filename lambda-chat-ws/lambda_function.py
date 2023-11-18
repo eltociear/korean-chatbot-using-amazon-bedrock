@@ -724,7 +724,7 @@ def retrieve_from_Kendra(query, top_k):
         resp =  kendra_client.retrieve(
             IndexId = index_id,
             QueryText = query,
-            PageSize = top_k,            
+            PageSize = 10,            
         )
         print('retrieve resp:', resp)
         query_id = resp["QueryId"]
@@ -732,7 +732,13 @@ def retrieve_from_Kendra(query, top_k):
         if len(resp["ResultItems"]) >= 1:            
             relevant_docs = []
             for query_result in resp["ResultItems"]:
-                relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+                confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+
+                if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
+                    relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+
+                    if len(relevant_docs) >= top_k:
+                        break
             # print('relevant_docs: ', relevant_docs)
             
         else:  # falback using query API
@@ -741,7 +747,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = top_k,
+                    PageSize = 10,
                     #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                 )
                 print('query resp:', resp)
@@ -750,8 +756,15 @@ def retrieve_from_Kendra(query, top_k):
                 if len(resp["ResultItems"]) >= 1:                    
                     relevant_docs = []
                     for query_result in resp["ResultItems"]:
-                        relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+                        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+
+                        if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
+                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+
+                            if len(relevant_docs) >= top_k:
+                                break
                     # print('relevant_docs: ', relevant_docs)
+
                 else: 
                     print('No result for Query API. Finally, no relevant docs!')
                     relevant_docs = []
