@@ -612,77 +612,77 @@ def get_revised_question(query):
     question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     return question_generator_chain.run({"question": query, "chat_history": chat_history})
 
+def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
+    rag_type = "kendra"
+    if(apiType == 'retrieve'): # retrieve API
+        excerpt = query_result["Content"]
+        query_result_type = query_result["Type"]
+        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+        document_id = query_result["DocumentId"] 
+        document_title = query_result["DocumentTitle"]
+        document_uri = query_result["DocumentURI"]
+        feedback_token = query_result["FeedbackToken"] 
 
-def extract_relevant_docs_from_kendra(apiType, resp):
-    relevant_docs = []
-
-    if(apiType == 'retrieve'):
-        print('Retrieve result: ')
-        for query_result in resp["ResultItems"]:
-            type = str(query_result["Type"])
-            print("Type: ", type)
-
-            confidence = str(query_result["ScoreAttributes"]['ScoreConfidence'])
-            print("Confidence: ", confidence)        
-                
+        page = ""
+        document_attributes = query_result["DocumentAttributes"]
+        for attribute in document_attributes:
+            if attribute["Key"] == "_excerpt_page_number":
+                page = str(attribute["Value"]["LongValue"])
+            
+    else: # query API
+        if query_result["Type"]=="DOCUMENT":
             document_title = ""
             if "DocumentTitle" in query_result:
-                document_title = query_result["DocumentTitle"]
-                print("Title: ", document_title)
-            
-            document_uri = ""
-            if "DocumentURI" in query_result:
-                document_uri = query_result["DocumentURI"]
-                print("Uri: ", document_uri)
+                document_title = query_result["DocumentTitle"]["Text"]
 
-            excerpt = query_result["Content"]
-            print('document_text: ', excerpt)
+        excerpt = query_result["DocumentExcerpt"]["Text"]
+        query_result_type = query_result["Type"]
+        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+        document_id = query_result["DocumentId"] 
+        document_uri = query_result["DocumentURI"]
+        feedback_token = query_result["FeedbackToken"] 
 
-            relevant_docs.append({
-                "api": 'retrieve',
-                "type": type,
-                "confidence": confidence,
-                "excerpt": excerpt,
+        page = ""
+        document_attributes = query_result["DocumentAttributes"]
+        for attribute in document_attributes:
+            if attribute["Key"] == "_excerpt_page_number":
+                page = str(attribute["Value"]["LongValue"])
+
+    if page:
+        doc_info = {
+            "rag_type": rag_type,
+            "api_type": apiType,
+            "confidence": confidence,
+            "metadata": {
+                "type": query_result_type,
+                "document_id": document_id,
+                "source": document_uri,
                 "title": document_title,
-                "uri": document_uri
-            })
+                "excerpt": excerpt,
+                "document_attributes": {
+                    "_excerpt_page_number": page
+                }
+            },
+            "query_id": query_id,
+            "feedback_token": feedback_token
+        }
     else: 
-        print('Query result: ')
-        for query_result in resp["ResultItems"]:
-            type = str(query_result["Type"])
-            print("Type: ", type)
-
-            confidence = str(query_result["ScoreAttributes"]['ScoreConfidence'])
-            print("Confidence: ", confidence)        
-                
-            if query_result["Type"]=="ANSWER" or query_result["Type"]=="QUESTION_ANSWER":
-                excerpt = query_result["DocumentExcerpt"]["Text"]
-                print('answer_text: ', excerpt)            
-            
-            if query_result["Type"]=="DOCUMENT":
-                document_title = ""
-                if "DocumentTitle" in query_result:
-                    document_title = query_result["DocumentTitle"]["Text"]
-                    print("Title: ", document_title)
-
-                document_uri = ""       
-                if "DocumentURI" in query_result:
-                    document_uri = query_result["DocumentURI"]
-                    print("Uri: ", document_uri)
-
-                excerpt = query_result["DocumentExcerpt"]["Text"]
-                print('document_text: ', excerpt)                
-            
-            relevant_docs.append({
-                "api": 'query',
-                "type": type,
-                "confidence": confidence,
-                "excerpt": excerpt,
+        doc_info = {
+            "rag_type": rag_type,
+            "api_type": apiType,
+            "confidence": confidence,
+            "metadata": {
+                "type": query_result_type,
+                "document_id": document_id,
+                "source": document_uri,
                 "title": document_title,
-                "uri": document_uri
-            })
-    return relevant_docs
-        
+                "excerpt": excerpt,
+            },
+            "query_id": query_id,
+            "feedback_token": feedback_token
+        }
+    return doc_info
+
 def retrieve_from_Kendra(query, top_k):
     index_id = kendraIndex    
     config = Config(
@@ -698,10 +698,15 @@ def retrieve_from_Kendra(query, top_k):
             QueryText = query,
             PageSize = top_k,            
         )
+        print('retrieve resp:', resp)
+        query_id = resp["QueryId"]
 
         if len(resp["ResultItems"]) >= 1:            
-            relevant_docs = extract_relevant_docs_from_kendra(apiType="retrieve", resp=resp)
-            print('relevant_docs: ', relevant_docs)
+            relevant_docs = []
+            for query_result in resp["ResultItems"]:
+                relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+            # print('relevant_docs: ', relevant_docs)
+            
         else:  # falback using query API
             print('No result for Retrieve API!')
             try:
@@ -709,12 +714,16 @@ def retrieve_from_Kendra(query, top_k):
                     IndexId = index_id,
                     QueryText = query,
                     PageSize = top_k,
-                    #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER'
+                    #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                 )
+                print('query resp:', resp)
+                query_id = resp["QueryId"]
 
                 if len(resp["ResultItems"]) >= 1:                    
-                    relevant_docs = extract_relevant_docs_from_kendra(apiType="query", resp=resp)
-                    print('relevant_docs: ', relevant_docs)
+                    relevant_docs = []
+                    for query_result in resp["ResultItems"]:
+                        relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+                    # print('relevant_docs: ', relevant_docs)
                 else: 
                     print('No result for Query API. Finally, no relevant docs!')
                     relevant_docs = []
@@ -730,7 +739,7 @@ def retrieve_from_Kendra(query, top_k):
         raise Exception ("Not able to retrieve from Kendra")     
 
     for i, rel_doc in enumerate(relevant_docs):
-        print(f'## Document {i+1}: {json.dumps(rel_doc)}')    
+        print(f'## Document {i+1}: {json.dumps(rel_doc)}')  
 
 def get_reference(docs, rag_type):
     if rag_type == 'kendra':
@@ -739,7 +748,8 @@ def get_reference(docs, rag_type):
             name = doc.metadata['title']
             url = path+name
 
-            if doc.metadata['document_attributes']:
+            #if doc.metadata['document_attributes']:
+            if "document_attributes" in doc.metadata:
                 page = doc.metadata['document_attributes']['_excerpt_page_number']
                 #reference = reference + (str(page)+'page in '+name+'\n')
                 reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
