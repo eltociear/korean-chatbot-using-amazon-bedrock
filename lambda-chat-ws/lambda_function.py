@@ -630,7 +630,6 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 page = str(attribute["Value"]["LongValue"])
             
     else: # query API
-        excerpt = query_result["DocumentExcerpt"]["Text"]
         query_result_type = query_result["Type"]
         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
         document_id = query_result["DocumentId"] 
@@ -645,6 +644,16 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
         for attribute in document_attributes:
             if attribute["Key"] == "_excerpt_page_number":
                 page = str(attribute["Value"]["LongValue"])
+
+        if query_result_type == "QUESTION_ANSWER":
+            question_text = ""
+            additional_attributes = query_result["AdditionalAttributes"]
+            for attribute in additional_attributes:
+                if attribute["Key"] == "QuestionText":
+                    question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
+            excerpt = question_text + ' ' + query_result["DocumentExcerpt"]["Text"]
+        else: 
+            excerpt = query_result["DocumentExcerpt"]["Text"]
 
     if page:
         doc_info = {
