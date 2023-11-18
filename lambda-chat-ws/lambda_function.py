@@ -757,6 +757,7 @@ def get_reference(docs, rag_type):
     if rag_type == 'kendra':
         reference = "\n\nFrom\n"
         for doc in docs:
+            print('doc: ', doc)
             name = doc.metadata['title']
             url = path+name
 
