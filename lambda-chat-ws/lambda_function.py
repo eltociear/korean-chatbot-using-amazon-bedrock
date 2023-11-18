@@ -760,7 +760,7 @@ def get_reference(docs, rag_type):
             print('doc: ', json.dumps(doc))
 
             if doc['metadata']['type'] == "QUESTION_ANSWER":
-                reference = reference + "FAQ\n"
+                reference = reference + f"<aFAQ</a>\n"
             else:
                 url = ""
                 if "title" in doc['metadata']:
