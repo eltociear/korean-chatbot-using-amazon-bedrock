@@ -589,7 +589,7 @@ def extract_chat_history_from_memory():
 
     return chat_history
 
-def get_revised_question(query):    
+def get_revised_question(connectionId, requestId, query):    
     condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
     Chat History:
@@ -617,6 +617,14 @@ def get_revised_question(query):
     except Exception as ex:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
+
+        result = {
+            'request_id': requestId,
+            'msg': err_msg,
+            'status': 'failed'
+        }
+        sendMessage(connectionId, result)
+        
         raise Exception ("Not able to request to LLM")    
     
     return revised_question
@@ -816,7 +824,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
 
 def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    revised_question = get_revised_question(text) # generate new prompt using chat history
+    revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
     print('revised_question: ', revised_question)
     if debugMessageMode=='true':
         sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
@@ -1222,7 +1230,7 @@ def lambda_handler(event, context):
                         'status': 'failed'
                     }
                     sendMessage(connectionId, result)
-                    
+
                     raise Exception ("Not able to send a message")
                                     
                 result = {
