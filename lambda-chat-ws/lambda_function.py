@@ -757,19 +757,20 @@ def get_reference(docs, rag_type):
     if rag_type == 'kendra':
         reference = "\n\nFrom\n"
         for doc in docs:
-            print('doc: ', doc)
+            print('doc: ', json.dumps(doc))
 
             url = ""
             if "title" in doc['metadata']:
-                print('metadata: ', doc['metadata'])
+                print('metadata: ', json.dumps(doc['metadata']))
                 name = doc['metadata']['title']
                 if name: 
                     url = path+name
 
             page = ""
-            if "_excerpt_page_number" in doc['metadata']['document_attributes']:
-                page = doc['metadata']['document_attributes']['_excerpt_page_number']
-                
+            if "document_attributes" in doc['metadata']:
+                if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                    page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                                    
             if url and page: 
                 #reference = reference + (str(page)+'page in '+name+'\n')
                 reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
