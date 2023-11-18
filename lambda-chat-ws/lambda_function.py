@@ -758,17 +758,25 @@ def get_reference(docs, rag_type):
         reference = "\n\nFrom\n"
         for doc in docs:
             print('doc: ', doc)
-            name = doc.metadata['title']
-            url = path+name
 
-            #if doc.metadata['document_attributes']:
+            url = ""
+            if "title" in doc['metadata']:
+                name = doc.metadata['title']
+                if name: 
+                    url = path+name
+
+            page = ""
             if "_excerpt_page_number" in doc.metadata['document_attributes']:
                 page = doc.metadata['document_attributes']['_excerpt_page_number']
+                
+            if url and page: 
                 #reference = reference + (str(page)+'page in '+name+'\n')
                 reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-            else:
+            elif url:
                 #reference = reference + name+'\n'
                 reference = reference + f"<a href={url} target=_blank>{name}</a>\n"
+            else:
+                reference = ""
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
