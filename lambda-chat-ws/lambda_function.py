@@ -662,6 +662,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                     question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
             answer = query_result["DocumentExcerpt"]["Text"]
             excerpt = f"Question: {question_text} \nAnswer: {answer}"
+            excerpt = excerpt.split()
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
 
