@@ -616,7 +616,7 @@ def get_revised_question(query):
 
     except Exception as ex:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
+        print('error message: ', err_msg)                
         raise Exception ("Not able to request to LLM")    
     
     return revised_question
@@ -881,7 +881,15 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             msg = readStreamMsg(connectionId, requestId, stream)
         except Exception as ex:
             err_msg = traceback.format_exc()
-            print('error message: ', err_msg)        
+            print('error message: ', err_msg)       
+
+            result = {
+                'request_id': requestId,
+                'msg': err_msg,
+                'status': 'failed'
+            }
+            sendMessage(connectionId, result)
+
             raise Exception ("Not able to request to LLM")    
 
         #source_documents = result['source_documents']
@@ -924,6 +932,14 @@ def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     except Exception as ex:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
+        
+        result = {
+            'request_id': requestId,
+            'msg': err_msg,
+            'status': 'failed'
+        }
+        sendMessage(connectionId, result)
+        
         raise Exception ("Not able to request to LLM")    
     
     return msg
@@ -1073,6 +1089,14 @@ def getResponse(connectionId, jsonBody):
                     except Exception as ex:
                         err_msg = traceback.format_exc()
                         print('error message: ', err_msg)        
+
+                        result = {
+                            'request_id': requestId,
+                            'msg': err_msg,
+                            'status': 'failed'
+                        }
+                        sendMessage(connectionId, result)
+
                         raise Exception ("Not able to request to LLM")    
                 else: 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
@@ -1191,14 +1215,14 @@ def lambda_handler(event, context):
                 except Exception as ex:
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
-                    
+
                     result = {
                         'request_id': requestId,
-                        'msg': "The request was failed by the system: "+err_msg,
+                        'msg': err_msg,
                         'status': 'failed'
                     }
-                    print('result: ', result)
                     sendMessage(connectionId, result)
+                    
                     raise Exception ("Not able to send a message")
                                     
                 result = {
