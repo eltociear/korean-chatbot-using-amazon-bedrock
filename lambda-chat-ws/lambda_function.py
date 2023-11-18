@@ -766,10 +766,9 @@ def get_reference(docs, rag_type):
                 #reference = reference + f"<aFAQ</a>\n"
                 #reference = reference + f"{number}. <a href='Page.html' onclick='window.open(this.href, '_blank', 'width=800, height=600'); return false;' target=_blank>FAQ ({confidence})</a>\n"
                 #reference = reference + f"<a href='Page.html' onclick='window.open(this.href, '_blank', 'width=800, height=600'); return false;' target=_blank>FAQ ({confidence})</a>\n"
-
-                reference = reference + f"{number}. <a herf=\"#\" onClick=\"alert('작업중입니다')\" target=_blank>FAQ ({confidence})</a>\n"
+                excerpt = doc['metadata']['excerpt'] 
+                reference = reference + f"{number}. <a herf=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
                 
-
             else:
                 url = ""
                 if "title" in doc['metadata']:
