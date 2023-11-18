@@ -767,7 +767,9 @@ def get_reference(docs, rag_type):
                 #reference = reference + f"{number}. <a href='Page.html' onclick='window.open(this.href, '_blank', 'width=800, height=600'); return false;' target=_blank>FAQ ({confidence})</a>\n"
                 #reference = reference + f"<a href='Page.html' onclick='window.open(this.href, '_blank', 'width=800, height=600'); return false;' target=_blank>FAQ ({confidence})</a>\n"
                 excerpt = doc['metadata']['excerpt'] 
-                reference = reference + f"{number}. <a herf=\"#\" onClick=\"alert('{excerpt}')\" target=_blank>FAQ ({confidence})</a>\n"
+                html = f"<html><head><title>FAQ</title></head><body>{excerpt}</body></html>"
+                
+                reference = reference + f"{number}. <a herf=\"#\" onClick=\"alert('{html}')\" target=_blank>FAQ ({confidence})</a>\n"
                 
             else:
                 url = ""
