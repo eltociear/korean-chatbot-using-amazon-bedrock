@@ -36,7 +36,7 @@ modelId = os.environ.get('model_id', 'anthropic.claude-v2')
 print('model_id: ', modelId)
 rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
-isDebugging = True
+isDebugging = False
 
 method_for_RAG = 'useRetrievalQA' # usePromptQA
 
@@ -630,15 +630,13 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 page = str(attribute["Value"]["LongValue"])
             
     else: # query API
-        if query_result["Type"]=="DOCUMENT":
-            document_title = ""
-            if "DocumentTitle" in query_result:
-                document_title = query_result["DocumentTitle"]["Text"]
-
         excerpt = query_result["DocumentExcerpt"]["Text"]
         query_result_type = query_result["Type"]
         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
         document_id = query_result["DocumentId"] 
+        document_title = ""
+        if "Text" in query_result["DocumentTitle"]:
+            document_title = query_result["DocumentTitle"]["Text"]
         document_uri = query_result["DocumentURI"]
         feedback_token = query_result["FeedbackToken"] 
 
@@ -684,6 +682,8 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
     return doc_info
 
 def retrieve_from_Kendra(query, top_k):
+    print('query: ', query)
+
     index_id = kendraIndex    
     config = Config(
         retries=dict(
@@ -829,9 +829,8 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         source_documents = result['source_documents']
         print('source_documents: ', source_documents)
 
-        if enableReference=='true':
-            reference = get_reference(source_documents, rag_type)
-            msg = msg+reference
+        if len(source_documents)>=1 and enableReference=='true':
+            msg = msg+get_reference(source_documents, rag_type)
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
