@@ -761,13 +761,14 @@ def get_reference(docs, rag_type):
 
             url = ""
             if "title" in doc['metadata']:
-                name = doc.metadata['title']
+                print('metadata: ', doc['metadata'])
+                name = doc['metadata']['title']
                 if name: 
                     url = path+name
 
             page = ""
-            if "_excerpt_page_number" in doc.metadata['document_attributes']:
-                page = doc.metadata['document_attributes']['_excerpt_page_number']
+            if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                page = doc['metadata']['document_attributes']['_excerpt_page_number']
                 
             if url and page: 
                 #reference = reference + (str(page)+'page in '+name+'\n')
@@ -780,9 +781,9 @@ def get_reference(docs, rag_type):
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
-            name = doc.metadata['name']
-            page = doc.metadata['page']
-            url = doc.metadata['url']
+            name = doc['metadata']['name']
+            page = doc['metadata']['page']
+            url = doc['metadata']['url']
         
             #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
             reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
