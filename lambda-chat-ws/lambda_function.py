@@ -750,6 +750,8 @@ def retrieve_from_Kendra(query, top_k):
     for i, rel_doc in enumerate(relevant_docs):
         print(f'## Document {i+1}: {json.dumps(rel_doc)}')  
 
+    return relevant_docs
+
 def get_reference(docs, rag_type):
     if rag_type == 'kendra':
         reference = "\n\nFrom\n"
@@ -777,40 +779,26 @@ def get_reference(docs, rag_type):
         
     return reference
 
-def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    revised_question = get_revised_question(text) # generate new prompt using chat history
-    print('revised_question: ', revised_question)
-    if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        
-    # debug
+def retrieve_from_vectorstore(query, top_k, rag_type):
+    print('query: ', query)
+
     if rag_type == 'faiss':
         query_embedding = vectorstore.embedding_function(query)
         relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore.similarity_search(query)
 
-    if rag_type == 'faiss' or rag_type == 'opensearch':
-        print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-        print('----')
-        for i, rel_doc in enumerate(relevant_documents):
-            if debugMessageMode=='true':
-                print(f'## Document {i+1}: {rel_doc}.......')
-                sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
-            else:
-                print(f'## Document {i+1}: {rel_doc.page_content}.......')
-        print('---')
-        
-        print('length of relevant_documents: ', len(relevant_documents))
 
-    if rag_type == 'kendra':
-        retrieve_from_Kendra(query=text, top_k=3)
+def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
+    revised_question = get_revised_question(text) # generate new prompt using chat history
+    print('revised_question: ', revised_question)
+    if debugMessageMode=='true':
+        sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
 
     PROMPT = get_prompt_template(revised_question, convType)
-    #print('PROMPT: ', PROMPT) 
-
+    #print('PROMPT: ', PROMPT)         
     
-
+    top_k = 10    
     if method_for_RAG == 'useRetrievalQA': # usePromptQA
         if rag_type=='kendra':
             retriever = kendraRetriever
@@ -819,10 +807,9 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
                 search_type="similarity", 
                 search_kwargs={
                     #"k": 3, 'score_threshold': 0.8
-                    "k": 10
+                    "k": top_k
                 }
             )
-
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -840,6 +827,38 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(source_documents)>=1 and enableReference=='true':
             msg = msg+get_reference(source_documents, rag_type)
+    else:
+        if rag_type == 'kendra':
+            relevant_documents = retrieve_from_Kendra(query=text, top_k=top_k)
+        else:
+            relevant_documents = retrieve_from_vectorstore(query=text, top_k=top_k, rag_type=rag_type)
+
+        relevant_context = ""
+        for document in relevant_documents:
+            relevant_context = relevant_context + document['metadata']['excerp'] + '\n\n'
+        print('relevant_context: ', relevant_context)
+
+
+        #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
+        #print('----')
+        #for i, rel_doc in enumerate(relevant_documents):
+        #    if debugMessageMode=='true':
+        #        print(f'## Document {i+1}: {rel_doc}.......')
+        #        sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
+        #    else:
+        #        print(f'## Document {i+1}: {rel_doc.page_content}.......')
+        #print('---')        
+        #print('length of relevant_documents: ', len(relevant_documents))
+
+        stream = llm(PROMPT.format(context=relevant_context, question=text))
+        msg = readStreamMsg(connectionId, requestId, stream)
+
+        #source_documents = result['source_documents']
+        #print('source_documents: ', source_documents)
+
+        #if len(source_documents)>=1 and enableReference=='true':
+        #    msg = msg+get_reference(source_documents, rag_type)
+
         
     if isDebugging:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
