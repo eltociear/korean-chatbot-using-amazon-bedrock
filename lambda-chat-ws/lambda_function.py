@@ -773,8 +773,8 @@ def get_reference(docs, rag_type):
 
                 #<a href="#" onClick="alert('{excerpt}')" target=_blank>FAQ</a>
 
-                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\">FAQ ({confidence})</a>\n"
-                print('reference: ', f"{number}. <a href=\"#\" onClick=\"alert('{excerpt}')\">FAQ ({confidence})</a>\n")
+                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
+                print('reference: ', f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n")
                 
 
             else:
