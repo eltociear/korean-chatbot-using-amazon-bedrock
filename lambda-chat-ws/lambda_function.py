@@ -762,7 +762,8 @@ def get_reference(docs, rag_type):
             confidence = doc['confidence']
             if doc['metadata']['type'] == "QUESTION_ANSWER":
                 excerpt = doc['metadata']['excerpt']
-
+                excerpt = excerpt.replace('<br/>', '\n')
+                
                 reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
             else:
                 url = ""
