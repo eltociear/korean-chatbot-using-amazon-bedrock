@@ -902,12 +902,11 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         #print('---')        
         #print('length of relevant_documents: ', len(relevant_documents))
 
-
     relevant_docs = []
     for i, document in enumerate(relevant_documents):
         #print('document.page_content:', document.page_content)        
         #print('document.metadata:', document.metadata)
-        print(f'## Document {i+1}: excerpt: {document.page_content} metadata: {document.metadata}')
+        print(f'## Document {i+1}: {document}')
 
         name = document.metadata['name']
         page = document.metadata['page']
@@ -932,7 +931,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         }
         relevant_docs.append(doc_info)
 
-    return relevant_documents
+    return relevant_docs
 
 def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
@@ -975,27 +974,15 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             msg = msg+get_reference(source_documents, rag_type)
     else: # RetrievalPrompt
         if rag_type == 'kendra':
-            relevant_documents = retrieve_from_Kendra(query=revised_question, top_k=top_k)
+            relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
-            relevant_documents = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
-            print('relevant_documents: ', relevant_documents)
+            relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+        print('relevant_docs: ', relevant_docs)
 
         relevant_context = ""
-        for document in relevant_documents:
+        for document in relevant_docs:
             relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
-
-
-        #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-        #print('----')
-        #for i, rel_doc in enumerate(relevant_documents):
-        #    if debugMessageMode=='true':
-        #        print(f'## Document {i+1}: {rel_doc}.......')
-        #        sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
-        #    else:
-        #        print(f'## Document {i+1}: {rel_doc.page_content}.......')
-        #print('---')        
-        #print('length of relevant_documents: ', len(relevant_documents))
 
         try: 
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
@@ -1007,12 +994,8 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             sendErrorMessage(connectionId, requestId, err_msg)    
             raise Exception ("Not able to request to LLM")    
 
-        #source_documents = result['source_documents']
-        #print('source_documents: ', source_documents)
-
-        if len(relevant_documents)>=1 and enableReference=='true':
-            msg = msg+get_reference(relevant_documents, rag_type)
-
+        if len(relevant_docs)>=1 and enableReference=='true':
+            msg = msg+get_reference(relevant_docs, rag_type)
         
     if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
