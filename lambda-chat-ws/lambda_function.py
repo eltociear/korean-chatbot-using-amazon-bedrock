@@ -17,6 +17,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.llms.bedrock import Bedrock
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from botocore.config import Config
 
@@ -423,6 +424,9 @@ def get_prompt_template(query, convType):
 def store_document(path, s3_file_name, requestId):
     source_uri = path+s3_file_name
 
+    file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
+    print('file_type: ', file_type)
+
     kendra = boto3.client("kendra")
     result = kendra.batch_put_document(
         IndexId = kendraIndex,
@@ -449,6 +453,7 @@ def store_document(path, s3_file_name, requestId):
                         }
                     },
                 ],
+                "ContentType": file_type
             }
         ],        
     )
@@ -1031,7 +1036,9 @@ def getResponse(connectionId, jsonBody):
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')            
         else: 
-            memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True, k=20)
+            
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
@@ -1040,7 +1047,8 @@ def getResponse(connectionId, jsonBody):
                 memory_chat = map_chat[userId]
                 print('memory_chat exist. reuse it!')    
             else: 
-                memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+                # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
                 #from langchain.memory import ConversationSummaryBufferMemory
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
