@@ -737,7 +737,7 @@ def retrieve_from_Kendra(query, top_k):
             for query_result in resp["ResultItems"]:
                 confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
-                if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
+                if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
                     relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
 
                     if len(relevant_docs) >= top_k:
@@ -761,7 +761,7 @@ def retrieve_from_Kendra(query, top_k):
                     for query_result in resp["ResultItems"]:
                         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
-                        if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
+                        if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
                             relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
 
                             if len(relevant_docs) >= top_k:
