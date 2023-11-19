@@ -136,7 +136,7 @@ def sendErrorMessage(connectionId, requestId, msg):
     }
     #print('debug: ', json.dumps(debugMsg))
     sendMessage(connectionId, debugMsg)
-    
+
 def get_prompt_template(query, convType):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
@@ -145,7 +145,7 @@ def get_prompt_template(query, convType):
 
     if word_kor and word_kor != 'None':
         if convType == "normal": # for General Conversation
-            prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
+            prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             Current conversation:
             {history}
@@ -154,7 +154,7 @@ def get_prompt_template(query, convType):
             {input}
             </question>
             
-            Assistant: [서연]"""
+            Assistant:"""
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
@@ -410,7 +410,7 @@ def store_document(path, s3_file_name, requestId):
         IndexId = kendraIndex,
         RoleArn = roleArn
     )
-    print(result)
+    print('kendra batch put docuent: ', result)
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
@@ -582,7 +582,7 @@ def readStreamMsg(connectionId, requestId, stream):
             }
             #print('result: ', json.dumps(result))
             sendMessage(connectionId, result)
-    print('msg: ', msg)
+    # print('msg: ', msg)
     return msg
 
 _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
@@ -978,7 +978,7 @@ def getResponse(connectionId, jsonBody):
     body = jsonBody['body']
     # print('body: ', body)
     convType = jsonBody['convType']  # conversation type
-    # print('convType: ', convType)
+    print('Conversation Type: ', convType)
 
     global llm, modelId, vectorstore, enableReference, rag_type
     global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
@@ -1223,7 +1223,7 @@ def lambda_handler(event, context):
                 print('routeKey: ', routeKey)
         
                 jsonBody = json.loads(body)
-                print('body: ', jsonBody)
+                print('request body: ', jsonBody)
 
                 requestId  = jsonBody['request_id']
                 try:
