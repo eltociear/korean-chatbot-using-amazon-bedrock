@@ -47,16 +47,16 @@ opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 
-opensearch_uri = os.environ.get('opensearch_uri')
+endpoint_url = os.environ.get('endpoint_url')
 path = os.environ.get('path')
 
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
 
 # websocket
-connection_uri = os.environ.get('connection_uri')
-client = boto3.client('apigatewaymanagementapi', endpoint_uri=connection_uri)
-print('connection_uri: ', connection_uri)
+connection_url = os.environ.get('connection_url')
+client = boto3.client('apigatewaymanagementapi', endpoint_uri=connection_url)
+print('connection_url: ', connection_url)
 
 # bedrock   
 boto3_bedrock = boto3.client(
@@ -1127,7 +1127,7 @@ def getResponse(connectionId, jsonBody):
             m=48,
             #engine="faiss",  # default: nmslib
             embedding_function = bedrock_embeddings,
-            opensearch_uri=opensearch_uri,
+            endpoint_url=endpoint_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
     elif convType == 'qa' and rag_type == 'faiss':
@@ -1268,7 +1268,7 @@ def getResponse(connectionId, jsonBody):
                         is_aoss = False,
                         #engine="faiss",  # default: nmslib
                         embedding_function = bedrock_embeddings,
-                        opensearch_uri = opensearch_uri,
+                        endpoint_url = endpoint_url,
                         http_auth=(opensearch_account, opensearch_passwd),
                     )
                     new_vectorstore.add_documents(docs)                              
