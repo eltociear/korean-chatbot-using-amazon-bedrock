@@ -47,16 +47,16 @@ opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 
-opensearch_url = os.environ.get('opensearch_url')
+opensearch_uri = os.environ.get('opensearch_uri')
 path = os.environ.get('path')
 
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
 
 # websocket
-connection_url = os.environ.get('connection_url')
-client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
-print('connection_url: ', connection_url)
+connection_uri = os.environ.get('connection_uri')
+client = boto3.client('apigatewaymanagementapi', endpoint_uri=connection_uri)
+print('connection_uri: ', connection_uri)
 
 # bedrock   
 boto3_bedrock = boto3.client(
@@ -517,7 +517,7 @@ def load_csv_document(s3_file_name):
             metadata={
                 'name': s3_file_name,
                 'page': n+1,
-                'url': path+s3_file_name
+                'uri': path+s3_file_name
             }
             #metadata=to_metadata
         )
@@ -848,43 +848,40 @@ def get_reference(docs, rag_type):
                 excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
                 reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
             else:
-                url = ""
+                uri = ""
                 if "title" in doc['metadata']:
                     #print('metadata: ', json.dumps(doc['metadata']))
                     name = doc['metadata']['title']
                     if name: 
-                        url = path+name
+                        uri = path+name
 
                 page = ""
                 if "document_attributes" in doc['metadata']:
                     if "_excerpt_page_number" in doc['metadata']['document_attributes']:
                         page = doc['metadata']['document_attributes']['_excerpt_page_number']
                                         
-                if url and page: 
+                if uri and page: 
                     #reference = reference + (str(page)+'page in '+name+'\n')
-                    reference = reference + f"{number}. {page}page in <a href={url} target=_blank>{name} ({confidence})</a>\n"
-                elif url:
+                    reference = reference + f"{number}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                elif uri:
                     #reference = reference + name+'\n'
-                    reference = reference + f"{number}. <a href={url} target=_blank>{name} ({confidence})</a>\n"
+                    reference = reference + f"{number}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
             number = number+1
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
             print('doc: ', doc)
 
-            #name = doc['metadata']['name']
-            #page = doc['metadata']['page']
-            #url = doc['metadata']['url']
             name = doc.metadata['name']
             page = doc.metadata['row']
-            url = doc.metadata['url']
+            uri = doc.metadata['uri']
 
             print('name: ', name)
             print('page: ', page)
-            print('url: ', url)
+            print('uri: ', uri)
                     
-            #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
-            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
+            #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
+            reference = reference + f"{page}page in <a href={uri} target=_blank>{name}</a>\n"
         
     return reference
 
@@ -899,6 +896,13 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
     relevant_docs = []
     for document in relevant_documents:
+        print('document.page_content:', document.page_content)
+        
+        print('document.metadata:', document.metadata)
+        name = document.metadata['name']
+        page = document.metadata['page']
+        uri = document.metadata['uri']
+
         doc_info = {
             "rag_type": rag_type,
             #"api_type": apiType,
@@ -906,11 +910,11 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             "metadata": {
                 #"type": query_result_type,
                 #"document_id": document_id,
-                #"source": document_uri,
-                #"title": document_title,
-                #"excerpt": excerpt,
+                "source": uri,
+                "title": name,
+                "excerpt": document.page_content,
                 "document_attributes": {
-                    #"_excerpt_page_number": page
+                    "_excerpt_page_number": page
                 }
             },
             #"query_id": query_id,
@@ -1123,7 +1127,7 @@ def getResponse(connectionId, jsonBody):
             m=48,
             #engine="faiss",  # default: nmslib
             embedding_function = bedrock_embeddings,
-            opensearch_url=opensearch_url,
+            opensearch_uri=opensearch_uri,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
     elif convType == 'qa' and rag_type == 'faiss':
@@ -1233,7 +1237,7 @@ def getResponse(connectionId, jsonBody):
                             metadata={
                                 'name': object,
                                 'page':i+1,
-                                'url': path+object
+                                'uri': path+object
                             }
                         )
                     )        
@@ -1264,7 +1268,7 @@ def getResponse(connectionId, jsonBody):
                         is_aoss = False,
                         #engine="faiss",  # default: nmslib
                         embedding_function = bedrock_embeddings,
-                        opensearch_url = opensearch_url,
+                        opensearch_uri = opensearch_uri,
                         http_auth=(opensearch_account, opensearch_passwd),
                     )
                     new_vectorstore.add_documents(docs)                              
