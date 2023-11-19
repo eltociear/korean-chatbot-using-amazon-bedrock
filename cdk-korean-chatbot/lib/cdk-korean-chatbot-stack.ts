@@ -264,10 +264,10 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
         value: 'https://'+domain.domainEndpoint,
         description: 'The endpoint of OpenSearch Domain',
-      });
+      }); 
 
-      opensearch_url = 'https://'+domain.domainEndpoint;
-    } */
+      opensearch_url = 'https://'+domain.domainEndpoint; */
+    }
 
     // api role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
