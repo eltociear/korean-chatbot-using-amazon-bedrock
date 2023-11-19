@@ -149,8 +149,12 @@ def get_prompt_template(query, convType):
 # - If you are unsure how to respond, say “Sorry, I didn’t understand that. Could you repeat the question?”
 # - If someone asks something irrelevant, say, “Sorry, I am Joe and I give career advice. Do you have a career question today I can help you with?”
 #Here is an example of how to respond in a standard interaction:
-#<example>User: Hi, how were you created and what do you do? Joe: Hello! My name is Joe, and I was created by AdAstra Careers to give career advice. What can I help you with today?</example>
-#Here is the conversation history (between the user and you) prior to the question. It could be empty if there is no history:<history> {{HISTORY}} </history>
+#<example>
+#User: Hi, how were you created and what do you do? 
+#Joe: Hello! My name is Joe, and I was created by AdAstra Careers to give career advice. What can I help you with today?
+#</example>
+#Here is the conversation history (between the user and you) prior to the question. It could be empty if there is no history:
+#<history> {{HISTORY}} </history>
 #Here is the user’s question: <question> {{QUESTION}} </question>
 #How do you respond to the user’s question?
 #Think about your answer first before you respond. Put your response in <response></response> tags.
@@ -158,7 +162,9 @@ def get_prompt_template(query, convType):
 
     if word_kor and word_kor != 'None':
         if convType == "normal": # for General Conversation
-            prompt_template = """\n\nHuman: Assistant의 이름은 서연이고, 질문에 친절하게 답변합니다. 다음은 이전에 있었던 Human과 Assistant의 친근한 대화입니다. 
+            prompt_template = """\n\nHuman: 너의 이름은 서연이고, 개인 비서로서 질문에 친절하게 답변합니다. 
+            
+            다음은 이전에 있었던 Human과 Assistant의 친근한 대화입니다. 
             <history> 
             {history} 
             </history>
