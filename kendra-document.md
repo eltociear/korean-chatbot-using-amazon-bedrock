@@ -20,7 +20,7 @@ Kendra의 검색 성능을 향상시키기 위한 방법에 대해 설명합니�
 
 ## [BatchPutDocument](https://docs.aws.amazon.com/kendra/latest/APIReference/API_BatchPutDocument.html) API에서 Attribute 추가하기
 
-[batch_put_document](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/kendra/client/batch_put_document.html)에 따라 
+[batch_put_document](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/kendra/client/batch_put_document.html)에 따라 아래처럼 attribute를 지정할 수 있습니다.
 
 ```java
 response = client.batch_put_document(
