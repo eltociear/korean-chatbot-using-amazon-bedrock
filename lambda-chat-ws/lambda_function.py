@@ -931,10 +931,23 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
 def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
     conversation.prompt = get_prompt_template(text, convType)
-    stream = conversation.predict(input=text)
-    #print('stream: ', stream)
-                        
-    msg = readStreamMsg(connectionId, requestId, stream)
+
+    try: 
+        stream = conversation.predict(input=text)
+        #print('stream: ', stream)                        
+        msg = readStreamMsg(connectionId, requestId, stream)
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        
+        result = {
+            'request_id': requestId,
+            'msg': err_msg,
+            'status': 'failed'
+        }
+        sendMessage(connectionId, result)
+        
+        raise Exception ("Not able to request to LLM")     
 
     if isDebugging==True:   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
