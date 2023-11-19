@@ -104,7 +104,7 @@ def get_retrieve_using_Kendra(index_id, query, top_k):
 
 ## User/Group별 활용
 
-[DataSourceGroup](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_DataSourceGroup.html)는 데이터 소스 그룹별로 검색할 수 있습니다.
+Document에 대한 접근권한을 관리할 수 있도록 [UserContext](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_UserContext.html)를 이용합니다. 이때, [DataSourceGroup](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_DataSourceGroup.html)는 데이터 소스 그룹별로 검색을 아래와 같이 지정할 수 있습니다.
 
 ```
 response = client.query(
