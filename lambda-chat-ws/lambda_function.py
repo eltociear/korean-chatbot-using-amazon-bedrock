@@ -873,8 +873,8 @@ def get_reference(docs, rag_type):
             print('doc: ', doc)
 
             name = doc.metadata['name']
-            page = doc.metadata['row']
-            uri = doc.metadata['url']
+            page = doc.metadata['page']
+            uri = doc.metadata['uri']
 
             print('name: ', name)
             print('page: ', page)
@@ -901,7 +901,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         print('document.metadata:', document.metadata)
         name = document.metadata['name']
         page = document.metadata['page']
-        uri = document.metadata['url']
+        uri = document.metadata['uri']
 
         doc_info = {
             "rag_type": rag_type,
