@@ -132,6 +132,8 @@ response = client.query(
 
 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)
 
+[Enterprise Search with Amazon Kendra](https://github.com/aws-samples/enterprise-search-with-amazon-kendra-workshop/tree/master)
+
 ## Samples
 
 ### QUESTION_ANSWER
