@@ -837,48 +837,69 @@ def retrieve_from_Kendra(query, top_k):
 
     return relevant_docs
 
-def get_reference(docs, rag_type):
-    if rag_type == 'kendra':
-        reference = "\n\nFrom\n"
+def get_reference(docs, rag_method, rag_type):
+    if rag_method == 'RetrievalQA':
+        if rag_type == 'kendra':
+            reference = "\n\nFrom\n"
+            for i, doc in enumerate(docs):
+                name = doc.metadata['title']
+                uri = path+name
 
-        number = 1
-        for doc in docs:
-            confidence = doc['confidence']
-            if doc['metadata']['type'] == "QUESTION_ANSWER":
-                excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
-                reference = reference + f"{number}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
-            else:
-                uri = ""
-                if "title" in doc['metadata']:
-                    #print('metadata: ', json.dumps(doc['metadata']))
-                    name = doc['metadata']['title']
-                    if name: 
-                        uri = path+name
+                if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
+                    page = doc.metadata['document_attributes']['_excerpt_page_number']
+                    reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
+                else:
+                    reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
+        else:
+            reference = "\n\nFrom\n"            
+            for i, doc in enumerate(docs):
+                print(f'## Document {i+1}: {doc}')
 
-                page = ""
-                if "document_attributes" in doc['metadata']:
-                    if "_excerpt_page_number" in doc['metadata']['document_attributes']:
-                        page = doc['metadata']['document_attributes']['_excerpt_page_number']
-                                        
-                if uri and page: 
-                    #reference = reference + (str(page)+'page in '+name+'\n')
-                    reference = reference + f"{number}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
-                elif uri:
-                    #reference = reference + name+'\n'
-                    reference = reference + f"{number}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
-            number = number+1
-    else:
-        reference = "\n\nFrom\n"
-        
-        for i, doc in enumerate(docs):
-            print(f'## Document {i+1}: {doc}')
+                name = doc.metadata['name']
+                page = doc.metadata['page']
+                uri = doc.metadata['uri']
 
-            name = doc.metadata['name']
-            page = doc.metadata['page']
-            uri = doc.metadata['uri']
+                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+    else: 
+        if rag_type == 'kendra':
+            reference = "\n\nFrom\n"
+            for i, doc in enumerate(docs):
+                confidence = doc['confidence']
+                if doc['metadata']['type'] == "QUESTION_ANSWER":
+                    excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
+                    reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
+                else:
+                    uri = ""
+                    if "title" in doc['metadata']:
+                        #print('metadata: ', json.dumps(doc['metadata']))
+                        name = doc['metadata']['title']
+                        if name: 
+                            uri = path+name
 
-            #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
-            reference = reference + f"{page}page in <a href={uri} target=_blank>{name}</a>\n"
+                    page = ""
+                    if "document_attributes" in doc['metadata']:
+                        if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                            page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                                            
+                    if uri and page: 
+                        #reference = reference + (str(page)+'page in '+name+'\n')
+                        reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                    elif uri:
+                        #reference = reference + name+'\n'
+                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+        else:
+            reference = "\n\nFrom\n"
+            
+            for i, doc in enumerate(docs):
+                print(f'## Document {i+1}: {doc}')
+
+                name = doc['metadata']['name']
+                page = doc['metadata']['page']
+                uri = doc['metadata']['uri']
+
+                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
         
     return reference
 
@@ -955,6 +976,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
                     "k": top_k
                 }
             )
+
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
@@ -971,7 +993,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         print('source_documents: ', source_documents)
 
         if len(source_documents)>=1 and enableReference=='true':
-            msg = msg+get_reference(source_documents, rag_type)
+            msg = msg+get_reference(source_documents, rag_method, rag_type)
     else: # RetrievalPrompt
         if rag_type == 'kendra':
             relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
@@ -995,7 +1017,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             raise Exception ("Not able to request to LLM")    
 
         if len(relevant_docs)>=1 and enableReference=='true':
-            msg = msg+get_reference(relevant_docs, rag_type)
+            msg = msg+get_reference(relevant_docs, rag_method, rag_type)
         
     if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory() 
