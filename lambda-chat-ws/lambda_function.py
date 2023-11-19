@@ -32,6 +32,7 @@ s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
 bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
+kendra_region = os.environ.get('kendra_region', 'us-west-2')
 modelId = os.environ.get('model_id', 'anthropic.claude-v2')
 print('model_id: ', modelId)
 rag_type = os.environ.get('rag_type', 'faiss')
@@ -125,9 +126,9 @@ bedrock_embeddings = BedrockEmbeddings(
 map_chain = dict() # Conversation with RAG
 map_chat = dict() # Conversation for normal 
 
-kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
+#kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
 #kendra_regin = 'us-west-2'
-#kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5,region_name=kendra_regin)
+kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5, region_name=kendra_regin)
 
 def get_prompt_template(query, convType):
     # check korean
@@ -713,12 +714,16 @@ def retrieve_from_Kendra(query, top_k):
     print('query: ', query)
 
     index_id = kendraIndex    
-    config = Config(
-        retries=dict(
-            max_attempts=10
+    
+    kendra_client = boto3.client(
+        service_name='kendra', 
+        region_name=kendra_region,
+        config = Config(
+            retries=dict(
+                max_attempts=10
+            )
         )
     )
-    kendra_client = boto3.client('kendra', config=config)
 
     try:
         resp =  kendra_client.retrieve(

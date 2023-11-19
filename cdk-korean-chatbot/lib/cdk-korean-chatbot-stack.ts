@@ -23,7 +23,8 @@ const model_id = "anthropic.claude-v2"; // anthropic.claude-v1, anthropic.claude
 const projectName = `korean-chatbot`; 
 
 const bucketName = `storage-for-${projectName}-${region}`; 
-const bedrock_region = "us-east-1";  // "us-east-1" "us-west-2" 
+const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
+const kendra_region = "us-west-2"; 
 
 const rag_type = 'kendra';  // faiss, opensearch, kendra
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA
@@ -525,6 +526,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       role: roleLambdaWebsocket,
       environment: {
         bedrock_region: bedrock_region,
+        kendra_region: kendra_region,
         model_id: model_id,
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
