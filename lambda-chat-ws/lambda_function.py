@@ -869,16 +869,10 @@ def get_reference(docs, rag_type):
             number = number+1
     else:
         reference = "\n\nFrom\n"
-        for doc in docs:
+        
+        for i, doc in enumerate(docs):
+            print(f'## Document {i+1}: {doc.page_content}, metadata: {doc.metadata}') 
             print('doc: ', doc)
-
-            name = doc.metadata['name']
-            page = doc.metadata['page']
-            uri = doc.metadata['uri']
-
-            print('name: ', name)
-            print('page: ', page)
-            print('uri: ', uri)
                     
             #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
             reference = reference + f"{page}page in <a href={uri} target=_blank>{name}</a>\n"
@@ -894,11 +888,24 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore.similarity_search(query)
 
+        #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
+        #print('----')
+        #for i, rel_doc in enumerate(relevant_documents):
+        #    if debugMessageMode=='true':
+        #        print(f'## Document {i+1}: {rel_doc}.......')
+        #        sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
+        #    else:
+        #        print(f'## Document {i+1}: {rel_doc.page_content}.......')
+        #print('---')        
+        #print('length of relevant_documents: ', len(relevant_documents))
+
+
     relevant_docs = []
-    for document in relevant_documents:
-        print('document.page_content:', document.page_content)
-        
-        print('document.metadata:', document.metadata)
+    for i, document in enumerate(relevant_documents):
+        #print('document.page_content:', document.page_content)        
+        #print('document.metadata:', document.metadata)
+        print(f'## Document {i+1}: excerpt: {document.page_content} metadata: {document.metadata}')
+
         name = document.metadata['name']
         page = document.metadata['page']
         uri = document.metadata['uri']
