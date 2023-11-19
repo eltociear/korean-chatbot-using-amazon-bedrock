@@ -889,14 +889,13 @@ def get_reference(docs, rag_method, rag_type):
                         #reference = reference + name+'\n'
                         reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
         else:
-            reference = "\n\nFrom\n"
-            
+            reference = "\n\nFrom\n"            
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
-
-                name = doc['metadata']['name']
-                page = doc['metadata']['page']
-                uri = doc['metadata']['uri']
+                
+                page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                uri = doc['metadata']['source']
+                name = doc['metadata']['title']
 
                 #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
