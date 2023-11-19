@@ -87,7 +87,31 @@ def get_retrieve_using_Kendra(index_id, query, top_k):
 
 [ScoreAttributes](https://docs.aws.amazon.com/kendra/latest/APIReference/API_ScoreAttributes.html)와 같이 "VERY_HIGH", "HIGH", "MEDIUM", "LOW", "NOT_AVAILABLE"로 결과의 신뢰도를 확인할 수 있습니다.
 
-```text
+
+## FAQ (Frequently asked questions)
+
+[FAQ-Kendra](https://github.com/aws-samples/enterprise-search-with-amazon-kendra-workshop/blob/master/Part%202%20-%20Adding%20a%20FAQ.md)를 참조합니다. [kendra-faq-refresher](https://github.com/aws-samples/amazon-kendra-faq-refresher/tree/main)를 참조하여 FAQ를 Kendra 검색 결과로 활용할 수 있습니다.
+
+여기서는 [Kendra FAQ](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra_faq.md)와 같이 Kendra의 Query API로 FAQ의 결과를 얻으면, 질문과 결과를 함께 excerpt로 활용합니다.
+
+## Kendra 성능향상 방법
+
+[Relevance tuning with Amazon Kendra](https://aws.amazon.com/ko/blogs/machine-learning/relevance-tuning-with-amazon-kendra/)
+
+[Submitting feedback for incremental learning](https://docs.aws.amazon.com/kendra/latest/dg/submitting-feedback.html)
+
+[Tuning search relevance](https://docs.aws.amazon.com/kendra/latest/dg/tuning.html)
+
+
+## Reference
+
+[Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)
+
+## Samples
+
+### QUESTION_ANSWER
+
+```java
 [
    {
       "Id":"74719041-8126-473c-92f1-929fdc520138-188b319d-552f-4ff4-a7d5-8cbcd21dbea8",
@@ -180,20 +204,8 @@ def get_retrieve_using_Kendra(index_id, query, top_k):
 ]
 ```
 
-## FAQ (Frequently asked questions)
 
-[FAQ-Kendra](https://github.com/aws-samples/enterprise-search-with-amazon-kendra-workshop/blob/master/Part%202%20-%20Adding%20a%20FAQ.md)를 참조합니다. [kendra-faq-refresher](https://github.com/aws-samples/amazon-kendra-faq-refresher/tree/main)를 참조하여 FAQ를 Kendra 검색 결과로 활용할 수 있습니다.
-
-여기서는 [Kendra FAQ](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra_faq.md)와 같이 Kendra의 Query API로 FAQ의 결과를 얻으면, 질문과 결과를 함께 excerpt로 활용합니다.
-
-
-
-
-## Reference
-
-[Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)
-
-## Document
+### Document
 
 ```text
 {
