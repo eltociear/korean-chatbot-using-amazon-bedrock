@@ -55,7 +55,7 @@ roleArn = os.environ.get('roleArn')
 
 # websocket
 connection_url = os.environ.get('connection_url')
-client = boto3.client('apigatewaymanagementapi', endpoint_uri=connection_url)
+client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
 print('connection_url: ', connection_url)
 
 # bedrock   
