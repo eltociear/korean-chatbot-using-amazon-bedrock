@@ -102,6 +102,28 @@ def get_retrieve_using_Kendra(index_id, query, top_k):
 
 [Tuning search relevance](https://docs.aws.amazon.com/kendra/latest/dg/tuning.html)
 
+## User/Group별 활용
+
+[DataSourceGroup](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_DataSourceGroup.html)는 데이터 소스 그룹별로 검색할 수 있습니다.
+
+```
+response = client.query(
+    IndexId='string',
+    QueryText='string',
+    UserContext={
+        'Token': 'string',
+        'UserId': 'string',
+        'Groups': [
+            'string',
+        ],
+        'DataSourceGroups': [
+            {
+                'GroupId': 'string',
+                'DataSourceId': 'string'
+            },
+        ]
+    },
+```
 
 ## Reference
 
