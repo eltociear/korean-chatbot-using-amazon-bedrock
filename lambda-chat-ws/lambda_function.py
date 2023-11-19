@@ -57,26 +57,6 @@ connection_url = os.environ.get('connection_url')
 client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
 print('connection_url: ', connection_url)
 
-def sendMessage(id, body):
-    try:
-        client.post_to_connection(
-            ConnectionId=id, 
-            Data=json.dumps(body)
-        )
-    except Exception as ex:
-        err_msg = traceback.format_exc()
-        print('err_msg: ', err_msg)
-        raise Exception ("Not able to send a message")
-    
-def sendDebugMessage(connectionId, requestId, msg):
-    debugMsg = {
-        'request_id': requestId,
-        'msg': msg,
-        'status': 'debug'
-    }
-    #print('debug: ', json.dumps(debugMsg))
-    sendMessage(connectionId, debugMsg)
-
 # bedrock   
 boto3_bedrock = boto3.client(
     service_name='bedrock-runtime',
@@ -128,6 +108,35 @@ map_chat = dict() # Conversation for normal
 
 kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5, region_name=kendra_region)
 
+def sendMessage(id, body):
+    try:
+        client.post_to_connection(
+            ConnectionId=id, 
+            Data=json.dumps(body)
+        )
+    except Exception as ex:
+        err_msg = traceback.format_exc()
+        print('err_msg: ', err_msg)
+        raise Exception ("Not able to send a message")
+    
+def sendDebugMessage(connectionId, requestId, msg):
+    debugMsg = {
+        'request_id': requestId,
+        'msg': msg,
+        'status': 'debug'
+    }
+    #print('debug: ', json.dumps(debugMsg))
+    sendMessage(connectionId, debugMsg)
+
+def sendErrorMessage(connectionId, requestId, msg):
+    debugMsg = {
+        'request_id': requestId,
+        'msg': msg,
+        'status': 'error'
+    }
+    #print('debug: ', json.dumps(debugMsg))
+    sendMessage(connectionId, debugMsg)
+    
 def get_prompt_template(query, convType):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
@@ -617,13 +626,7 @@ def get_revised_question(connectionId, requestId, query):
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
 
-        result = {
-            'request_id': requestId,
-            'msg': err_msg,
-            'status': 'failed'
-        }
-        sendMessage(connectionId, result)
-        
+        sendErrorMessage(connectionId, requestId, err_msg)        
         raise Exception ("Not able to request to LLM")    
     
     return revised_question
@@ -907,13 +910,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
 
-            result = {
-                'request_id': requestId,
-                'msg': err_msg,
-                'status': 'failed'
-            }
-            sendMessage(connectionId, result)
-
+            sendErrorMessage(connectionId, requestId, err_msg)    
             raise Exception ("Not able to request to LLM")    
 
         #source_documents = result['source_documents']
@@ -943,13 +940,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         
-        result = {
-            'request_id': requestId,
-            'msg': err_msg,
-            'status': 'failed'
-        }
-        sendMessage(connectionId, result)
-        
+        sendErrorMessage(connectionId, requestId, err_msg)    
         raise Exception ("Not able to request to LLM")     
 
     if isDebugging==True:   # extract chat history for debug
@@ -970,13 +961,7 @@ def get_answer_from_PROMPT(text, convType, connectionId, requestId):
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         
-        result = {
-            'request_id': requestId,
-            'msg': err_msg,
-            'status': 'failed'
-        }
-        sendMessage(connectionId, result)
-        
+        sendErrorMessage(connectionId, requestId, err_msg)    
         raise Exception ("Not able to request to LLM")    
     
     return msg
@@ -1127,13 +1112,7 @@ def getResponse(connectionId, jsonBody):
                         err_msg = traceback.format_exc()
                         print('error message: ', err_msg)        
 
-                        result = {
-                            'request_id': requestId,
-                            'msg': err_msg,
-                            'status': 'failed'
-                        }
-                        sendMessage(connectionId, result)
-
+                        sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")    
                 else: 
                     msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
@@ -1253,13 +1232,7 @@ def lambda_handler(event, context):
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
 
-                    result = {
-                        'request_id': requestId,
-                        'msg': err_msg,
-                        'status': 'failed'
-                    }
-                    sendMessage(connectionId, result)
-
+                    sendErrorMessage(connectionId, requestId, err_msg)    
                     raise Exception ("Not able to send a message")
                                     
                 result = {
