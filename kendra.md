@@ -26,12 +26,15 @@ Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/
 
 ```python
 def get_retrieve_using_Kendra(index_id, query, top_k):
-    config = Config(
-        retries=dict(
-            max_attempts=10
+    kendra_client = boto3.client(
+        service_name='kendra', 
+        region_name=kendra_region,
+        config = Config(
+            retries=dict(
+                max_attempts=10
+            )
         )
     )
-    kendra_client = boto3.client('kendra', config=config)
 
     attributeFilter = {
         "AndAllFilters": [
