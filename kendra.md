@@ -1,4 +1,4 @@
-# Kendra 성능 향상 방법
+# Kendra 를 이용한 RAG의 구현
 
 Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)를 이용합니다.
 
