@@ -428,10 +428,8 @@ def store_document(path, s3_file_name, requestId):
     print('file_type: ', file_type)
 
     kendra = boto3.client("kendra")
-    result = kendra.batch_put_document(
-        IndexId = kendraIndex,
-        RoleArn = roleArn,
-        Documents = [
+
+    documents = [
             {
                 "Id": requestId,
                 "Title": s3_file_name,
@@ -455,9 +453,15 @@ def store_document(path, s3_file_name, requestId):
                 ],
                 "ContentType": file_type
             }
-        ],        
+        ]
+    print('document info: ', documents)
+
+    result = kendra.batch_put_document(
+        IndexId = kendraIndex,
+        RoleArn = roleArn,
+        Documents = documents       
     )
-    print('kendra batch put docuent: ', result)
+    print('batch_put_document(kendra): ', result)
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
