@@ -158,9 +158,7 @@ def get_prompt_template(query, convType):
 
     if word_kor and word_kor != 'None':
         if convType == "normal": # for General Conversation
-            prompt_template = """\n\nAssistant의 이름은 서연이고, 질문에 친절하게 답변합니다. 
-                
-            다음은 이전에 있었던 Human과 Assistant의 친근한 대화입니다. 
+            prompt_template = """\n\nHuman: Assistant의 이름은 서연이고, 질문에 친절하게 답변합니다. 다음은 이전에 있었던 Human과 Assistant의 친근한 대화입니다. 
             <history> 
             {history} 
             </history>
@@ -170,7 +168,7 @@ def get_prompt_template(query, convType):
             {input} 
             </question>
 
-            Assistant은 질문에 대답하기 전에 충분히 생각하고 상황에 맞는 구체적인 세부 정보를 제공합니다. 모르는 질문을 받으면 솔직히 모른다고 말합니다.            
+            Assistant는 질문에 대답하기 전에 충분히 생각하고 상황에 맞는 구체적인 세부 정보를 제공합니다. 모르는 질문을 받으면 솔직히 모른다고 말합니다.            
             Assistant:"""
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
