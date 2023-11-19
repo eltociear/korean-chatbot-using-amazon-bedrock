@@ -874,7 +874,7 @@ def get_reference(docs, rag_type):
 
             name = doc.metadata['name']
             page = doc.metadata['row']
-            uri = doc.metadata['uri']
+            uri = doc.metadata['url']
 
             print('name: ', name)
             print('page: ', page)
@@ -901,7 +901,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         print('document.metadata:', document.metadata)
         name = document.metadata['name']
         page = document.metadata['page']
-        uri = document.metadata['uri']
+        uri = document.metadata['url']
 
         doc_info = {
             "rag_type": rag_type,
@@ -934,15 +934,6 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     #print('PROMPT: ', PROMPT)         
     
     top_k = 5
-
-    # debug
-    relevant_documents = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
-    print('relevant_documents: ', relevant_documents)
-
-    relevant_context = ""
-    for document in relevant_documents:
-        relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
-    print('relevant_context: ', relevant_context)
     
     if rag_method == 'RetrievalQA': # RetrievalQA
         if rag_type=='kendra':
