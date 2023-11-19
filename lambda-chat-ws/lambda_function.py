@@ -47,7 +47,7 @@ opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 
-endpoint_url = os.environ.get('endpoint_url')
+opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 
 kendraIndex = os.environ.get('kendraIndex')
@@ -1127,7 +1127,7 @@ def getResponse(connectionId, jsonBody):
             m=48,
             #engine="faiss",  # default: nmslib
             embedding_function = bedrock_embeddings,
-            endpoint_url=endpoint_url,
+            opensearch_url=opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
     elif convType == 'qa' and rag_type == 'faiss':
@@ -1268,7 +1268,7 @@ def getResponse(connectionId, jsonBody):
                         is_aoss = False,
                         #engine="faiss",  # default: nmslib
                         embedding_function = bedrock_embeddings,
-                        endpoint_url = endpoint_url,
+                        opensearch_url = opensearch_url,
                         http_auth=(opensearch_account, opensearch_passwd),
                     )
                     new_vectorstore.add_documents(docs)                              
