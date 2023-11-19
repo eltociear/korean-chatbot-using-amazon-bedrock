@@ -126,9 +126,7 @@ bedrock_embeddings = BedrockEmbeddings(
 map_chain = dict() # Conversation with RAG
 map_chat = dict() # Conversation for normal 
 
-#kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
-#kendra_regin = 'us-west-2'
-kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5, region_name=kendra_regin)
+kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5, region_name=kendra_region)
 
 def get_prompt_template(query, convType):
     # check korean
