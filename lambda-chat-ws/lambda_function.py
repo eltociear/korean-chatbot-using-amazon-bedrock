@@ -114,7 +114,7 @@ def sendMessage(id, body):
             ConnectionId=id, 
             Data=json.dumps(body)
         )
-    except Exception as ex:
+    except Exception:
         err_msg = traceback.format_exc()
         print('err_msg: ', err_msg)
         raise Exception ("Not able to send a message")
@@ -681,7 +681,7 @@ def get_revised_question(connectionId, requestId, query):
     try:         
         revised_question = question_generator_chain.run({"question": query, "chat_history": chat_history})
 
-    except Exception as ex:
+    except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
 
@@ -834,12 +834,12 @@ def retrieve_from_Kendra(query, top_k):
                     print('No result for Query API. Finally, no relevant docs!')
                     relevant_docs = []
 
-            except Exception as ex:
+            except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)
                 raise Exception ("Not able to query from Kendra")                
 
-    except Exception as ex:
+    except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         raise Exception ("Not able to retrieve from Kendra")     
@@ -965,7 +965,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         try: 
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
-        except Exception as ex:
+        except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
 
@@ -995,7 +995,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
         stream = conversation.predict(input=text)
         #print('stream: ', stream)                        
         msg = readStreamMsg(connectionId, requestId, stream)
-    except Exception as ex:
+    except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         
@@ -1016,7 +1016,7 @@ def get_answer_from_PROMPT(text, convType, connectionId, requestId):
     try: 
         stream = llm(PROMPT.format(input=text))
         msg = readStreamMsg(connectionId, requestId, stream)
-    except Exception as ex:
+    except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         
@@ -1161,13 +1161,13 @@ def getResponse(connectionId, jsonBody):
                     else: 
                         msg = get_answer_using_RAG(text, rag_type, convType, connectionId, requestId)     
                 
-                elif convType == 'normal':      # normal
+                elif convType == 'normal' or convType == 'funny':      # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
                 
                 elif convType == 'none':   # no prompt
                     try: 
                         msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
-                    except Exception as ex:
+                    except Exception:
                         err_msg = traceback.format_exc()
                         print('error message: ', err_msg)        
 
@@ -1251,7 +1251,7 @@ def getResponse(connectionId, jsonBody):
         client = boto3.client('dynamodb')
         try:
             resp =  client.put_item(TableName=callLogTableName, Item=item)
-        except Exception as ex:
+        except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)
             raise Exception ("Not able to write into dynamodb")        
@@ -1287,7 +1287,7 @@ def lambda_handler(event, context):
                 requestId  = jsonBody['request_id']
                 try:
                     msg = getResponse(connectionId, jsonBody)
-                except Exception as ex:
+                except Exception:
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
 
