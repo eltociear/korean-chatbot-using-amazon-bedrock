@@ -421,24 +421,36 @@ def get_prompt_template(query, convType):
 
 # store document into Kendra
 def store_document(path, s3_file_name, requestId):
-    documentInfo = {
-        "S3Path": {
-            "Bucket": s3_bucket,
-            "Key": s3_prefix+'/'+s3_file_name
-        },
-        "Title": s3_file_name,
-        "Id": requestId        
-    }
-
-    documents = [
-        documentInfo
-    ]
+    source_uri = path+s3_file_name
 
     kendra = boto3.client("kendra")
     result = kendra.batch_put_document(
-        Documents = documents,
         IndexId = kendraIndex,
-        RoleArn = roleArn
+        RoleArn = roleArn,
+        Documents = [
+            {
+                "Id": requestId,
+                "Title": s3_file_name,
+                "S3Path": {
+                    "Bucket": s3_bucket,
+                    "Key": s3_prefix+'/'+s3_file_name
+                },
+                "Attributes": [
+                    {
+                        "Key": '_source_uri',
+                        'Value': {
+                            'StringValue': source_uri
+                        }
+                    },
+                    {
+                        "Key": '_language_code',
+                        'Value': {
+                            'StringValue': "ko"
+                        }
+                    },
+                ],
+            }
+        ],        
     )
     print('kendra batch put docuent: ', result)
 
