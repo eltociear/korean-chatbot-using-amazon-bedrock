@@ -870,10 +870,19 @@ def get_reference(docs, rag_type):
     else:
         reference = "\n\nFrom\n"
         for doc in docs:
-            name = doc['metadata']['name']
-            page = doc['metadata']['page']
-            url = doc['metadata']['url']
-        
+            print('doc: ', doc)
+
+            #name = doc['metadata']['name']
+            #page = doc['metadata']['page']
+            #url = doc['metadata']['url']
+            name = doc.metadata['name']
+            page = doc.metadata['row']
+            url = doc.metadata['url']
+
+            print('name: ', name)
+            print('page: ', page)
+            print('url: ', url)
+                    
             #reference = reference + (str(page)+'page in '+name+' ('+url+')'+'\n')
             reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
         
@@ -888,6 +897,28 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore.similarity_search(query)
 
+    relevant_docs = []
+    for document in relevant_documents:
+        doc_info = {
+            "rag_type": rag_type,
+            #"api_type": apiType,
+            #"confidence": confidence,
+            "metadata": {
+                #"type": query_result_type,
+                #"document_id": document_id,
+                #"source": document_uri,
+                #"title": document_title,
+                #"excerpt": excerpt,
+                "document_attributes": {
+                    #"_excerpt_page_number": page
+                }
+            },
+            #"query_id": query_id,
+            #"feedback_token": feedback_token
+        }
+        relevant_docs.append(doc_info)
+
+    return relevant_documents
 
 def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
@@ -899,6 +930,16 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     #print('PROMPT: ', PROMPT)         
     
     top_k = 5
+
+    # debug
+    relevant_documents = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+    print('relevant_documents: ', relevant_documents)
+
+    relevant_context = ""
+    for document in relevant_documents:
+        relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+    print('relevant_context: ', relevant_context)
+    
     if rag_method == 'RetrievalQA': # RetrievalQA
         if rag_type=='kendra':
             retriever = kendraRetriever
@@ -932,6 +973,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             relevant_documents = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
             relevant_documents = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+            print('relevant_documents: ', relevant_documents)
 
         relevant_context = ""
         for document in relevant_documents:
