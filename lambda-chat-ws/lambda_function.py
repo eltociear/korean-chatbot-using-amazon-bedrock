@@ -689,9 +689,9 @@ def get_revised_question(connectionId, requestId, query):
     chat_history = extract_chat_history_from_memory()
     # print('chat_history: ', chat_history)
     
-    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     try:         
-        revised_question = question_generator_chain.run({"question": query, "chat_history": chat_history})
+        revised_question = condense_prompt_chain.run({"question": query, "chat_history": chat_history})
 
     except Exception:
         err_msg = traceback.format_exc()

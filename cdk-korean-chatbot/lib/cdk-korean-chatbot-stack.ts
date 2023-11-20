@@ -165,7 +165,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }); 
 
       const accountId = process.env.CDK_DEFAULT_ACCOUNT;
-      const kendraResourceArn = `arn:aws:kendra:${region}:${accountId}:index/${cfnIndex.attrId}`
+      const kendraResourceArn = `arn:aws:kendra:${kendra_region}:${accountId}:index/${cfnIndex.attrId}`
       if(debug) {
         new cdk.CfnOutput(this, `resource-arn-of-kendra-for-${projectName}`, {
           value: kendraResourceArn,
