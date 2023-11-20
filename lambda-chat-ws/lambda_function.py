@@ -40,7 +40,7 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = False
 
-rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA
+rag_method = os.environ.get('rag_method', 'RetrievalQA') # RetrievalPrompt, RetrievalQA
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
