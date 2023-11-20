@@ -1,15 +1,38 @@
 # Kendra 를 이용한 RAG의 구현
 
-Kendra의 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)를 이용합니다.
+## 정확도 개선 방안
 
-## Retrieve API
+### Kendra API
+Kendra에서 검색할때에 사용하는 API에는 [Retrieve API](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)와 [Query](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_Query.html)가 있습니다. 아래와 같이 요약하여 설명합니다. 
+
+- Retrieve API는 Query API보다 많은 token으로 구성된 발췌문을 제공하는데, 발췌문의 길이는 RAG의 정확도에 매우 중요한 요소입니다. 또한 Retrieve API에 대한 token 숫자는 기본이 300인데, case를 통해 증량을 요청할 수 있습니다.
+- Query API로 한글문서를 검색하는 경우에 token숫자의 제한으로 많은 경우에 만족할만한 RAG의 결과를 얻을 수 없었습니다.
+- 검색의 정확도(score)를 활용하여 검색의 범위를 조정하면 RAG의 정확도가 올라갑니다. 그런데, Retrieve는 2023년 11월(현재)까지 영어(en)에 대해서만 score를 제공하고 있습니다. 따라서, 한국어(ko)는 token수가 적은 Query API를 이용할때만 score를 활용할 수 있습니다.
+- Kendra의 FAQ를 이용하면 RAG의 정확도를 개선할 수 있는데, Query API로만 결과를 얻을 수 있습니다. 또한, Kendra에서는 Retrieve API로 조회시 결과가 없을때에 Query API로 fallback을 best practice로 가이드하고 있습니다. 따라서, FAQ를 사용하고자 한다면, Retrive와 Query API를 모두 사용하여야 합니다.
+
+### LangChain 활용시 문제점
+
+- Kendra에서는 Retreive로 Query시에 결과가 없을 경우에 Query로 한번 더 Query를 하라고 가이드하고 있으며, LangChain도 동일한 방법으로 Retrieve후에 결과가 없을 경우에 Query로 한번더 조회를 하고 있습니다. 
+- LangChain의 Kendra retriever를 활용하면, score의 레벨을 사용할 수 없습니다. (2023년 11월 기준)
+- Kendra에서 문서 업로드시에 Language 설정을 "ko"로 할 경우에 문서가 검색이 되지 않습니다.(2023년 11월 기준)
+- 한글 문서를 "en"(영어 설정 코드)로 등록하면 Retrieve API로 결과이 되지 않습니다.(추가 확인 필요) Query API로만 검색이 가능하므로 활용할 수 있는 token수가 적어집니다.
+  
+### 정확도 개선 방안
+
+- 한글문서의 언어설정을 "ko"로하여 Kendra에 등록합니다.
+- LangChain의 Kendra Retriever가 아닌 Kendra의 Retrieve/Query API로 직접 조회하여 활용합니다.
+- 가능하다면 FAQ문서를 Kendra에 등록하여 활용합니다. FAQ 사용시 Query API를 활용하여하므로, 결과를 얻는 속도를 개선하기 위해 동시에 Retrieve/Query API를 호출합니다.
+
+
+## API 가이드
+
+### Retrieve API
 
 [Retrieve](https://docs.aws.amazon.com/kendra/latest/APIReference/API_Retrieve.html)는 Default Quota 기준으로 하나의 발췌문(passges)는 200개의 token으로 구성될 수 있고, 최대 100개(PageSize)까지 이런 발췌문을 얻을 수 있습니다. 200 개의 token으로 구성된 발췌문(passage)과 최대 100개의 의미론적으로 관련된 발췌문을 검색할 수 있습니다. Query API와 다르게 qustion/answer와 FAG는 포함되지 않습니다. 
 
-Retrieve는 feedback을 지원하지 않습니다.
+Retrieve API는 영어(en)만 score를 제공하고, 성능을 개선하기 위한 feedback을 지원하지 않습니다.
 
-
-## Query API
+### Query API
 
 [Query](https://docs.aws.amazon.com/ko_kr/kendra/latest/APIReference/API_Query.html)의 결과는 "DOCUMENT", "QUESTION_ANSWER", "ANSWER"의 Type이 있습니다. 
 
