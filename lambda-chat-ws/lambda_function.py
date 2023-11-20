@@ -694,8 +694,6 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
     rag_type = "kendra"
     if(apiType == 'retrieve'): # retrieve API
         excerpt = query_result["Content"]
-        # query_result_type = query_result["Type"]
-        # feedback_token = query_result["FeedbackToken"] 
         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
         document_id = query_result["DocumentId"] 
         document_title = query_result["DocumentTitle"]
@@ -708,6 +706,36 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 document_uri = str(attribute["Value"]["StringValue"])        
             if attribute["Key"] == "_excerpt_page_number":
                 page = str(attribute["Value"]["LongValue"])
+        if document_uri=="":  
+            document_uri = query_result["DocumentURI"]
+
+        if page:
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                    "document_attributes": {
+                        "_excerpt_page_number": page
+                    }
+                },
+            }
+        else: 
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                },
+            }
             
     else: # query API
         query_result_type = query_result["Type"]
@@ -737,39 +765,39 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
 
-    if page:
-        doc_info = {
-            "rag_type": rag_type,
-            "api_type": apiType,
-            "confidence": confidence,
-            "metadata": {
-                "type": query_result_type,
-                "document_id": document_id,
-                "source": document_uri,
-                "title": document_title,
-                "excerpt": excerpt,
-                "document_attributes": {
-                    "_excerpt_page_number": page
-                }
-            },
-            "query_id": query_id,
-            "feedback_token": feedback_token
-        }
-    else: 
-        doc_info = {
-            "rag_type": rag_type,
-            "api_type": apiType,
-            "confidence": confidence,
-            "metadata": {
-                "type": query_result_type,
-                "document_id": document_id,
-                "source": document_uri,
-                "title": document_title,
-                "excerpt": excerpt,
-            },
-            "query_id": query_id,
-            "feedback_token": feedback_token
-        }
+        if page:
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "type": query_result_type,
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                    "document_attributes": {
+                        "_excerpt_page_number": page
+                    }
+                },
+                "query_id": query_id,
+                "feedback_token": feedback_token
+            }
+        else: 
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "type": query_result_type,
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                },
+                "query_id": query_id,
+                "feedback_token": feedback_token
+            }
     return doc_info
 
 def retrieve_from_Kendra(query, top_k):
