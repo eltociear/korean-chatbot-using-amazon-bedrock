@@ -10,18 +10,17 @@ Kendra에서 검색할때에 사용하는 API에는 [Retrieve API](https://docs.
 - 검색의 정확도(score)를 활용하여 검색의 범위를 조정하면 RAG의 정확도가 올라갑니다. 그런데, Retrieve는 2023년 11월(현재)까지 영어(en)에 대해서만 score를 제공하고 있습니다. 따라서, 한국어(ko)는 token수가 적은 Query API를 이용할때만 score를 활용할 수 있습니다.
 - Kendra의 [FAQ를 이용](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-faq.md)하면 RAG의 정확도를 개선할 수 있는데, Query API로만 결과를 얻을 수 있습니다. 또한, Kendra에서는 Retrieve API로 조회시 결과가 없을때에 Query API로 fallback을 best practice로 가이드하고 있습니다. 따라서, FAQ를 사용하고자 한다면, Retrive와 Query API를 모두 사용하여야 합니다.
 
-### LangChain 활용시 문제점
+### LangChain 활용 방법
 
-- Kendra에서는 Retreive로 Query시에 결과가 없을 경우에 Query로 한번 더 Query를 하라고 가이드하고 있으며, LangChain도 동일한 방법으로 Retrieve후에 결과가 없을 경우에 Query로 한번더 조회를 하고 있습니다. 
-- LangChain의 Kendra retriever를 활용하면, score의 레벨을 사용할 수 없습니다. (2023년 11월 기준)
-- Kendra에서 문서 업로드시에 Language 설정을 "ko"로 할 경우에 문서가 검색이 되지 않습니다.(2023년 11월 기준)
-- 한글 문서를 "en"(영어 설정 코드)로 등록하면 Retrieve API로 결과이 되지 않습니다.(추가 확인 필요) Query API로만 검색이 가능하므로 활용할 수 있는 token수가 적어집니다.
-  
+- LangChain은 Retreive API로 검색하였을대에 결과가 없으면, Query로 한번 더 검색을 수행합니다.
+- Kendra에서 한국어 문서를 업로드하면 retriever의 Language 설정을 "ko"로 설정하여야 합니다.
+    
 ### 정확도 개선 방안
 
 - 한글문서의 언어설정을 "ko"로하여 Kendra에 등록합니다.
-- LangChain의 Kendra Retriever가 아닌 Kendra의 Retrieve/Query API로 직접 조회하여 활용합니다.
-- 가능하다면 FAQ문서를 Kendra에 등록하여 활용합니다. FAQ 사용시 Query API를 활용하여하므로, 결과를 얻는 속도를 개선하기 위해 동시에 Retrieve/Query API를 호출합니다.
+- LangChain의 Kendra Retriever로 질의시 language를 "ko"로 설정하여야 retriever api로 더 많은 token을 가지는 발췌문을 얻을 수 있습니다.
+- Kendra의 Retrieve/Query API로 직접 조회하면 좀더 유연하게 RAG를 구현할 수 있습니다.
+- FAQ문서가 있다면, Kendra에 등록하여 활용합니다. FAQ 사용시 Query API를 활용하여하므로, 결과를 얻는 속도를 개선하기 위해 동시에 Retrieve/Query API를 호출합니다.
 
 
 ## API 가이드
