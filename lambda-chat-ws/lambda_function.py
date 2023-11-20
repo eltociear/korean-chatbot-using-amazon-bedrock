@@ -455,7 +455,7 @@ def store_document(path, s3_file_name, requestId):
                 {
                     "Key": '_language_code',
                     'Value': {
-                        'StringValue': "en"
+                        'StringValue': "ko"
                     }
                 },
             ],
@@ -805,7 +805,7 @@ def retrieve_from_Kendra(query, top_k):
                 "EqualsTo": {      
                     "Key": "_language_code",
                     "Value": {
-                        "StringValue": "en"
+                        "StringValue": "ko"
                     }
                 },
             },      
@@ -837,7 +837,7 @@ def retrieve_from_Kendra(query, top_k):
                         "EqualsTo": {      
                             "Key": "_language_code",
                             "Value": {
-                                "StringValue": "en"
+                                "StringValue": "ko"
                             }
                         },
                     },      
