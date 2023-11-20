@@ -107,7 +107,19 @@ bedrock_embeddings = BedrockEmbeddings(
 map_chain = dict() # Conversation with RAG
 map_chat = dict() # Conversation for normal 
 
-kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex, top_k=5, region_name=kendra_region)
+kendraRetriever = AmazonKendraRetriever(
+    index_id=kendraIndex, 
+    top_k=5, 
+    region_name=kendra_region,
+    attribute_filter = {
+        "EqualsTo": {      
+            "Key": "_language_code",
+            "Value": {
+                "StringValue": "ko"
+            }
+        },
+    },
+)
 
 def sendMessage(id, body):
     try:
