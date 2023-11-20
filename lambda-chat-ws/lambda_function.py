@@ -699,43 +699,24 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
         document_title = query_result["DocumentTitle"]
         
         document_uri = ""
-        page = ""
         document_attributes = query_result["DocumentAttributes"]
         for attribute in document_attributes:
             if attribute["Key"] == "_source_uri":
                 document_uri = str(attribute["Value"]["StringValue"])        
-            if attribute["Key"] == "_excerpt_page_number":
-                page = str(attribute["Value"]["LongValue"])
         if document_uri=="":  
             document_uri = query_result["DocumentURI"]
 
-        if page:
-            doc_info = {
-                "rag_type": rag_type,
-                "api_type": apiType,
-                "confidence": confidence,
-                "metadata": {
-                    "document_id": document_id,
-                    "source": document_uri,
-                    "title": document_title,
-                    "excerpt": excerpt,
-                    "document_attributes": {
-                        "_excerpt_page_number": page
-                    }
-                },
-            }
-        else: 
-            doc_info = {
-                "rag_type": rag_type,
-                "api_type": apiType,
-                "confidence": confidence,
-                "metadata": {
-                    "document_id": document_id,
-                    "source": document_uri,
-                    "title": document_title,
-                    "excerpt": excerpt,
-                },
-            }
+        doc_info = {
+            "rag_type": rag_type,
+            "api_type": apiType,
+            "confidence": confidence,
+            "metadata": {
+                "document_id": document_id,
+                "source": document_uri,
+                "title": document_title,
+                "excerpt": excerpt,
+            },
+        }
             
     else: # query API
         query_result_type = query_result["Type"]
@@ -919,33 +900,39 @@ def get_reference(docs, rag_method, rag_type):
 
                 #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+
     else: 
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                confidence = doc['confidence']
-                if doc['metadata']['type'] == "QUESTION_ANSWER":
-                    excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
-                    reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
-                else:
-                    uri = ""
-                    if "title" in doc['metadata']:
-                        #print('metadata: ', json.dumps(doc['metadata']))
+                if doc['api_type'] == 'retrieve': # Retrieve
+                        uri = doc['metadata']['source']
                         name = doc['metadata']['title']
-                        if name: 
-                            uri = path+name
+                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>\n"
+                else: # Query
+                    confidence = doc['confidence']
+                    if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
+                        excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
+                        reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>\n"
+                    else:
+                        uri = ""
+                        if "title" in doc['metadata']:
+                            #print('metadata: ', json.dumps(doc['metadata']))
+                            name = doc['metadata']['title']
+                            if name: 
+                                uri = path+name
 
-                    page = ""
-                    if "document_attributes" in doc['metadata']:
-                        if "_excerpt_page_number" in doc['metadata']['document_attributes']:
-                            page = doc['metadata']['document_attributes']['_excerpt_page_number']
-                                            
-                    if uri and page: 
-                        #reference = reference + (str(page)+'page in '+name+'\n')
-                        reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
-                    elif uri:
-                        #reference = reference + name+'\n'
-                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                        page = ""
+                        if "document_attributes" in doc['metadata']:
+                            if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                                page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                                                
+                        if uri and page: 
+                            #reference = reference + (str(page)+'page in '+name+'\n')
+                            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                        elif uri:
+                            #reference = reference + name+'\n'
+                            reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
         else:
             reference = "\n\nFrom\n"            
             for i, doc in enumerate(docs):
