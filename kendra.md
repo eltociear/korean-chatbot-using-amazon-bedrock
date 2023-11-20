@@ -8,7 +8,7 @@ Kendra에서 검색할때에 사용하는 API에는 [Retrieve API](https://docs.
 - Retrieve API는 Query API보다 많은 token으로 구성된 발췌문을 제공하는데, 발췌문의 길이는 RAG의 정확도에 매우 중요한 요소입니다. 또한 Retrieve API에 대한 token 숫자는 기본이 300인데, case를 통해 증량을 요청할 수 있습니다.
 - Query API로 한글문서를 검색하는 경우에 token숫자의 제한으로 많은 경우에 만족할만한 RAG의 결과를 얻을 수 없었습니다.
 - 검색의 정확도(score)를 활용하여 검색의 범위를 조정하면 RAG의 정확도가 올라갑니다. 그런데, Retrieve는 2023년 11월(현재)까지 영어(en)에 대해서만 score를 제공하고 있습니다. 따라서, 한국어(ko)는 token수가 적은 Query API를 이용할때만 score를 활용할 수 있습니다.
-- Kendra의 FAQ를 이용하면 RAG의 정확도를 개선할 수 있는데, Query API로만 결과를 얻을 수 있습니다. 또한, Kendra에서는 Retrieve API로 조회시 결과가 없을때에 Query API로 fallback을 best practice로 가이드하고 있습니다. 따라서, FAQ를 사용하고자 한다면, Retrive와 Query API를 모두 사용하여야 합니다.
+- Kendra의 [FAQ를 이용](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-faq.md)하면 RAG의 정확도를 개선할 수 있는데, Query API로만 결과를 얻을 수 있습니다. 또한, Kendra에서는 Retrieve API로 조회시 결과가 없을때에 Query API로 fallback을 best practice로 가이드하고 있습니다. 따라서, FAQ를 사용하고자 한다면, Retrive와 Query API를 모두 사용하여야 합니다.
 
 ### LangChain 활용시 문제점
 
