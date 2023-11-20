@@ -427,36 +427,44 @@ def store_document(path, s3_file_name, requestId):
     file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
     print('file_type: ', file_type)
 
-    kendra = boto3.client("kendra")
+    kendra_client = boto3.client(
+        service_name='kendra', 
+        region_name=kendra_region,
+        config = Config(
+            retries=dict(
+                max_attempts=10
+            )
+        )
+    )
 
     documents = [
-            {
-                "Id": requestId,
-                "Title": s3_file_name,
-                "S3Path": {
-                    "Bucket": s3_bucket,
-                    "Key": s3_prefix+'/'+s3_file_name
+        {
+            "Id": requestId,
+            "Title": s3_file_name,
+            "S3Path": {
+                "Bucket": s3_bucket,
+                "Key": s3_prefix+'/'+s3_file_name
+            },
+            "Attributes": [
+                {
+                    "Key": '_source_uri',
+                    'Value': {
+                        'StringValue': source_uri
+                    }
                 },
-                "Attributes": [
-                    {
-                        "Key": '_source_uri',
-                        'Value': {
-                            'StringValue': source_uri
-                        }
-                    },
-                    {
-                        "Key": '_language_code',
-                        'Value': {
-                            'StringValue': "ko"
-                        }
-                    },
-                ],
-                "ContentType": file_type
-            }
-        ]
+                {
+                    "Key": '_language_code',
+                    'Value': {
+                        'StringValue': "ko"
+                    }
+                },
+            ],
+            "ContentType": file_type
+        }
+    ]
     print('document info: ', documents)
 
-    result = kendra.batch_put_document(
+    result = kendra_client.batch_put_document(
         IndexId = kendraIndex,
         RoleArn = roleArn,
         Documents = documents       
@@ -781,7 +789,15 @@ def retrieve_from_Kendra(query, top_k):
         resp =  kendra_client.retrieve(
             IndexId = index_id,
             QueryText = query,
-            PageSize = 10,            
+            PageSize = 10,      
+            AttributeFilter = {
+                "EqualsTo": {      
+                    "Key": "_language_code",
+                    "Value": {
+                        "StringValue": "ko"
+                    }
+                },
+            },      
         )
         print('retrieve resp:', resp)
         query_id = resp["QueryId"]
@@ -806,6 +822,14 @@ def retrieve_from_Kendra(query, top_k):
                     QueryText = query,
                     PageSize = 10,
                     #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
+                    AttributeFilter = {
+                        "EqualsTo": {      
+                            "Key": "_language_code",
+                            "Value": {
+                                "StringValue": "ko"
+                            }
+                        },
+                    },      
                 )
                 print('query resp:', resp)
                 query_id = resp["QueryId"]
