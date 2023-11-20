@@ -27,6 +27,7 @@ from langchain.embeddings import BedrockEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
+from langchain.chains import ConversationalRetrievalChain
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -40,7 +41,7 @@ rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = False
 
-rag_method = os.environ.get('rag_method', 'RetrievalQA') # RetrievalPrompt, RetrievalQA
+rag_method = os.environ.get('rag_method', 'RetrievalQA') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -1010,18 +1011,65 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
     return relevant_docs
 
-def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
-    print('revised_question: ', revised_question)
-    if debugMessageMode=='true':
-        sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+from langchain.schema import BaseMessage
+_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
+def _get_chat_history(chat_history):
+    #print('_get_chat_history: ', chat_history)
+    buffer = ""
+    for dialogue_turn in chat_history:
+        if isinstance(dialogue_turn, BaseMessage):
+            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+        elif isinstance(dialogue_turn, tuple):
+            human = "\n\nHuman: " + dialogue_turn[0]
+            ai = "\n\nAssistant: " + dialogue_turn[1]
+            buffer += "\n" + "\n".join([human, ai])
+        else:
+            raise ValueError(
+                f"Unsupported chat history format: {type(dialogue_turn)}."
+                f" Full chat history: {chat_history} "
+            )
+    #print('buffer: ', buffer)
+    return buffer
 
-    PROMPT = get_prompt_template(revised_question, convType)
-    #print('PROMPT: ', PROMPT)         
-    
-    top_k = 5
-    
+def create_ConversationalRetrievalChain(PROMPT, retriever):  
+    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:"""
+    CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_template)
+        
+    qa = ConversationalRetrievalChain.from_llm(
+        llm=llm, 
+        retriever=retriever,
+        condense_question_prompt=CONDENSE_QUESTION_PROMPT, # chat history and new question
+        combine_docs_chain_kwargs={'prompt': PROMPT},
+
+        memory=memory_chain,
+        get_chat_history=_get_chat_history,
+        verbose=False, # for logging to stdout
+        
+        #max_tokens_limit=300,
+        chain_type='stuff', # 'refine'
+        rephrase_question=True,  # to pass the new generated question to the combine_docs_chain       
+        # return_source_documents=True, # retrieved source
+        return_generated_question=False, # generated question
+    )
+
+    return qa
+
+def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
+    top_k = 5    
     if rag_method == 'RetrievalQA': # RetrievalQA
+        revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
+        print('revised_question: ', revised_question)
+        if debugMessageMode=='true':
+            sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+        PROMPT = get_prompt_template(revised_question, convType)
+        #print('PROMPT: ', PROMPT)
+
         if rag_type=='kendra':
             retriever = kendraRetriever
         elif rag_type=='opensearch' or rag_type=='faiss':
@@ -1050,7 +1098,14 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(source_documents)>=1 and enableReference=='true':
             msg = msg+get_reference(source_documents, rag_method, rag_type)
-    else: # RetrievalPrompt
+    elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
+        revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
+        print('revised_question: ', revised_question)
+        if debugMessageMode=='true':
+            sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+        PROMPT = get_prompt_template(revised_question, convType)
+        #print('PROMPT: ', PROMPT)
+
         if rag_type == 'kendra':
             relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
@@ -1074,9 +1129,26 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(relevant_docs, rag_method, rag_type)
+    
+    else: # ConversationalRetrievalChain
+        PROMPT = get_prompt_template(text, convType)
+        if rag_type == 'kendra':
+            qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
+        else: # opensearch faiss
+            vectorstoreRetriever = vectorstore.as_retriever(
+                search_type="similarity", 
+                search_kwargs={
+                    "k": 5
+                }
+            )
+            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
         
+        result = qa({"question": text})
+        print('result: ', result)    
+        msg = result['answer']
+
     if isDebugging==True:   # extract chat history for debug
-        chat_history_all = extract_chat_history_from_memory() 
+        chat_history_all = extract_chat_history_from_memory()
         print('chat_history_all: ', chat_history_all)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
