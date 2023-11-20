@@ -455,7 +455,7 @@ def store_document(path, s3_file_name, requestId):
                 {
                     "Key": '_language_code',
                     'Value': {
-                        'StringValue': "ko"
+                        'StringValue': "en"
                     }
                 },
             ],
@@ -805,7 +805,7 @@ def retrieve_from_Kendra(query, top_k):
                 "EqualsTo": {      
                     "Key": "_language_code",
                     "Value": {
-                        "StringValue": "ko"
+                        "StringValue": "en"
                     }
                 },
             },      
@@ -813,7 +813,7 @@ def retrieve_from_Kendra(query, top_k):
         print('retrieve resp:', resp)
         query_id = resp["QueryId"]
 
-        if len(resp["ResultItems"]) >= 1:            
+        if len(resp["ResultItems"]) >= 1:
             relevant_docs = []
             for query_result in resp["ResultItems"]:
                 confidence = query_result["ScoreAttributes"]['ScoreConfidence']
@@ -837,7 +837,7 @@ def retrieve_from_Kendra(query, top_k):
                         "EqualsTo": {      
                             "Key": "_language_code",
                             "Value": {
-                                "StringValue": "ko"
+                                "StringValue": "en"
                             }
                         },
                     },      
@@ -845,7 +845,7 @@ def retrieve_from_Kendra(query, top_k):
                 print('query resp:', resp)
                 query_id = resp["QueryId"]
 
-                if len(resp["ResultItems"]) >= 1:                    
+                if len(resp["ResultItems"]) >= 1:
                     relevant_docs = []
                     for query_result in resp["ResultItems"]:
                         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
@@ -890,7 +890,7 @@ def get_reference(docs, rag_method, rag_type):
                 else:
                     reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
         else:
-            reference = "\n\nFrom\n"            
+            reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
 
@@ -901,11 +901,11 @@ def get_reference(docs, rag_method, rag_type):
                 #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
 
-    else: 
+    else: # RetrievalPrompt
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                if doc['api_type'] == 'retrieve': # Retrieve
+                if doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                         uri = doc['metadata']['source']
                         name = doc['metadata']['title']
                         reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>\n"
@@ -934,7 +934,7 @@ def get_reference(docs, rag_method, rag_type):
                             #reference = reference + name+'\n'
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
         else:
-            reference = "\n\nFrom\n"            
+            reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
                 
@@ -969,7 +969,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
     relevant_docs = []
     for i, document in enumerate(relevant_documents):
-        #print('document.page_content:', document.page_content)        
+        #print('document.page_content:', document.page_content)
         #print('document.metadata:', document.metadata)
         print(f'## Document {i+1}: {document}')
 
