@@ -694,16 +694,18 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
     rag_type = "kendra"
     if(apiType == 'retrieve'): # retrieve API
         excerpt = query_result["Content"]
-        query_result_type = query_result["Type"]
+        # query_result_type = query_result["Type"]
+        # feedback_token = query_result["FeedbackToken"] 
         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
         document_id = query_result["DocumentId"] 
         document_title = query_result["DocumentTitle"]
-        document_uri = query_result["DocumentURI"]
-        feedback_token = query_result["FeedbackToken"] 
-
+        
+        document_uri = ""
         page = ""
         document_attributes = query_result["DocumentAttributes"]
         for attribute in document_attributes:
+            if attribute["Key"] == "_source_uri":
+                document_uri = str(attribute["Value"]["StringValue"])        
             if attribute["Key"] == "_excerpt_page_number":
                 page = str(attribute["Value"]["LongValue"])
             
@@ -807,11 +809,11 @@ def retrieve_from_Kendra(query, top_k):
             for query_result in resp["ResultItems"]:
                 confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
-                if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
-                    relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+                #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
+                relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
 
-                    if len(relevant_docs) >= top_k:
-                        break
+                if len(relevant_docs) >= top_k:
+                    break
             # print('relevant_docs: ', relevant_docs)
             
         else:  # falback using query API
