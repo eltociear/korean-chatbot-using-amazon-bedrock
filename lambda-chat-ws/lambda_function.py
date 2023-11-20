@@ -1324,7 +1324,8 @@ def getResponse(connectionId, jsonBody):
                 msg  = "The chat memory was intialized in this session."
             else:          
                 if convType == 'qa':   # question & answering
-                    print('rag_type: ', rag_type)
+                    print(f'rag_type: {rag_type}, rag_method: {rag_method}')
+                          
                     if rag_type == 'faiss' and isReady==False:                               
                         msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
 
