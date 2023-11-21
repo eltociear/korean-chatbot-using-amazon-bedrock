@@ -890,7 +890,7 @@ def retrieve_from_Kendra(query, top_k):
     return relevant_docs
 
 def get_reference(docs, rag_method, rag_type):
-    if rag_method == 'RetrievalQA':
+    if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
@@ -907,12 +907,14 @@ def get_reference(docs, rag_method, rag_type):
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
 
-                name = doc.metadata['name']
-                page = doc.metadata['page']
                 uri = doc.metadata['uri']
+                name = doc.metadata['name']
 
-                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
-                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+                if "page" in doc.metadata: 
+                    page = doc.metadata['page']            
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+                else:
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>\n"
 
     elif rag_method == 'RetrievalPrompt':
         if rag_type == 'kendra':
@@ -954,21 +956,7 @@ def get_reference(docs, rag_method, rag_type):
                 name = doc['metadata']['title']
 
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
-
-    elif rag_method == 'ConversationalRetrievalChain':
-        reference = "\n\nFrom\n"
-        for i, doc in enumerate(docs):
-            print(f'## Document {i+1}: {doc}')
-                
-            uri = doc.metadata['uri']
-            name = doc.metadata['name']
-
-            if "page" in doc.metadata: 
-                page = doc.metadata['page']            
-                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
-            else:
-                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>\n"
-        
+            
     return reference
 
 def retrieve_from_vectorstore(query, top_k, rag_type):
