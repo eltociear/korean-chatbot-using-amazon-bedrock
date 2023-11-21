@@ -434,7 +434,7 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 # store document into Kendra
-def store_document(path, s3_file_name, requestId, convType):
+def store_document(path, s3_file_name, requestId):
     encoded_name = parse.quote(s3_file_name)
     source_uri = path + encoded_name    
     print('source_uri: ', source_uri)
@@ -1338,7 +1338,7 @@ def getResponse(connectionId, jsonBody):
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
                 memory_chat.clear()                
-                map_chat[userId] = memory_chat
+                memory_chain[userId] = memory_chat
                 conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
@@ -1410,7 +1410,7 @@ def getResponse(connectionId, jsonBody):
                 print('rag_type: ', rag_type)                
                 if rag_type=='kendra':      
                     print('upload to kendra: ', object)           
-                    store_document(path, object, requestId, convType)  # store the object into kendra
+                    store_document(path, object, requestId)  # store the object into kendra
                                     
                 else:
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
