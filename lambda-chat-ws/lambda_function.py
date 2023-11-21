@@ -894,8 +894,10 @@ def get_reference(docs, rag_method, rag_type):
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                name = doc.metadata['title']                
-                uri = parse.urlencode(path+name, encoding='UTF-8', doseq=True)
+                name = doc.metadata['title']     
+                uri = path+name           
+                #uri = parse.urlencode(path+name, encoding='UTF-8', doseq=True)
+
                 print('uri: ', uri)
 
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
