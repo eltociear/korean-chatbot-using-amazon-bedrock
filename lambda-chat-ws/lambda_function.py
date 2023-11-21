@@ -1157,6 +1157,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         
         result = qa({"question": text})
         
+        msg = result['answer']
         print('\nquestion: ', result['question'])    
         print('answer: ', result['answer'])    
         print('chat_history: ', result['chat_history'])    
@@ -1247,7 +1248,7 @@ def getResponse(connectionId, jsonBody):
                 print('memory_chat exist. reuse it!')    
             else: 
                 # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', output_key='answer', ai_prefix='Assistant', k=50)
+                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=50)
                 #from langchain.memory import ConversationSummaryBufferMemory
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
@@ -1262,7 +1263,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chat exist. reuse it!')
         else:
             # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', output_key='answer', ai_prefix='Assistant', k=50)
+            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=50)
             map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
