@@ -894,8 +894,9 @@ def get_reference(docs, rag_method, rag_type):
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                name = doc.metadata['title']
-                uri = path+name
+                name = doc.metadata['title']                
+                uri = parse.urlencode(path+name, encoding='UTF-8', doseq=True)
+                print('uri: ', uri)
 
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
@@ -954,17 +955,6 @@ def get_reference(docs, rag_method, rag_type):
                 name = doc['metadata']['title']
 
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
-
-    elif rag_method == 'ConversationalRetrievalChain':
-        reference = "\n\nFrom\n"
-        for i, doc in enumerate(docs):
-            print(f'## Document {i+1}: {doc}')
-                
-            page = doc.metadata['page']
-            uri = doc.metadata['uri']
-            name = doc.metadata['name']
-
-            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
         
     return reference
 
