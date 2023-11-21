@@ -890,7 +890,7 @@ def retrieve_from_Kendra(query, top_k):
     return relevant_docs
 
 def get_reference(docs, rag_method, rag_type):
-    if rag_method == 'RetrievalQA':
+    if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
