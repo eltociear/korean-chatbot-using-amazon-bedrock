@@ -899,6 +899,7 @@ def get_reference(docs, rag_method, rag_type):
                 #uri = parse.urlencode(path+name, encoding='UTF-8', doseq=True)
 
                 print('uri: ', uri)
+                print('encoding: ', parse.urlencode(name, encoding='UTF-8', doseq=True))
 
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
