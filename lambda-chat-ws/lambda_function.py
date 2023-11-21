@@ -442,6 +442,9 @@ def store_document(path, s3_file_name, requestId):
     file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
     print('file_type: ', file_type)
 
+    if(file_type == 'PPTX'):
+        file_type = 'PPT'
+
     kendra_client = boto3.client(
         service_name='kendra', 
         region_name=kendra_region,
