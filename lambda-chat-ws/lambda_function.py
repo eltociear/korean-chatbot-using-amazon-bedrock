@@ -1361,7 +1361,10 @@ def getResponse(connectionId, jsonBody):
                 for doc in docs:
                     texts.append(doc.page_content)
                 print('texts: ', texts)
-            else:
+
+                msg = get_summary(texts)
+
+            elif file_type == 'pdf' or file_type == 'txt':
                 texts = load_document(file_type, object)
 
                 docs = []
@@ -1379,35 +1382,38 @@ def getResponse(connectionId, jsonBody):
                 print('docs[0]: ', docs[0])    
                 print('docs size: ', len(docs))
 
-            # summary
-            msg = get_summary(texts)
-
+                msg = get_summary(texts)
+            else:
+                if rag_type=='kendra':   
+                    msg = "The file is uploaded: "+object
+            
             if convType == 'qa':
                 if rag_type=='kendra':      
                     print('upload to kendra: ', object)           
                     store_document(path, object, requestId)  # store the object into kendra
-
-                elif rag_type == 'faiss':
-                    if isReady == False:   
-                        vectorstore = FAISS.from_documents( # create vectorstore from a document
-                            docs,  # documents
-                            bedrock_embeddings  # embeddings
-                        )
-                        isReady = True
-                    else:
-                        vectorstore.add_documents(docs)
-
-                elif rag_type == 'opensearch':    
-                    new_vectorstore = OpenSearchVectorSearch(
-                        index_name="rag-index-"+userId+'-'+requestId,
-                        is_aoss = False,
-                        #engine="faiss",  # default: nmslib
-                        embedding_function = bedrock_embeddings,
-                        opensearch_url = opensearch_url,
-                        http_auth=(opensearch_account, opensearch_passwd),
-                    )
-                    new_vectorstore.add_documents(docs)                              
                 
+                elif file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                    if rag_type == 'faiss':
+                        if isReady == False:   
+                            vectorstore = FAISS.from_documents( # create vectorstore from a document
+                                docs,  # documents
+                                bedrock_embeddings  # embeddings
+                            )
+                            isReady = True
+                        else:
+                            vectorstore.add_documents(docs)
+
+                    elif rag_type == 'opensearch':    
+                        new_vectorstore = OpenSearchVectorSearch(
+                            index_name="rag-index-"+userId+'-'+requestId,
+                            is_aoss = False,
+                            #engine="faiss",  # default: nmslib
+                            embedding_function = bedrock_embeddings,
+                            opensearch_url = opensearch_url,
+                            http_auth=(opensearch_account, opensearch_passwd),
+                        )
+                        new_vectorstore.add_documents(docs)                              
+                    
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
         

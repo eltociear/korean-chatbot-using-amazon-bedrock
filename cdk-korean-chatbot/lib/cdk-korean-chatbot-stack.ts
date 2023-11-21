@@ -289,7 +289,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     const api = new apiGateway.RestApi(this, `api-chatbot-for-${projectName}`, {
       description: 'API Gateway for chatbot',
       endpointTypes: [apiGateway.EndpointType.REGIONAL],
-      binaryMediaTypes: ['application/pdf', 'text/plain', 'text/csv'], 
+      // binaryMediaTypes: ['application/pdf', 'text/plain', 'text/csv'], 
+      binaryMediaTypes: ['*/*'], 
       deployOptions: {
         stageName: stage,
 
