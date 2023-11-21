@@ -895,6 +895,7 @@ def get_reference(docs, rag_method, rag_type):
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 name = doc.metadata['title']
+                print('uri: ', path+name)
                 uri = parse.urlencode(path+name, doseq=True)
 
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
