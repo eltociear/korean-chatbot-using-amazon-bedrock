@@ -960,9 +960,9 @@ def get_reference(docs, rag_method, rag_type):
         for i, doc in enumerate(docs):
             print(f'## Document {i+1}: {doc}')
                 
-            page = doc['metadata']['page']
-            uri = doc['metadata']['uri']
-            name = doc['metadata']['name']
+            page = doc.metadata['page']
+            uri = doc.metadata['uri']
+            name = doc.metadata['name']
 
             reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
         
@@ -1153,7 +1153,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         
         result = qa({"question": text})
 
-        print('question: ', result['question'])    
+        print('\nquestion: ', result['question'])    
         print('answer: ', result['answer'])    
         print('chat_history: ', result['chat_history'])    
         print('source_documents: ', result['source_documents'])    
