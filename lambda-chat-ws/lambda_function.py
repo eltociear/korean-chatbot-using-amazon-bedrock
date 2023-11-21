@@ -960,11 +960,14 @@ def get_reference(docs, rag_method, rag_type):
         for i, doc in enumerate(docs):
             print(f'## Document {i+1}: {doc}')
                 
-            page = doc.metadata['page']
             uri = doc.metadata['uri']
             name = doc.metadata['name']
 
-            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+            if "page" in doc.metadata: 
+                page = doc.metadata['page']            
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+            else:
+                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>\n"
         
     return reference
 
