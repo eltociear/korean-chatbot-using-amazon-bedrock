@@ -434,8 +434,9 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 # store document into Kendra
+from urllib import parse
 def store_document(path, s3_file_name, requestId):
-    source_uri = path+s3_file_name
+    source_uri = parse.urlencode(path+s3_file_name, doseq=True)
 
     file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
     print('file_type: ', file_type)
