@@ -444,6 +444,8 @@ def store_document(path, s3_file_name, requestId):
 
     if(file_type == 'PPTX'):
         file_type = 'PPT'
+    elif(file_type == 'TXX'):
+        file_type = 'PLAIN_TEXT'        
 
     kendra_client = boto3.client(
         service_name='kendra', 
