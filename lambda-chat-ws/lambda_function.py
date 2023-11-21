@@ -542,7 +542,7 @@ def load_csv_document(s3_file_name):
             metadata={
                 'name': s3_file_name,
                 'page': n+1,
-                'uri': parse.urlencode(path+s3_file_name, doseq=True)
+                'uri': path+s3_file_name
             }
             #metadata=to_metadata
         )
@@ -890,15 +890,13 @@ def retrieve_from_Kendra(query, top_k):
     return relevant_docs
 
 def get_reference(docs, rag_method, rag_type):
-    if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
+    if rag_method == 'RetrievalQA':
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 name = doc.metadata['title']
-                print('path+name: ', path+name)
-                uri = path + parse.urlencode(name, encoding='UTF-8', doseq=True)
-                print('uri: ', uri)
-                
+                uri = path+name
+
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
                     reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
@@ -909,14 +907,12 @@ def get_reference(docs, rag_method, rag_type):
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
 
-                uri = doc.metadata['uri']
                 name = doc.metadata['name']
+                page = doc.metadata['page']
+                uri = doc.metadata['uri']
 
-                if "page" in doc.metadata: 
-                    page = doc.metadata['page']            
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
-                else:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>\n"
+                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
 
     elif rag_method == 'RetrievalPrompt':
         if rag_type == 'kendra':
@@ -937,7 +933,7 @@ def get_reference(docs, rag_method, rag_type):
                             #print('metadata: ', json.dumps(doc['metadata']))
                             name = doc['metadata']['title']
                             if name: 
-                                uri = parse.urlencode(path+name, doseq=True)
+                                uri = path+name
 
                         page = ""
                         if "document_attributes" in doc['metadata']:
@@ -958,7 +954,18 @@ def get_reference(docs, rag_method, rag_type):
                 name = doc['metadata']['title']
 
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
-            
+
+    elif rag_method == 'ConversationalRetrievalChain':
+        reference = "\n\nFrom\n"
+        for i, doc in enumerate(docs):
+            print(f'## Document {i+1}: {doc}')
+                
+            page = doc.metadata['page']
+            uri = doc.metadata['uri']
+            name = doc.metadata['name']
+
+            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+        
     return reference
 
 def retrieve_from_vectorstore(query, top_k, rag_type):
@@ -1384,7 +1391,7 @@ def getResponse(connectionId, jsonBody):
                             metadata={
                                 'name': object,
                                 'page':i+1,
-                                'uri': parse.urlencode(path+object, doseq=True)
+                                'uri': path+object
                             }
                         )
                     )        
