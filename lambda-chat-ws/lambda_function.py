@@ -1337,7 +1337,7 @@ def getResponse(connectionId, jsonBody):
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
-                memory_chain.clear()                
+                memory_chat.clear()                
                 map_chat[userId] = memory_chat
                 memory_chat = ConversationBufferWindowMemory(human_prefix='Human', output_key='answer', ai_prefix='Assistant', k=5)
                 conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
