@@ -914,7 +914,7 @@ def get_reference(docs, rag_method, rag_type):
                 #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
 
-    else: # RetrievalPrompt
+    elif rag_method == 'RetrievalPrompt':
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
@@ -941,10 +941,8 @@ def get_reference(docs, rag_method, rag_type):
                                 page = doc['metadata']['document_attributes']['_excerpt_page_number']
                                                 
                         if uri and page: 
-                            #reference = reference + (str(page)+'page in '+name+'\n')
                             reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
                         elif uri:
-                            #reference = reference + name+'\n'
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
         else:
             reference = "\n\nFrom\n"
@@ -955,8 +953,18 @@ def get_reference(docs, rag_method, rag_type):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
-                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+
+    elif rag_method == 'ConversationalRetrievalChain':
+        reference = "\n\nFrom\n"
+        for i, doc in enumerate(docs):
+            print(f'## Document {i+1}: {doc}')
+                
+            page = doc['metadata']['page']
+            uri = doc['metadata']['uri']
+            name = doc['metadata']['name']
+
+            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
         
     return reference
 
@@ -1144,8 +1152,16 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
         
         result = qa({"question": text})
-        print('result: ', result)    
+
+        print('question: ', result['question'])    
+        print('answer: ', result['answer'])    
+        print('chat_history: ', result['chat_history'])    
+        print('source_documents: ', result['source_documents'])    
+        
         msg = result['answer']
+
+        if len(result['source_documents'])>=1 and enableReference=='true':
+            msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
 
     if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
