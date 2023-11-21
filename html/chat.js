@@ -468,7 +468,7 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'xls') {
                 contentType = 'application/vnd.ms-excel'
             }
-            print('contentType: ', contentType)
+            console.log('contentType: ', contentType)
 
             let current = new Date();
             let datastr = getDate(current);
