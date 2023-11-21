@@ -9,6 +9,7 @@ import csv
 import sys, traceback
 import re
 import base64
+from urllib import parse
 
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -433,7 +434,6 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 # store document into Kendra
-from urllib import parse
 def store_document(path, s3_file_name, requestId):
     source_uri = parse.urlencode(path+s3_file_name, doseq=True)
 
@@ -895,12 +895,11 @@ def get_reference(docs, rag_method, rag_type):
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 name = doc.metadata['title']     
-                uri = path+name           
-                #uri = parse.urlencode(path+name, encoding='UTF-8', doseq=True)
 
-                print('uri: ', uri)
-                print('encoding: ', parse.urlencode(name, encoding='UTF-8', doseq=True))
-
+                uri = ""
+                if ("document_attributes" in doc.metadata) and ("_source_uri" in doc.metadata['document_attributes']):
+                    uri = doc.metadata['document_attributes']['_source_uri']
+                                    
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
                     reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
@@ -915,7 +914,6 @@ def get_reference(docs, rag_method, rag_type):
                 page = doc.metadata['page']
                 uri = doc.metadata['uri']
 
-                #reference = reference + (str(page)+'page in '+name+' ('+uri+')'+'\n')
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
 
     elif rag_method == 'RetrievalPrompt':
