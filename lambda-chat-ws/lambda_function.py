@@ -1217,7 +1217,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chain exist. reuse it!')            
         else: 
             # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True, k=5)
+            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
             
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
@@ -1228,7 +1228,7 @@ def getResponse(connectionId, jsonBody):
                 print('memory_chat exist. reuse it!')    
             else: 
                 # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=5)
+                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', output_key='answer', ai_prefix='Assistant', k=5)
                 #from langchain.memory import ConversationSummaryBufferMemory
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
@@ -1243,7 +1243,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chat exist. reuse it!')
         else:
             # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=5)
+            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', output_key='answer', ai_prefix='Assistant', k=5)
             map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
