@@ -1341,11 +1341,9 @@ def getResponse(connectionId, jsonBody):
                 if convType == "qa": 
                     if rag_type=='kendra' or rag_type=='opensearch' or (rag_type=='faiss' and isReady==True):   
                         memory_chain.clear()
-                        memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)           
                         map_chain[userId] = memory_chain
-                        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chain)
                     elif rag_type=='faiss' and isReady==False:
-                        memory_chat.clear()                
+                        memory_chat.clear()         
                         map_chat[userId] = memory_chat
                         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
                 else:
