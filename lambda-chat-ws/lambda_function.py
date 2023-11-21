@@ -434,7 +434,7 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 # store document into Kendra
-def store_document(path, s3_file_name, requestId):
+def store_document(path, s3_file_name, requestId, convType):
     encoded_name = parse.quote(s3_file_name)
     source_uri = path + encoded_name    
     print('source_uri: ', source_uri)
@@ -442,10 +442,16 @@ def store_document(path, s3_file_name, requestId):
     file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
     print('file_type: ', file_type)
 
+    # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
+
     if(file_type == 'PPTX'):
         file_type = 'PPT'
-    elif(file_type == 'TXX'):
-        file_type = 'PLAIN_TEXT'        
+    elif(file_type == 'TXT'):
+        file_type = 'PLAIN_TEXT'         
+    elif(file_type == 'XLS' or file_type == 'XLSX'):
+        file_type = 'MS_EXCEL'      
+    elif(file_type == 'DOC' or file_type == 'DOCX'):
+        file_type = 'MS_WORD'
 
     kendra_client = boto3.client(
         service_name='kendra', 
@@ -1404,7 +1410,7 @@ def getResponse(connectionId, jsonBody):
                 print('rag_type: ', rag_type)                
                 if rag_type=='kendra':      
                     print('upload to kendra: ', object)           
-                    store_document(path, object, requestId)  # store the object into kendra
+                    store_document(path, object, requestId, convType)  # store the object into kendra
                                     
                 else:
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
