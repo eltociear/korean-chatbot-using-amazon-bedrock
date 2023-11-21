@@ -1338,7 +1338,7 @@ def getResponse(connectionId, jsonBody):
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
                 memory_chain.clear()                
-                memory_chain[userId] = memory_chat
+                map_chat[userId] = memory_chain
                 conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chain)
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
