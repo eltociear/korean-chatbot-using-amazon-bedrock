@@ -1157,9 +1157,6 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         
         result = qa({"question": text})
         
-        #msg = result['answer']
-        msg = readStreamMsg(connectionId, requestId, result['answer'])
-        
         print('\nquestion: ', result['question'])    
         print('answer: ', result['answer'])    
         print('chat_history: ', result['chat_history'])    
