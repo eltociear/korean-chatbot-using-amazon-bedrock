@@ -456,7 +456,10 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'csv') {
                 contentType = 'text/csv'
             }
-            else if(ext == 'pptx' || ext == 'pptx') {
+            else if(ext == 'ppt') {
+                contentType = 'application/vnd.ms-powerpoint'
+            }
+            else if(ext == 'pptx') {
                 contentType = 'application/vnd.ms-powerpoint'
             }
             else if(ext == 'doc') {
