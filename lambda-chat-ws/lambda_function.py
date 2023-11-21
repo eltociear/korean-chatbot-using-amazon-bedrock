@@ -37,10 +37,9 @@ bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 modelId = os.environ.get('model_id', 'anthropic.claude-v2')
 print('model_id: ', modelId)
-rag_type = os.environ.get('rag_type', 'faiss')
 isReady = False   
 isDebugging = False
-
+rag_type = os.environ.get('rag_type', 'faiss')
 rag_method = os.environ.get('rag_method', 'RetrievalQA') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')

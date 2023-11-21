@@ -26,7 +26,7 @@ const bucketName = `storage-for-${projectName}-${region}`;
 const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
 const kendra_region = "us-west-2"; 
 
-const rag_type = 'opensearch';  // faiss, opensearch, kendra
+const rag_type = 'kendra';  // faiss, opensearch, kendra
 const rag_method = 'ConversationalRetrievalChain' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
