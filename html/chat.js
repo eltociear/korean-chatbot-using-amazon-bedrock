@@ -456,13 +456,23 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'csv') {
                 contentType = 'text/csv'
             }
+            else if(ext == 'pptx' || ext == 'pptx') {
+                contentType = 'application/vnd.ms-powerpoint'
+            }
+            else if(ext == 'doc') {
+                contentType = 'application/msword'
+            }
+            else if(ext == 'xls') {
+                contentType = 'application/vnd.ms-excel'
+            }
+            print('contentType: ', contentType)
 
             let current = new Date();
             let datastr = getDate(current);
             let timestr = getTime(current);
             let requestTime = datastr+' '+timestr
             let requestId = uuidv4();
-            addSentMessageForSummary(requestId, timestr, "uploading the selected file in order to summerize...");
+            addSentMessageForSummary(requestId, timestr, "uploading the selected file...");
 
             const uri = "upload";
             const xhr = new XMLHttpRequest();
