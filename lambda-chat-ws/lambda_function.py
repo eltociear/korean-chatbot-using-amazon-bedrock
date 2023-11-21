@@ -1156,13 +1156,14 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
         
         result = qa({"question": text})
+        
+        msg = result['answer']
+        msg = readStreamMsg(connectionId, requestId, result)
+        
         print('\nquestion: ', result['question'])    
         print('answer: ', result['answer'])    
         print('chat_history: ', result['chat_history'])    
         print('source_documents: ', result['source_documents']) 
-        
-        msg = result['answer']
-        msg = readStreamMsg(connectionId, requestId, result)
 
         if len(result['source_documents'])>=1 and enableReference=='true':
             msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
