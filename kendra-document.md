@@ -74,3 +74,9 @@ response = client.batch_put_document(
     ]
 )
 ```
+
+여기서 ContentType으로 아래와 같은 파일 확장자를 제공하므로 TXT는 PLAIN_TEXT로, PPTX는 "PPT"로 등록하여야 합니다. 
+
+```text
+PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
+```
