@@ -299,18 +299,18 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       },
     });  
    
-    //new cdk.CfnOutput(this, `WebUrl-for-${projectName}`, {
-    //  value: 'https://'+distribution.domainName+'/index.html',      
-    //  description: 'The web url of request for chat',
+    new cdk.CfnOutput(this, `WebUrl-for-${projectName}`, {
+      value: 'https://'+distribution.domainName+'/index.html',      
+      description: 'The web url of request for chat',
+    });
+    
+    // new cdk.CfnOutput(this, `UpdateCommend-for-${projectName}`, {
+    //  value: 'aws s3 cp ../html/chat.js '+'s3://'+s3Bucket.bucketName,
+    //  description: 'The url of web file upload',
     //});
     new cdk.CfnOutput(this, 'HtmlUpdateCommend', {
       value: 'aws s3 cp ../html/ ' + 's3://' + s3Bucket.bucketName + '/html --recursive',
       description: 'copy commend for web pages',
-    });
-
-    new cdk.CfnOutput(this, `UpdateCommend-for-${projectName}`, {
-      value: 'aws s3 cp ../html/chat.js '+'s3://'+s3Bucket.bucketName,
-      description: 'The url of web file upload',
     });
 
     // Lambda - Upload
