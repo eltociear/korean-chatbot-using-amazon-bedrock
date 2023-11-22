@@ -243,6 +243,23 @@ function onSend(e) {
 
         let requestId = uuidv4();
         addSentMessage(requestId, timestr, message.value);
+
+        if(conversationType=='qa-kendra') {
+            convType = 'qa',
+            rag_type = 'kendra'
+        }
+        else if(conversationType=='qa-opensearch') {
+            convType = 'qa',
+            rag_type = 'opensearch'
+        }
+        else if(conversationType=='qa-faiss') {
+            convType = 'qa',
+            rag_type = 'faiss'
+        }
+        else {
+            convType = conversationType,
+            rag_type = ''
+        }
         
         sendMessage({
             "user_id": userId,
@@ -250,7 +267,8 @@ function onSend(e) {
             "request_time": requestTime,        
             "type": "text",
             "body": message.value,
-            "convType": conversationType
+            "convType": convType,
+            "rag_type": rag_type
         })
         
         sentTime.put(requestId, current);
@@ -505,6 +523,23 @@ attachFile.addEventListener('click', function(){
                     xmlHttp.onreadystatechange = function() {
                         if (xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status == 200 ) {
                             console.log(xmlHttp.responseText);
+
+                            if(conversationType=='qa-kendra') {
+                                convType = 'qa',
+                                rag_type = 'kendra'
+                            }
+                            else if(conversationType=='qa-opensearch') {
+                                convType = 'qa',
+                                rag_type = 'opensearch'
+                            }
+                            else if(conversationType=='qa-faiss') {
+                                convType = 'qa',
+                                rag_type = 'faiss'
+                            }
+                            else {
+                                convType = conversationType,
+                                rag_type = ''
+                            }
                                            
                             // summary for the upload file                            
                             sendMessage({
@@ -513,7 +548,8 @@ attachFile.addEventListener('click', function(){
                                 "request_time": requestTime,
                                 "type": "document",
                                 "body": filename,
-                                "convType": conversationType
+                                "convType": convType,
+                                "rag_type": rag_type
                             })
                         }
                         else if(xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status != 200) {

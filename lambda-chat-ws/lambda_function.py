@@ -1228,6 +1228,10 @@ def getResponse(connectionId, jsonBody):
 
     global llm, modelId, vectorstore, enableReference, rag_type
     global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
+    
+    if "rag_type" in jsonBody:
+        rag_type = jsonBody['rag_type']  # RAG type
+        print('rag Type: ', rag_type)
 
     # create memory
     if convType=='qa':
