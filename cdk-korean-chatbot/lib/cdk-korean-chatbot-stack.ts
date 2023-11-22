@@ -75,10 +75,10 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }
 
     // copy web application files into s3 bucket
-    new s3Deploy.BucketDeployment(this, `upload-HTML-for-${projectName}`, {
-      sources: [s3Deploy.Source.asset("../html")],
-      destinationBucket: s3Bucket,
-    });    
+    // new s3Deploy.BucketDeployment(this, `upload-HTML-for-${projectName}`, {
+    //  sources: [s3Deploy.Source.asset("../html")],
+    //  destinationBucket: s3Bucket,
+    //});    
 
     // cloudfront
     const distribution = new cloudFront.Distribution(this, `cloudfront-for-${projectName}`, {
@@ -299,9 +299,13 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       },
     });  
    
-    new cdk.CfnOutput(this, `WebUrl-for-${projectName}`, {
-      value: 'https://'+distribution.domainName+'/index.html',      
-      description: 'The web url of request for chat',
+    //new cdk.CfnOutput(this, `WebUrl-for-${projectName}`, {
+    //  value: 'https://'+distribution.domainName+'/index.html',      
+    //  description: 'The web url of request for chat',
+    //});
+    new cdk.CfnOutput(this, 'HtmlUpdateCommend', {
+      value: 'aws s3 cp ../html/ ' + 's3://' + s3Bucket.bucketName + '/html --recursive',
+      description: 'copy commend for web pages',
     });
 
     new cdk.CfnOutput(this, `UpdateCommend-for-${projectName}`, {
