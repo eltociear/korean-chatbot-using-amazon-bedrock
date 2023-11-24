@@ -85,7 +85,7 @@ def get_parameter(modelId):
             "max_tokens_to_sample":8191, # 8k
             "temperature":0.1,
             "top_k":250,
-            "top_p": 0.9,
+            "top_p":0.9,
             "stop_sequences": [HUMAN_PROMPT]            
         }
 parameters = get_parameter(modelId)
@@ -1047,10 +1047,11 @@ def _get_chat_history(chat_history):
     return buffer
 
 def create_ConversationalRetrievalChain(PROMPT, retriever):  
-    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+    condense_template = """Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
-    Chat History:
+    <history>
     {chat_history}
+    </history>
     Follow Up Input: {question}
     Standalone question:"""
     CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_template)
@@ -1237,18 +1238,16 @@ def getResponse(connectionId, jsonBody):
 
     # create memory
     if convType=='qa':
-        if rag_type=='kendra' or rag_type=='opensearch' or (rag_type=='faiss' and isReady==True):     
-            if userId in map_chain:  
-                memory_chain = map_chain[userId]
-                print('memory_chain exist. reuse it!')            
-            else: 
-                # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-                memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
-                
-                map_chain[userId] = memory_chain
-                print('memory_chain does not exist. create new one!')
+        if userId in map_chain:  
+            memory_chain = map_chain[userId]
+            print('memory_chain exist. reuse it!')
+        else: 
+            # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
+            map_chain[userId] = memory_chain
+            print('memory_chain does not exist. create new one!')
 
-        elif rag_type=='faiss' and isReady==False:        
+        if rag_type=='faiss' and isReady==False:        
             if userId in map_chat:  
                 memory_chat = map_chat[userId]
                 print('memory_chat exist. reuse it!')    
@@ -1259,8 +1258,8 @@ def getResponse(connectionId, jsonBody):
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
    
-                map_chat[userId] = memory_chat
-                print('memory_chat does not exist. create new one!')        
+            map_chat[userId] = memory_chat
+            print('memory_chat does not exist. create new one!')                        
             conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
 
     else:    # normal 
@@ -1344,13 +1343,8 @@ def getResponse(connectionId, jsonBody):
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
                 if convType == "qa": 
-                    if rag_type=='kendra' or rag_type=='opensearch' or (rag_type=='faiss' and isReady==True):   
-                        memory_chain.clear()
-                        map_chain[userId] = memory_chain
-                    elif rag_type=='faiss' and isReady==False:
-                        memory_chat.clear()         
-                        map_chat[userId] = memory_chat
-                        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+                    memory_chain.clear()
+                    map_chain[userId] = memory_chain
                 else:
                     memory_chat.clear()                
                     map_chat[userId] = memory_chat
@@ -1366,7 +1360,7 @@ def getResponse(connectionId, jsonBody):
                         msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
-                        memory_chain.chat_memory.add_ai_message(msg)     
+                        memory_chain.chat_memory.add_ai_message(msg)
                     else: 
                         msg = get_answer_using_RAG(text, rag_type, convType, connectionId, requestId)     
                 
