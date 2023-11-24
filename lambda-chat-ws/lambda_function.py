@@ -1004,7 +1004,9 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
     if rag_type == 'faiss':
-        query_embedding = vectorstore_faiss.embedding_function(query)
+        #query_embedding = vectorstore_faiss.embedding_function(query)
+        query_embedding = vectorstore_faiss.embed_query(query)
+        print('query_embedding: ', query_embedding)
         relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
@@ -1153,7 +1155,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         if rag_type == 'kendra':
             qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
         elif rag_type == 'opensearch': # opensearch
-            vectorstoreRetriever = vectorstore.as_retriever(
+            vectorstoreRetriever = vectorstore_opensearch.as_retriever(
                 search_type="similarity", 
                 search_kwargs={
                     "k": 5
@@ -1161,7 +1163,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             )
             qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
         elif rag_type == 'faiss': # faiss
-            vectorstoreRetriever = vectorstore.as_retriever(
+            vectorstoreRetriever = vectorstore_faiss.as_retriever(
                 search_type="similarity", 
                 search_kwargs={
                     "k": 5
