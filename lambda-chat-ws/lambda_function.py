@@ -1035,7 +1035,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         #"document_id": document_id,
                         "source": uri,
                         "title": name,
-                        "excerpt": document.page_content,
+                        "excerpt": document[0].page_content,
                         "document_attributes": {
                             "_excerpt_page_number": page
                         }
@@ -1054,7 +1054,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         #"document_id": document_id,
                         "source": uri,
                         "title": name,
-                        "excerpt": document.page_content,
+                        "excerpt": document[0].page_content,
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
