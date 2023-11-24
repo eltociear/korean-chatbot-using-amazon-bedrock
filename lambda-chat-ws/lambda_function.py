@@ -869,15 +869,58 @@ def retrieve_from_Kendra(query, top_k):
 
         if len(resp["ResultItems"]) >= 1:
             relevant_docs = []
+            retrieve_docs = []
             for query_result in resp["ResultItems"]:
                 confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
                 #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
-                relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+                retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+            # print('relevant_docs: ', relevant_docs)
 
+            print('Looking for FAQ...')
+            try:
+                resp =  kendra_client.query(
+                    IndexId = index_id,
+                    QueryText = query,
+                    PageSize = 10,
+                    QueryResultTypeFilter = "QUESTION_ANSWER",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
+                    AttributeFilter = {
+                        "EqualsTo": {      
+                            "Key": "_language_code",
+                            "Value": {
+                                "StringValue": "ko"
+                            }
+                        },
+                    },      
+                )
+                print('query resp:', resp)
+                query_id = resp["QueryId"]
+
+                if len(resp["ResultItems"]) >= 1:
+                    
+                    for query_result in resp["ResultItems"]:
+                        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+
+                        if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
+                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+
+                            if len(relevant_docs) >= top_k:
+                                break
+                    # print('relevant_docs: ', relevant_docs)
+
+                else: 
+                    print('No result for FAQ')
+
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)
+                raise Exception ("Not able to query from Kendra")                
+
+            for doc in retrieve_docs:                
                 if len(relevant_docs) >= top_k:
                     break
-            # print('relevant_docs: ', relevant_docs)
+                else:
+                    relevant_docs.append(doc)            
             
         else:  # falback using query API
             print('No result for Retrieve API!')
@@ -935,17 +978,30 @@ def get_reference(docs, rag_method, rag_type):
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                name = doc.metadata['title']     
+                name = doc.metadata['title']  
+
+                confidence = ""
+                if 'confidence' in doc:
+                    confidence = doc['confidence']
 
                 uri = ""
                 if ("document_attributes" in doc.metadata) and ("_source_uri" in doc.metadata['document_attributes']):
                     uri = doc.metadata['document_attributes']['_source_uri']
-                                    
+
+                page = ""      
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
-                    reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
+                    
+                if confidence:
+                    if page:
+                        reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
+                    else:
+                        reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
                 else:
-                    reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
+                    if page:
+                        reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n'
+                    else:
+                        reference = reference + f'{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n'
         else:
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
