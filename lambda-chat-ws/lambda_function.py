@@ -1121,7 +1121,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
                     "k": top_k
                 }
             )
-        else rag_type=='faiss':
+        elif rag_type=='faiss':
             retriever = vectorstore_faiss.as_retriever(
                 search_type="similarity", 
                 search_kwargs={
