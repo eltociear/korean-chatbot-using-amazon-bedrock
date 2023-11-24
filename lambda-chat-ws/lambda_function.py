@@ -983,20 +983,41 @@ def get_reference(docs, rag_method, rag_type):
                             if "_excerpt_page_number" in doc['metadata']['document_attributes']:
                                 page = doc['metadata']['document_attributes']['_excerpt_page_number']
                                                 
-                        if uri and page: 
+                        if page: 
                             reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
                         elif uri:
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
-        else:
+        elif rag_type == 'opensearch':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
                 print(f'## Document {i+1}: {doc}')
                 
-                page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                page = ""
+                if "document_attributes" in doc['metadata']:
+                    if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                        page = doc['metadata']['document_attributes']['_excerpt_page_number']
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+        
+        elif rag_type == 'faiss':
+            reference = "\n\nFrom\n"
+            for i, doc in enumerate(docs):
+                print(f'## Document {i+1}: {doc}')
+                
+                page = ""
+                if "document_attributes" in doc['metadata']:
+                    if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                        page = doc['metadata']['document_attributes']['_excerpt_page_number']
+                uri = doc['metadata']['source']
+                name = doc['metadata']['title']
+                confidence = doc['confidence']
+
+                if page: 
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                elif uri:
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
         
     return reference
 
