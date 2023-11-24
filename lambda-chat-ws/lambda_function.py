@@ -1008,9 +1008,13 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         #query_embedding = bedrock_embeddings.embed_query(query)
         #print('query_embedding: ', query_embedding)
         #relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
+        relevant_documents2 = vectorstore_faiss.similarity_search_with_score(query)
+        print('relevant_documents2',relevant_documents2)
         
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
+
+        
 
         #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
         #print('----')
