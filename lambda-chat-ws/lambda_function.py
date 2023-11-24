@@ -1009,14 +1009,17 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         #print('query_embedding: ', query_embedding)
         #relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
         relevant_documents2 = vectorstore_faiss.similarity_search_with_score(query)
-        print('relevant_documents2',relevant_documents2)
+        print('relevant_documents2: ',relevant_documents2)
 
         for i, doc in enumerate(relevant_documents2):
-            print("doc[{i}]': {doc}")
-            score = doc[1]
+            print('doc['+i+']: '+doc)
             page_num = doc[0].metadata['page']
-            content = doc[0].metadata['page_content']            
+            content = doc[0].page_content            
+            score = doc[1]            
             print(str(score) + " - " + page_num+', content:'+content)
+
+        relevant_documents3 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
+        print('relevant_documents3: ',relevant_documents3)
         
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
