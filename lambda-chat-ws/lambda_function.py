@@ -1004,10 +1004,10 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
     if rag_type == 'faiss':
-        query_embedding = vectorstore.embedding_function(query)
-        relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
+        query_embedding = vectorstore_faiss.embedding_function(query)
+        relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
     elif rag_type == 'opensearch':
-        relevant_documents = vectorstore.similarity_search(query)
+        relevant_documents = vectorstore_opensearch.similarity_search(query)
 
         #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
         #print('----')
@@ -1113,8 +1113,16 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if rag_type=='kendra':
             retriever = kendraRetriever
-        elif rag_type=='opensearch' or rag_type=='faiss':
-            retriever = vectorstore.as_retriever(
+        elif rag_type=='opensearch':
+            retriever = vectorstore_opensearch.as_retriever(
+                search_type="similarity", 
+                search_kwargs={
+                    #"k": 3, 'score_threshold': 0.8
+                    "k": top_k
+                }
+            )
+        else rag_type=='faiss':
+            retriever = vectorstore_faiss.as_retriever(
                 search_type="similarity", 
                 search_kwargs={
                     #"k": 3, 'score_threshold': 0.8
@@ -1144,7 +1152,15 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         PROMPT = get_prompt_template(text, convType)
         if rag_type == 'kendra':
             qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
-        else: # opensearch faiss
+        elif rag_type == 'opensearch': # opensearch
+            vectorstoreRetriever = vectorstore.as_retriever(
+                search_type="similarity", 
+                search_kwargs={
+                    "k": 5
+                }
+            )
+            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
+        elif rag_type == 'faiss': # faiss
             vectorstoreRetriever = vectorstore.as_retriever(
                 search_type="similarity", 
                 search_kwargs={
@@ -1257,7 +1273,7 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     print('Conversation Type: ', convType)
 
-    global llm, modelId, vectorstore, enableReference, rag_type
+    global llm, modelId, vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
     global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
     
     if "rag_type" in jsonBody:
@@ -1306,7 +1322,7 @@ def getResponse(connectionId, jsonBody):
 
     # rag sources
     if convType == 'qa' and rag_type == 'opensearch':
-        vectorstore = OpenSearchVectorSearch(
+        vectorstore_opensearch = OpenSearchVectorSearch(
             #index_name = "rag-index-*", # all
             index_name = 'rag-index-'+userId+'-*',
             is_aoss = False,
@@ -1455,13 +1471,13 @@ def getResponse(connectionId, jsonBody):
                         if rag_type == 'faiss':
                             if isReady == False:   
                                 embeddings = bedrock_embeddings
-                                vectorstore = FAISS.from_documents( # create vectorstore from a document
+                                vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
                                     docs,  # documents
                                     embeddings  # embeddings
                                 )
                                 isReady = True
                             else:
-                                vectorstore.add_documents(docs)
+                                vectorstore_faiss.add_documents(docs)
 
                         elif rag_type == 'opensearch':    
                             new_vectorstore = OpenSearchVectorSearch(
