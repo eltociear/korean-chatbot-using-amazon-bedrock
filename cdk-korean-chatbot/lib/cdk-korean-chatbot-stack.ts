@@ -81,7 +81,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     //});    
     
     new cdk.CfnOutput(this, `UploadFAQContents-for-${projectName}`, {
-      value: 'aws s3 cp ../contents/faq '+'s3://'+s3Bucket.bucketName+'/contents --recursive',
+      value: 'aws s3 cp ../contents/faq '+'s3://'+s3Bucket.bucketName+'/contents/faq --recursive',
       description: 'The commend for uploading contents of FAQ',
     });
 
