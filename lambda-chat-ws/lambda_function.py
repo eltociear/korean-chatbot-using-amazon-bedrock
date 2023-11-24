@@ -356,7 +356,7 @@ def get_prompt_template(query, convType):
             </question>
 
             Assistant:"""
-            
+
         elif convType=="translation": 
             prompt_template = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
             
@@ -1456,7 +1456,7 @@ def getResponse(connectionId, jsonBody):
                             if isReady == False:   
                                 vectorstore = FAISS.from_documents( # create vectorstore from a document
                                     docs,  # documents
-                                    bedrock_embeddings  # embeddings
+                                    embeddings = bedrock_embeddings  # embeddings
                                 )
                                 isReady = True
                             else:
