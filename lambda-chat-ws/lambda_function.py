@@ -920,7 +920,7 @@ def retrieve_from_Kendra(query, top_k):
                 if len(relevant_docs) >= top_k:
                     break
                 else:
-                    relevant_docs.append(doc)            
+                    relevant_docs.append(doc)
             
         else:  # falback using query API
             print('No result for Retrieve API!')
@@ -978,30 +978,17 @@ def get_reference(docs, rag_method, rag_type):
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                name = doc.metadata['title']  
-
-                confidence = ""
-                if 'confidence' in doc:
-                    confidence = doc['confidence']
+                name = doc.metadata['title']     
 
                 uri = ""
                 if ("document_attributes" in doc.metadata) and ("_source_uri" in doc.metadata['document_attributes']):
                     uri = doc.metadata['document_attributes']['_source_uri']
-
-                page = ""      
+                                    
                 if ("document_attributes" in doc.metadata) and ("_excerpt_page_number" in doc.metadata['document_attributes']):
                     page = doc.metadata['document_attributes']['_excerpt_page_number']
-                    
-                if confidence:
-                    if page:
-                        reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
-                    else:
-                        reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
+                    reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n'
                 else:
-                    if page:
-                        reference = reference + f'{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n'
-                    else:
-                        reference = reference + f'{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n'
+                    reference = reference + f'{i+1}. <a href={uri} target=_blank>{name}</a>\n'
         else:
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
