@@ -170,6 +170,18 @@ def get_prompt_template(query, convType):
             </question>
             
             Assistant:"""
+        elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
+            prompt_template = """\n\nHuman: 다음은 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+
+            <history>
+            {history}
+            </history>
+
+            <question>            
+            {input}
+            </question>
+            
+            Assistant:"""
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
@@ -319,6 +331,19 @@ def get_prompt_template(query, convType):
 
             Assistant:"""
 
+        elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
+            prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
+
+            <history>
+            {history}
+            </history>
+            
+            <question>            
+            {input}
+            </question>
+
+            Assistant:"""           
+
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """\n\nHuman: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
             
@@ -331,6 +356,7 @@ def get_prompt_template(query, convType):
             </question>
 
             Assistant:"""
+            
         elif convType=="translation": 
             prompt_template = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
             
@@ -1112,7 +1138,32 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         print('source_documents: ', source_documents)
 
         if len(source_documents)>=1 and enableReference=='true':
-            msg = msg+get_reference(source_documents, rag_method, rag_type)
+            msg = msg+get_reference(source_documents, rag_method, rag_type)    
+
+    elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
+        PROMPT = get_prompt_template(text, convType)
+        if rag_type == 'kendra':
+            qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
+        else: # opensearch faiss
+            vectorstoreRetriever = vectorstore.as_retriever(
+                search_type="similarity", 
+                search_kwargs={
+                    "k": 5
+                }
+            )
+            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
+        
+        result = qa({"question": text})
+        
+        msg = result['answer']
+        print('\nquestion: ', result['question'])    
+        print('answer: ', result['answer'])    
+        print('chat_history: ', result['chat_history'])    
+        print('source_documents: ', result['source_documents']) 
+
+        if len(result['source_documents'])>=1 and enableReference=='true':
+            msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
+    
     elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
         revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
@@ -1144,30 +1195,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
         if len(relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(relevant_docs, rag_method, rag_type)
-    
-    else: # ConversationalRetrievalChain
-        PROMPT = get_prompt_template(text, convType)
-        if rag_type == 'kendra':
-            qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
-        else: # opensearch faiss
-            vectorstoreRetriever = vectorstore.as_retriever(
-                search_type="similarity", 
-                search_kwargs={
-                    "k": 5
-                }
-            )
-            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
-        
-        result = qa({"question": text})
-        
-        msg = result['answer']
-        print('\nquestion: ', result['question'])    
-        print('answer: ', result['answer'])    
-        print('chat_history: ', result['chat_history'])    
-        print('source_documents: ', result['source_documents']) 
 
-        if len(result['source_documents'])>=1 and enableReference=='true':
-            msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
 
     if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -1175,12 +1203,12 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
+    
 
     return msg
 
 def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
     conversation.prompt = get_prompt_template(text, convType)
-
     try: 
         stream = conversation.predict(input=text)
         #print('stream: ', stream)                        
