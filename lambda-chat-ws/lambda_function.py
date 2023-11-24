@@ -1003,71 +1003,95 @@ def get_reference(docs, rag_method, rag_type):
 def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
+    relevant_docs = []
     if rag_type == 'faiss':
-        relevant_documents = vectorstore_faiss.similarity_search(query)
+        #relevant_documents = vectorstore_faiss.similarity_search(query)
         #query_embedding = bedrock_embeddings.embed_query(query)
         #print('query_embedding: ', query_embedding)
         #relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
-        relevant_documents2 = vectorstore_faiss.similarity_search_with_score(query)
-        print('relevant_documents2: ',relevant_documents2)
 
-        for i, doc in enumerate(relevant_documents2):
-            page_num = doc[0].metadata['page']
-            content = doc[0].page_content            
-            score = doc[1]           
-            print('score', score) 
-            print('page_num', page_num)
-            print('content', content)
-            print('doc['+str(i)+']: '+doc)
-            
-
-        relevant_documents3 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
-        print('relevant_documents3: ',relevant_documents3)
+        relevant_documents = vectorstore_faiss.similarity_search_with_score(query)
         
+        relevant_documents1 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
+        print('relevant_documents1: ',relevant_documents1)
+        
+        for i, document in enumerate(relevant_documents):
+            #print('document.page_content:', document.page_content)
+            #print('document.metadata:', document.metadata)
+            print(f'## Document {i+1}: {document}')
+
+            name = document[0].metadata['name']
+            page = document[0].metadata['page']
+            uri = document[0].metadata['uri']
+            confidence = document[1]
+            
+            if page:
+                doc_info = {
+                    "rag_type": rag_type,
+                    #"api_type": apiType,
+                    "confidence": confidence,
+                    "metadata": {
+                        #"type": query_result_type,
+                        #"document_id": document_id,
+                        "source": uri,
+                        "title": name,
+                        "excerpt": document.page_content,
+                        "document_attributes": {
+                            "_excerpt_page_number": page
+                        }
+                    },
+                    #"query_id": query_id,
+                    #"feedback_token": feedback_token
+                }
+
+            else: 
+                doc_info = {
+                    "rag_type": rag_type,
+                    #"api_type": apiType,
+                    "confidence": confidence,
+                    "metadata": {
+                        #"type": query_result_type,
+                        #"document_id": document_id,
+                        "source": uri,
+                        "title": name,
+                        "excerpt": document.page_content,
+                    },
+                    #"query_id": query_id,
+                    #"feedback_token": feedback_token
+                }
+            
+            relevant_docs.append(doc_info)
+            
     elif rag_type == 'opensearch':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
 
-        
+        for i, document in enumerate(relevant_documents):
+            #print('document.page_content:', document.page_content)
+            #print('document.metadata:', document.metadata)
+            print(f'## Document {i+1}: {document}')
 
-        #print(f'{len(relevant_documents)} documents are fetched which are relevant to the query.')
-        #print('----')
-        #for i, rel_doc in enumerate(relevant_documents):
-        #    if debugMessageMode=='true':
-        #        print(f'## Document {i+1}: {rel_doc}.......')
-        #        sendDebugMessage(connectionId, requestId, '[Debug-'+rag_type+'] relevant_docs['+str(i+1)+']: '+rel_doc.page_content)
-        #    else:
-        #        print(f'## Document {i+1}: {rel_doc.page_content}.......')
-        #print('---')        
-        #print('length of relevant_documents: ', len(relevant_documents))
+            name = document.metadata['name']
+            page = document.metadata['page']
+            uri = document.metadata['uri']
 
-    relevant_docs = []
-    for i, document in enumerate(relevant_documents):
-        #print('document.page_content:', document.page_content)
-        #print('document.metadata:', document.metadata)
-        print(f'## Document {i+1}: {document}')
-
-        name = document.metadata['name']
-        page = document.metadata['page']
-        uri = document.metadata['uri']
-
-        doc_info = {
-            "rag_type": rag_type,
-            #"api_type": apiType,
-            #"confidence": confidence,
-            "metadata": {
-                #"type": query_result_type,
-                #"document_id": document_id,
-                "source": uri,
-                "title": name,
-                "excerpt": document.page_content,
-                "document_attributes": {
-                    "_excerpt_page_number": page
-                }
-            },
-            #"query_id": query_id,
-            #"feedback_token": feedback_token
-        }
-        relevant_docs.append(doc_info)
+            doc_info = {
+                "rag_type": rag_type,
+                #"api_type": apiType,
+                #"confidence": confidence,
+                "metadata": {
+                    #"type": query_result_type,
+                    #"document_id": document_id,
+                    "source": uri,
+                    "title": name,
+                    "excerpt": document.page_content,
+                    "document_attributes": {
+                        "_excerpt_page_number": page
+                    }
+                },
+                #"query_id": query_id,
+                #"feedback_token": feedback_token
+            }
+            relevant_docs.append(doc_info)
 
     return relevant_docs
 
