@@ -1454,9 +1454,10 @@ def getResponse(connectionId, jsonBody):
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
                         if rag_type == 'faiss':
                             if isReady == False:   
+                                embeddings = bedrock_embeddings
                                 vectorstore = FAISS.from_documents( # create vectorstore from a document
                                     docs,  # documents
-                                    embeddings = bedrock_embeddings  # embeddings
+                                    embeddings  # embeddings
                                 )
                                 isReady = True
                             else:
