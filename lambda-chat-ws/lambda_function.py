@@ -47,7 +47,7 @@ opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
-
+top_k = 8
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 
@@ -110,7 +110,7 @@ map_chat = dict() # Conversation for normal
 
 kendraRetriever = AmazonKendraRetriever(
     index_id=kendraIndex, 
-    top_k=5, 
+    top_k=top_k, 
     region_name=kendra_region,
     attribute_filter = {
         "EqualsTo": {      
@@ -1080,6 +1080,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         print('relevant_documents1: ',relevant_documents1)
         
         for i, document in enumerate(relevant_documents):
+            if i>=top_k:
+                break
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
             print(f'## Document {i+1}: {document}')
@@ -1130,6 +1132,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         relevant_documents = vectorstore_opensearch.similarity_search(query)
 
         for i, document in enumerate(relevant_documents):
+            if i>=top_k:
+                break
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
             print(f'## Document {i+1}: {document}')
@@ -1209,8 +1213,7 @@ def create_ConversationalRetrievalChain(PROMPT, retriever):
 
     return qa
 
-def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
-    top_k = 5    
+def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):    
     if rag_method == 'RetrievalQA': # RetrievalQA
         revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
