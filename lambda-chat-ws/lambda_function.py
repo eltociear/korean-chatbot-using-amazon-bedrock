@@ -1014,8 +1014,10 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         for i, doc in enumerate(relevant_documents2):
             page_num = doc[0].metadata['page']
             content = doc[0].page_content            
-            score = doc[1]            
-            print(str(score) + " - " + page_num+', content:'+content)
+            score = doc[1]           
+            print('score', score) 
+            print('page_num', page_num)
+            print('content', content)
             print('doc['+str(i)+']: '+doc)
             
 
