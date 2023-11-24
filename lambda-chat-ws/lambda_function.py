@@ -1012,11 +1012,12 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         print('relevant_documents2: ',relevant_documents2)
 
         for i, doc in enumerate(relevant_documents2):
-            print('doc['+i+']: '+doc)
             page_num = doc[0].metadata['page']
             content = doc[0].page_content            
             score = doc[1]            
             print(str(score) + " - " + page_num+', content:'+content)
+            print('doc['+str(i)+']: '+doc)
+            
 
         relevant_documents3 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
         print('relevant_documents3: ',relevant_documents3)
