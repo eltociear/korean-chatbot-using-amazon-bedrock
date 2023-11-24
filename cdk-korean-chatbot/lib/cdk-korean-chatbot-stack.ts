@@ -602,6 +602,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       stageName: stage
     }); 
 
+    new cdk.CfnOutput(this, `FAQ-Update-for-${projectName}`, {
+      value: 'aws create-faq --index-id '+kendraIndex+' --name FAQ_fsi --s3-path s3://'+s3Bucket.bucketName+'/contents/faq/FAQ_fsi.csv --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
+      description: 'The commend for uploading contents of FAQ',
+    });
+
     // deploy components
     new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)     
 
