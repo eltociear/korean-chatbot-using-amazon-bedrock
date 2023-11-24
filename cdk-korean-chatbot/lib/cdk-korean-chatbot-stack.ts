@@ -79,6 +79,16 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     //  sources: [s3Deploy.Source.asset("../html")],
     //  destinationBucket: s3Bucket,
     //});    
+    
+    // upload FAQ files to s3 bucket
+    new s3Deploy.BucketDeployment(this, `upload-FAQ-for-${projectName}`, {
+      sources: [s3Deploy.Source.asset("../contents/faq")],
+      destinationBucket: s3Bucket,
+    }); 
+    new cdk.CfnOutput(this, `UploadFAQContents-for-${projectName}`, {
+      value: 'aws s3 cp ../contents/faq '+'s3://'+s3Bucket.bucketName+'/contents --recursive',
+      description: 'The commend for uploading contents of FAQ',
+    });
 
     // cloudfront
     const distribution = new cloudFront.Distribution(this, `cloudfront-for-${projectName}`, {
