@@ -603,7 +603,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }); 
 
     new cdk.CfnOutput(this, `FAQ-Update-for-${projectName}`, {
-      value: 'aws create-faq --index-id '+kendraIndex+' --name FAQ_fsi --s3-path s3://'+s3Bucket.bucketName+'/contents/faq/FAQ_fsi.csv --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
+      value: 'aws create-faq --index-id '+kendraIndex+' --name FAQ_fsi --s3-path \'{\"Bucket\": \"'+s3Bucket.bucketName+'\", \"Key\": \" \"contents/faq/FAQ_fsi.csv\"}\' --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
       description: 'The commend for uploading contents of FAQ',
     });
 
