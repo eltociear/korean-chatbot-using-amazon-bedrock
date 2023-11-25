@@ -222,7 +222,7 @@ def get_prompt_template(query, convType):
             <review>
             {input}
             </review>
-            Assistant: """
+            Assistant:"""
 
         elif convType == "extraction":  # information extraction
             prompt_template = """\n\nHuman: 다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요.
@@ -231,7 +231,7 @@ def get_prompt_template(query, convType):
             {input}
             </text>
 
-            Assistant: """
+            Assistant:"""
 
         elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
             prompt_template = """\n\nHuman: 아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요.
@@ -240,7 +240,7 @@ def get_prompt_template(query, convType):
             {input}
             </text>
 
-            Assistant: """
+            Assistant:"""
 
         elif convType == "grammar":  # Checking Grammatical Errors
             prompt_template = """\n\nHuman: 다음의 <article>에서 문장의 오류를 찾아서 설명하고, 오류가 수정된 문장을 답변 마지막에 추가하여 주세요.
@@ -395,7 +395,7 @@ def get_prompt_template(query, convType):
             {input}
             </text>
 
-            Assistant: """
+            Assistant:"""
 
         elif convType == "extraction":  # for sentiment, input
             prompt_template = """\n\nHuman: Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags.
@@ -735,7 +735,11 @@ def get_revised_question(connectionId, requestId, query):
     </history>
 
     Follow Up Input: {question}
-    Standalone question:"""
+    Assistant: Standalone question:"""
+
+    #"Combine the chat history and follow up question into "
+    #"a standalone question. Chat History: {chat_history}"
+    #"Follow up question: {question}"
 
     # other sample for condense template
     # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
@@ -1210,7 +1214,7 @@ def create_ConversationalRetrievalChain(PROMPT, retriever):
     {chat_history}
     </history>
     Follow Up Input: {question}
-    Standalone question:"""
+    Assistant: Standalone question:"""
     CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_template)
         
     qa = ConversationalRetrievalChain.from_llm(
