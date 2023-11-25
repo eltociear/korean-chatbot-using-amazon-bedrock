@@ -728,13 +728,14 @@ def extract_chat_history_from_memory():
     return chat_history
 
 def get_revised_question(connectionId, requestId, query):    
-    condense_template = """Human: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
      <history>
     {chat_history}
     </history>
 
     Follow Up Input: {question}
+    
     Assistant: Standalone question:"""
 
     #"Combine the chat history and follow up question into "
@@ -1208,12 +1209,14 @@ def _get_chat_history(chat_history):
     return buffer
 
 def create_ConversationalRetrievalChain(PROMPT, retriever):  
-    condense_template = """Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
 
     <history>
     {chat_history}
     </history>
+    
     Follow Up Input: {question}
+    
     Assistant: Standalone question:"""
     CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_template)
         
