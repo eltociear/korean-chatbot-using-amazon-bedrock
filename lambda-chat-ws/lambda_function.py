@@ -737,6 +737,7 @@ def get_revised_question(connectionId, requestId, query):
     #Follow Up Input: {question}
     
     #Assistant: Standalone question:"""
+    print('<query: '+query+'>')
 
     condense_template = """\n\nHuman: Combine the chat history and follow up question into a standalone question. Answer only with the new question.
     
@@ -774,6 +775,8 @@ def get_revised_question(connectionId, requestId, query):
     condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     try:         
         revised_question = condense_prompt_chain.run({"question": query, "chat_history": chat_history})
+
+        print('<revised_question: '+revised_question+'>')
 
     except Exception:
         err_msg = traceback.format_exc()
