@@ -144,13 +144,13 @@ def sendDebugMessage(connectionId, requestId, msg):
     sendMessage(connectionId, debugMsg)
 
 def sendErrorMessage(connectionId, requestId, msg):
-    debugMsg = {
+    errorMsg = {
         'request_id': requestId,
         'msg': msg,
         'status': 'error'
     }
-    #print('debug: ', json.dumps(debugMsg))
-    sendMessage(connectionId, debugMsg)
+    #print('error: ', json.dumps(errorMsg))
+    sendMessage(connectionId, errorMsg)
 
 def get_prompt_template(query, convType):
     # check korean

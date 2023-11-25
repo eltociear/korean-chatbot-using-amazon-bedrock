@@ -124,7 +124,11 @@ function connect(endpoint, type) {
                 else if(response.status == 'debug') {
                     console.log('debug: ', response.msg);
                     addNotifyMessage(response.msg);
-                }           
+                }          
+                else if(response.status == 'error') {
+                    console.log('error: ', response.msg);
+                    addNotifyMessage(response.msg);
+                }   
             }
             else {
                 console.log('system message: ', event.data);
