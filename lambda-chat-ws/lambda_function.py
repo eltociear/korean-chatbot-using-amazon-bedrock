@@ -747,12 +747,25 @@ def get_revised_question(connectionId, requestId, query):
     </history>
     
     Follow up question:
-    <history>
+    <question>
     {question}
-    </history>
+    </question>
     
     Assistant: Standalone question:"""
 
+
+    #condense_template = """\n\nHuman 다음의 <history>는 Human과 Assistant의 이전 대화입니다.    
+    
+    #<history>
+    #{chat_history}
+    #</history>
+    
+    #Answer only with the new question.
+    
+    #Human: How would you ask the question considering the previous conversation: {question}
+    
+    #Assistant: Question:"""
+    
 
 
     #"Combine the chat history and follow up question into "
