@@ -739,7 +739,7 @@ def get_revised_question(connectionId, requestId, query):
     #Assistant: Standalone question:"""
     print('<query: '+query+'>')
 
-    condense_template = """\n\nHuman: Combine the chat history and follow up question into a standalone question. Answer only with the new question.
+    condense_template = """\n\nHuman: Combine the chat history and follow up question into a standalone question. 
     
     Chat History:     
     <history>
@@ -748,7 +748,7 @@ def get_revised_question(connectionId, requestId, query):
     
     Follow up question:
     <question>
-    {question}
+    {input_text}
     </question>
     
     Assistant: Standalone question:"""
@@ -779,7 +779,7 @@ def get_revised_question(connectionId, requestId, query):
     # Assistant: Question:""")
 
     CONDENSE_QUESTION_PROMPT = PromptTemplate(
-        template = condense_template, input_variables = ["chat_history", "question"]
+        template = condense_template, input_variables = ["chat_history", "input_text"]
     )
     
     chat_history = extract_chat_history_from_memory()
