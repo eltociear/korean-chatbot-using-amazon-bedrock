@@ -460,7 +460,7 @@ def get_prompt_template(query, convType):
     
     return PromptTemplate.from_template(prompt_template)
 
-def store_document_for_faiss(docs):
+def store_document_for_faiss(docs, vectorstore_faiss):
     print('store document into faiss')    
     vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
@@ -1609,7 +1609,7 @@ def getResponse(connectionId, jsonBody):
                                     )
                                     isReady = True
                                 else:
-                                    store_document_for_faiss(docs)
+                                    store_document_for_faiss(doc, vectorstore_faiss)
                                                                 
                             elif rag_type == 'opensearch':    
                                 store_document_for_opensearch(docs, userId, requestId)
@@ -1633,7 +1633,7 @@ def getResponse(connectionId, jsonBody):
                             )
                             isReady = True
                         else: 
-                            p3 = Process(target=store_document_for_faiss, args=(docs))
+                            p3 = Process(target=store_document_for_faiss, args=(docs, vectorstore_faiss))
                             p3.start(); p3.join()
                         
                 print('processing time: ', str(time.time() - start_time))
