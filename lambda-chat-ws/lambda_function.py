@@ -728,7 +728,7 @@ def extract_chat_history_from_memory():
     return chat_history
 
 def get_revised_question(connectionId, requestId, query):    
-    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
 
      <history>
     {chat_history}
