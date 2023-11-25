@@ -891,7 +891,7 @@ def retrieve_from_Kendra(query, top_k):
                 },
             },      
         )
-        print('retrieve resp:', resp)
+        print('retrieve resp:', json.dumps(resp))
         query_id = resp["QueryId"]
 
         if len(resp["ResultItems"]) >= 1:
@@ -920,7 +920,7 @@ def retrieve_from_Kendra(query, top_k):
                         },
                     },      
                 )
-                print('query resp:', resp)
+                print('query resp:', json.dumps(resp))
                 query_id = resp["QueryId"]
 
                 if len(resp["ResultItems"]) >= 1:
@@ -1333,7 +1333,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
         else:
             relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
-        print('relevant_docs: ', relevant_docs)
+        print('relevant_docs: ', json.dumps(relevant_docs))
 
         relevant_context = ""
         for document in relevant_docs:
