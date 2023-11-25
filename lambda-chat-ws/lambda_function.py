@@ -460,16 +460,9 @@ def get_prompt_template(query, convType):
     
     return PromptTemplate.from_template(prompt_template)
 
-def store_document_for_faiss(docs, bedrock_embeddings, isReady):
-    print('store document into faiss')
-    if isReady == False:   
-        embeddings = bedrock_embeddings
-        vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                docs,  # documents
-                embeddings  # embeddings
-        )
-    else:
-        vectorstore_faiss.add_documents(docs)   
+def store_document_for_faiss(docs):
+    print('store document into faiss')    
+    vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
 
 def store_document_for_opensearch(docs, userId, requestId):
@@ -1608,9 +1601,16 @@ def getResponse(connectionId, jsonBody):
                     else:
                         if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
                             if rag_type == 'faiss':
-                                store_document_for_faiss(docs, bedrock_embeddings, isReady)
-                                isReady = True
-                                
+                                if isReady == False:   
+                                    embeddings = bedrock_embeddings
+                                    vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
+                                            docs,  # documents
+                                            embeddings  # embeddings
+                                    )
+                                    isReady = True
+                                else:
+                                    store_document_for_faiss(docs)
+                                                                
                             elif rag_type == 'opensearch':    
                                 store_document_for_opensearch(docs, userId, requestId)
                     
@@ -1620,12 +1620,22 @@ def getResponse(connectionId, jsonBody):
                     p1.start(); p1.join()
                     
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
-                        p2 = Process(target=store_document_for_faiss, args=(docs, bedrock_embeddings, isReady,))
-                        p3 = Process(target=store_document_for_opensearch, args=(docs, userId, requestId,))
- 
+                        # opensearch
+                        p2 = Process(target=store_document_for_opensearch, args=(docs, userId, requestId,))
                         p2.start(); p2.join()
-                        p3.start(); p3.join()
-                        isReady = True
+
+                        # faiss
+                        if isReady == False:   
+                            embeddings = bedrock_embeddings
+                            vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
+                                docs,  # documents
+                                embeddings  # embeddings
+                            )
+                            isReady = True
+                        else: 
+                            p3 = Process(target=store_document_for_faiss, args=(docs))
+                            p3.start(); p3.join()
+                        
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start
