@@ -748,7 +748,7 @@ def get_revised_question(connectionId, requestId, query):
     
     Follow up question:
     <question>
-    {input_text}
+    {question}
     </question>
     
     Assistant: Standalone question:"""
@@ -779,15 +779,22 @@ def get_revised_question(connectionId, requestId, query):
     # Assistant: Question:""")
 
     CONDENSE_QUESTION_PROMPT = PromptTemplate(
-        template = condense_template, input_variables = ["chat_history", "input_text"]
+        template = condense_template, input_variables = ["chat_history", "question"]
     )
     
     chat_history = extract_chat_history_from_memory()
     # print('chat_history: ', chat_history)
     
-    condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    #condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+
+    condense_prompt_claude = PromptTemplate.from_template("""
+        {chat_history}    
+        Answer only with the new question.
+        Human: How would you ask the question considering the previous conversation: {question}
+        Assistant: Question:""")
+    condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
     try:         
-        revised_question = condense_prompt_chain.run({"chat_history": chat_history, "input_text": query})
+        revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
 
         print('<revised_question: '+revised_question+'>')
 
