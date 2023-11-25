@@ -727,66 +727,15 @@ def extract_chat_history_from_memory():
 
     return chat_history
 
-def get_condense_template(query):
-    #condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
-    #<history>
-    #{chat_history}
-    #</history>
-    #Follow Up Input: {question}
-    
-    #Assistant: Standalone question:"""
-    #print('<query: '+query+'>')
-    #condense_template = """\n\nHuman: Combine the chat history and follow up question into a standalone question.     
-    #Chat History:     
-    #<history>
-    #{chat_history}
-    #</history>    
-    #Follow up question:
-    #<question>
-    #{question}
-    #</question>    
-    #Assistant: Standalone question:"""
-
-
-    #condense_template = """\n\nHuman 다음의 <history>는 Human과 Assistant의 이전 대화입니다.        
-    #<history>
-    #{chat_history}
-    #</history>    
-    #Answer only with the new question.    
-    #Human: How would you ask the question considering the previous conversation: {question}    
-    #Assistant: Question:"""
-    
-    #"Combine the chat history and follow up question into "
-    #"a standalone question. Chat History: {chat_history}"
-    #"Follow up question: {question}"
-
-    # other sample for condense template
-    # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
-    # Answer only with the new question.
-    # Human: How would you ask the question considering the previous conversation: {question}
-    # Assistant: Question:""")
-
-    #CONDENSE_QUESTION_PROMPT = PromptTemplate(
-    #    template = condense_template, input_variables = ["chat_history", "question"]
-    #)
-
-
-    
-    
-
+def get_revised_question(connectionId, requestId, query):    
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
     word_kor = pattern_hangul.search(str(query))
     print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
-        condense_template = """다음의 <history>는 Human과 Assistant의 이전 대화입니다. 
-
-        <history>
-        {chat_history}
-        </history>
-
-        Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성합니다.  
+        condense_template = """{chat_history}
+        Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성하여 질문만 전달합니다.
 
         <question>            
         {question}
@@ -794,8 +743,7 @@ def get_condense_template(query):
             
         Assistant: Question:"""
     else: 
-        condense_template = """Here is pieces of conversation between Human and Asisstant, contained in <context> tags. 
-        {chat_history}    
+        condense_template = """{chat_history}    
         Answer only with the new question.
 
         Human: How would you ask the question considering the previous conversation: {question}
@@ -806,53 +754,6 @@ def get_condense_template(query):
     condense_prompt_claude = PromptTemplate.from_template(condense_template)
         
     condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
-
-    return condense_prompt_chain
-
-def get_revised_question(connectionId, requestId, query):    
-    #condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
-    #<history>
-    #{chat_history}
-    #</history>
-    #Follow Up Input: {question}    
-    #Assistant: Standalone question:"""
-    
-
-    #condense_template = """\n\nHuman 다음의 <history>는 Human과 Assistant의 이전 대화입니다.        
-    #<history>
-    #{chat_history}
-    #</history>    
-    #Answer only with the new question.    
-    #Human: How would you ask the question considering the previous conversation: {question}    
-    #Assistant: Question:"""
-    
-
-    #"Combine the chat history and follow up question into "
-    #"a standalone question. Chat History: {chat_history}"
-    #"Follow up question: {question}"
-
-    # other sample for condense template
-    # condense_prompt_claude = PromptTemplate.from_template("""{chat_history}    
-    # Answer only with the new question.
-    # Human: How would you ask the question considering the previous conversation: {question}
-    # Assistant: Question:""")
-
-
-    # CONDENSE_QUESTION_PROMPT = get_condense_template(query)
-    #CONDENSE_QUESTION_PROMPT = PromptTemplate(
-    #    template = condense_template, input_variables = ["chat_history", "question"]
-    #)
-        
-    # print('chat_history: ', chat_history)    
-    #condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
-    #condense_prompt_claude = PromptTemplate.from_template("""
-    #    {chat_history}    
-    #    Answer only with the new question.
-    #    Human: How would you ask the question considering the previous conversation: {question}
-    #    Assistant: Question:""")
-    #condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
-
-    condense_prompt_chain = get_condense_template(query)
 
     chat_history = extract_chat_history_from_memory()
     try:         
