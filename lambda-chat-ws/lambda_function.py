@@ -750,6 +750,7 @@ def get_revised_question(connectionId, requestId, query):
 
         Assistant: Question:"""
 
+    print('condense_template: ', condense_template)
 
     condense_prompt_claude = PromptTemplate.from_template(condense_template)
         
