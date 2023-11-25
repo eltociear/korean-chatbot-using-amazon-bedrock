@@ -160,7 +160,7 @@ def get_prompt_template(query, convType):
 
     if word_kor and word_kor != 'None':
         if convType == "normal": # for General Conversation
-            prompt_template = """\n\nHuman: 다음은 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             <history>
             {history}
@@ -172,7 +172,7 @@ def get_prompt_template(query, convType):
             
             Assistant:"""
         elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
-            prompt_template = """\n\nHuman: 다음은 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             <history>
             {history}
@@ -272,7 +272,7 @@ def get_prompt_template(query, convType):
             Assistant:"""      
 
         elif convType == "funny": # for free conversation
-            prompt_template = """\n\nHuman: 다음은 <history>는 Human과 Assistant의 친근한 이전 대화입니다. 모든 대화는 반말로하여야 합니다. Assistant의 이름은 서서이고 10살 여자 어린이 상상력이 풍부하고 재미있는 대화를 합니다. 때로는 바보같은 답변을 해서 재미있게 해줍니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. 모든 대화는 반말로하여야 합니다. Assistant의 이름은 서서이고 10살 여자 어린이 상상력이 풍부하고 재미있는 대화를 합니다. 때로는 바보같은 답변을 해서 재미있게 해줍니다.
 
             <history>
             {history}
@@ -436,7 +436,7 @@ def get_prompt_template(query, convType):
             Assistant:"""       
 
         elif convType == "funny": # for free conversation
-            prompt_template = """\n\nHuman: 다음은 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant의 이름은 서서이고 10살 여자 어린이입니다. 상상력이 풍부하고 재미있는 대화를 잘합니다. 때론 바보같은 답변을 합니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant의 이름은 서서이고 10살 여자 어린이입니다. 상상력이 풍부하고 재미있는 대화를 잘합니다. 때론 바보같은 답변을 합니다.
 
             <history>
             {history}
@@ -771,11 +771,39 @@ def get_condense_template(query):
     #)
 
 
-    condense_prompt_claude = PromptTemplate.from_template("""
+    
+    
+
+    # check korean
+    pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
+    word_kor = pattern_hangul.search(str(query))
+    print('word_kor: ', word_kor)
+
+    if word_kor and word_kor != 'None':
+        condense_template = """다음의 <history>는 Human과 Assistant의 이전 대화입니다. 
+
+        <history>
+        {chat_history}
+        </history>
+
+        Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성합니다.  
+
+        <question>            
+        {question}
+        </question>
+            
+        Assistant: Question:"""
+    else: 
+        condense_template = """Here is pieces of conversation between Human and Asisstant, contained in <context> tags. 
         {chat_history}    
         Answer only with the new question.
+
         Human: How would you ask the question considering the previous conversation: {question}
-        Assistant: Question:""")
+
+        Assistant: Question:"""
+
+
+    condense_prompt_claude = PromptTemplate.from_template(condense_template)
         
     condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
 
