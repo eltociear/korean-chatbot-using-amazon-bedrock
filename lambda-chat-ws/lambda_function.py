@@ -1633,8 +1633,9 @@ def getResponse(connectionId, jsonBody):
                             )
                             isReady = True
                         else: 
-                            p3 = Process(target=store_document_for_faiss, args=(docs, vectorstore_faiss))
-                            p3.start(); p3.join()
+                            #p3 = Process(target=store_document_for_faiss, args=(docs, vectorstore_faiss))
+                            #p3.start(); p3.join()
+                            vectorstore_faiss.add_documents(docs)       
                         
                 print('processing time: ', str(time.time() - start_time))
                         
