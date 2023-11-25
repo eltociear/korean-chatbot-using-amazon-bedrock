@@ -741,14 +741,14 @@ def get_revised_question(connectionId, requestId, query):
         {question}
         </question>
             
-        Assistant: Question:"""
+        Assistant: 새로운 질문:"""
     else: 
         condense_template = """{chat_history}    
         Answer only with the new question.
 
         Human: How would you ask the question considering the previous conversation: {question}
 
-        Assistant: Question:"""
+        Assistant: Standalone question:"""
 
     print('condense_template: ', condense_template)
 
