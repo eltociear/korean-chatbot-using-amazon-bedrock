@@ -149,7 +149,7 @@ def sendErrorMessage(connectionId, requestId, msg):
         'msg': msg,
         'status': 'error'
     }
-    #print('error: ', json.dumps(errorMsg))
+    print('error: ', json.dumps(errorMsg))
     sendMessage(connectionId, errorMsg)
 
 def get_prompt_template(query, convType):
