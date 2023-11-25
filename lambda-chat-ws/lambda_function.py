@@ -787,7 +787,7 @@ def get_revised_question(connectionId, requestId, query):
     
     condense_prompt_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
     try:         
-        revised_question = condense_prompt_chain.run({"question": query, "chat_history": chat_history})
+        revised_question = condense_prompt_chain.run({"chat_history": chat_history, "input_text": query})
 
         print('<revised_question: '+revised_question+'>')
 
