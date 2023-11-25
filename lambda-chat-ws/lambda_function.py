@@ -1209,7 +1209,7 @@ def _get_chat_history(chat_history):
     return buffer
 
 def create_ConversationalRetrievalChain(PROMPT, retriever):  
-    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
+    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
 
     <history>
     {chat_history}
