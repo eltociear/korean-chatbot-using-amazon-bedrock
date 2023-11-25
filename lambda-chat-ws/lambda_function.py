@@ -728,15 +728,31 @@ def extract_chat_history_from_memory():
     return chat_history
 
 def get_revised_question(connectionId, requestId, query):    
-    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
+    #condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
 
-     <history>
+    #<history>
+    #{chat_history}
+    #</history>
+
+    #Follow Up Input: {question}
+    
+    #Assistant: Standalone question:"""
+
+    condense_template = """\n\nHuman: Combine the chat history and follow up question into a standalone question. Answer only with the new question.
+    
+    Chat History:     
+    <history>
     {chat_history}
     </history>
-
-    Follow Up Input: {question}
+    
+    Follow up question:
+    <history>
+    {question}
+    </history>
     
     Assistant: Standalone question:"""
+
+
 
     #"Combine the chat history and follow up question into "
     #"a standalone question. Chat History: {chat_history}"
