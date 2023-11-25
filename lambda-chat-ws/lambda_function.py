@@ -468,7 +468,6 @@ def store_document_for_faiss(docs, bedrock_embeddings, isReady):
                 docs,  # documents
                 embeddings  # embeddings
         )
-        isReady = True
     else:
         vectorstore_faiss.add_documents(docs)   
     print('uploaded into faiss')
@@ -1610,6 +1609,7 @@ def getResponse(connectionId, jsonBody):
                         if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
                             if rag_type == 'faiss':
                                 store_document_for_faiss(docs, bedrock_embeddings, isReady)
+                                isReady = True
                                 
                             elif rag_type == 'opensearch':    
                                 store_document_for_opensearch(docs, userId, requestId)
@@ -1625,6 +1625,7 @@ def getResponse(connectionId, jsonBody):
  
                         p2.start(); p2.join()
                         p3.start(); p3.join()
+                        isReady = True
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start
