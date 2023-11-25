@@ -563,7 +563,7 @@ def load_document(file_type, s3_file_name):
     elif file_type == 'txt':        
         contents = doc.get()['Body'].read().decode('utf-8')
         
-    print('contents: ', contents)
+    # print('contents: ', contents)
     new_contents = str(contents).replace("\n"," ") 
     print('length: ', len(new_contents))
 
@@ -1308,7 +1308,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
         msg = result['answer']
         print('\nquestion: ', result['question'])    
         print('answer: ', result['answer'])    
-        print('chat_history: ', result['chat_history'])    
+        # print('chat_history: ', result['chat_history'])    
         print('source_documents: ', result['source_documents']) 
 
         if len(result['source_documents'])>=1 and enableReference=='true':
@@ -1412,7 +1412,7 @@ def getResponse(connectionId, jsonBody):
     
     if "rag_type" in jsonBody:
         rag_type = jsonBody['rag_type']  # RAG type
-        print('rag Type: ', rag_type)
+        print('rag_type: ', rag_type)
 
     # create memory
     if convType=='qa':
