@@ -461,6 +461,7 @@ def get_prompt_template(query, convType):
     return PromptTemplate.from_template(prompt_template)
 
 def store_document_for_faiss(docs, bedrock_embeddings, isReady):
+    print('store document into faiss')
     if isReady == False:   
         embeddings = bedrock_embeddings
         vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
@@ -470,8 +471,10 @@ def store_document_for_faiss(docs, bedrock_embeddings, isReady):
         isReady = True
     else:
         vectorstore_faiss.add_documents(docs)   
+    print('uploaded into faiss')
 
 def store_document_for_opensearch(docs, userId, requestId):
+    print('store document into opensearch')
     new_vectorstore = OpenSearchVectorSearch(
         index_name="rag-index-"+userId+'-'+requestId,
         is_aoss = False,
@@ -481,18 +484,18 @@ def store_document_for_opensearch(docs, userId, requestId):
         http_auth=(opensearch_account, opensearch_passwd),
     )
     new_vectorstore.add_documents(docs)    
+    print('uploaded into opensearch')
 
 # store document into Kendra
 def store_document_for_kendra(path, s3_file_name, requestId):
+    print('store document into kendra')
     encoded_name = parse.quote(s3_file_name)
     source_uri = path + encoded_name    
-    print('source_uri: ', source_uri)
-
+    #print('source_uri: ', source_uri)
     file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
-    print('file_type: ', file_type)
+    #print('file_type: ', file_type)
 
     # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
-
     if(file_type == 'PPTX'):
         file_type = 'PPT'
     elif(file_type == 'TXT'):
@@ -544,7 +547,8 @@ def store_document_for_kendra(path, s3_file_name, requestId):
         RoleArn = roleArn,
         Documents = documents       
     )
-    print('batch_put_document(kendra): ', result)
+    # print('batch_put_document(kendra): ', result)
+    print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
