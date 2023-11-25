@@ -35,6 +35,7 @@ const opensearch_passwd = "Wifi1234!";
 const enableReference = 'true';
 let opensearch_url = "";
 const debugMessageMode = 'false'; // if true, debug messages will be delivered to the client.
+const useMultiProcessing = 'false';
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -546,7 +547,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         kendraIndex: kendraIndex,
         roleArn: roleLambdaWebsocket.roleArn,
         debugMessageMode: debugMessageMode,
-        rag_method: rag_method
+        rag_method: rag_method,
+        useMultiProcessing: useMultiProcessing
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
