@@ -900,10 +900,9 @@ def retrieve_from_Kendra(query, top_k):
             for query_result in resp["ResultItems"]:
                 confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
-                #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
-                if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
-                    retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
-                    # print('relevant_docs: ', relevant_docs)
+                #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': only for "en"
+                retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+                # print('relevant_docs: ', relevant_docs)
 
             print('Looking for FAQ...')
             try:
