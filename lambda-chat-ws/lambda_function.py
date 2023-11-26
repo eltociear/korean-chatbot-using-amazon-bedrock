@@ -910,7 +910,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = top_k/2,
+                    PageSize = 4,
                     QueryResultTypeFilter = "QUESTION_ANSWER",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
@@ -957,7 +957,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = top_k/2,
+                    PageSize = top_k,
                     #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
