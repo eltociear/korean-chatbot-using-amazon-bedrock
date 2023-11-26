@@ -41,7 +41,7 @@ print('model_id: ', modelId)
 isReady = False   
 isDebugging = False
 rag_type = os.environ.get('rag_type', 'faiss')
-rag_method = os.environ.get('rag_method', 'RetrievalQA') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
+rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
