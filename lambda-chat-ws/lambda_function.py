@@ -881,7 +881,7 @@ def retrieve_from_Kendra(query, top_k):
         resp =  kendra_client.retrieve(
             IndexId = index_id,
             QueryText = query,
-            PageSize = 10,      
+            PageSize = top_k,      
             AttributeFilter = {
                 "EqualsTo": {      
                     "Key": "_language_code",
@@ -909,7 +909,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = 10,
+                    PageSize = top_k/2,
                     QueryResultTypeFilter = "QUESTION_ANSWER",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
@@ -956,7 +956,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = 10,
+                    PageSize = top_k/2,
                     #QueryResultTypeFilter = "DOCUMENT",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
