@@ -484,17 +484,17 @@ def store_document_for_kendra(path, s3_file_name, requestId):
     encoded_name = parse.quote(s3_file_name)
     source_uri = path + encoded_name    
     #print('source_uri: ', source_uri)
-    file_type = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
-    #print('file_type: ', file_type)
+    ext = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
+    #print('ext: ', ext)
 
     # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
-    if(file_type == 'PPTX'):
+    if(ext == 'PPTX'):
         file_type = 'PPT'
-    elif(file_type == 'TXT'):
+    elif(ext == 'TXT'):
         file_type = 'PLAIN_TEXT'         
-    elif(file_type == 'XLS' or file_type == 'XLSX'):
+    elif(ext == 'XLS' or ext == 'XLSX'):
         file_type = 'MS_EXCEL'      
-    elif(file_type == 'DOC' or file_type == 'DOCX'):
+    elif(ext == 'DOC' or ext == 'DOCX'):
         file_type = 'MS_WORD'
 
     kendra_client = boto3.client(
@@ -760,7 +760,7 @@ def get_revised_question(connectionId, requestId, query):
     try:         
         revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
 
-        print('<revised_question: '+revised_question+'>')
+        print('revised_question: '+revised_question)
 
     except Exception:
         err_msg = traceback.format_exc()
@@ -950,7 +950,7 @@ def retrieve_from_Kendra(query, top_k):
                 else:
                     relevant_docs.append(doc)
             
-        else:  # falback using query API
+        else:  # fallback using query API
             print('No result for Retrieve API!')
             try:
                 resp =  kendra_client.query(
@@ -1697,7 +1697,7 @@ def lambda_handler(event, context):
                 print('routeKey: ', routeKey)
         
                 jsonBody = json.loads(body)
-                print('request body: ', jsonBody)
+                print('request body: ', json.dumps(jsonBody))
 
                 requestId  = jsonBody['request_id']
                 try:
