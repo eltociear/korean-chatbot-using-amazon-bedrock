@@ -85,16 +85,12 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         s3Deploy.Source.asset("../contents/faq/")
       ],
       destinationBucket: s3Bucket,
-      destinationKeyPrefix: 'contents/faq/' 
-    });    
+      destinationKeyPrefix: 'faq/' 
+    });   
     
     new cdk.CfnOutput(this, 'HtmlUpdateCommend', {
       value: 'aws s3 cp ../html/ ' + 's3://' + s3Bucket.bucketName + '/ --recursive',
       description: 'copy commend for web pages',
-    });
-    new cdk.CfnOutput(this, `FaqUploadCommand`, {
-      value: 'aws s3 cp ../contents/faq '+'s3://'+s3Bucket.bucketName+'/contents/faq --recursive',
-      description: 'The commend for uploading contents of FAQ',
     });
 
     // cloudfront
@@ -607,7 +603,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }); 
 
     new cdk.CfnOutput(this, `FAQ-Update-for-${projectName}`, {
-      value: 'aws kendra create-faq --index-id '+kendraIndex+' --name FAQ_fsi --s3-path \'{\"Bucket\":\"'+s3Bucket.bucketName+'\", \"Key\":\"contents/faq/FAQ_fsi.csv\"}\' --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
+      value: 'aws kendra create-faq --index-id '+kendraIndex+' --name FAQ_fsi --s3-path \'{\"Bucket\":\"'+s3Bucket.bucketName+'\", \"Key\":\"faq/FAQ_fsi.csv\"}\' --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
       description: 'The commend for uploading contents of FAQ',
     });
 
