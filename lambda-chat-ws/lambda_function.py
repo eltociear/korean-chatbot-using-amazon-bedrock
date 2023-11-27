@@ -571,8 +571,11 @@ def load_document(file_type, s3_file_name):
     ) 
 
     texts = text_splitter.split_text(new_contents) 
-    print('texts[0]: ', texts[0])
-    
+    if len(new_contents)>0:
+        print('texts[0]: ', texts[0])
+    else:
+        print('No texts')
+            
     return texts
 
 # load csv documents from s3
@@ -891,7 +894,7 @@ def retrieve_from_Kendra(query, top_k):
                 },
             },      
         )
-        print('retrieve resp:', json.dumps(resp))
+        # print('retrieve resp:', json.dumps(resp))
         query_id = resp["QueryId"]
 
         if len(resp["ResultItems"]) >= 1:
@@ -902,7 +905,7 @@ def retrieve_from_Kendra(query, top_k):
 
                 #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': only for "en"
                 retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
-                # print('relevant_docs: ', relevant_docs)
+                # print('retrieve_docs: ', retrieve_docs)
 
             print('Looking for FAQ...')
             try:
