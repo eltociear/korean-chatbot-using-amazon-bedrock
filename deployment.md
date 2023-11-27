@@ -71,16 +71,21 @@ cdk bootstrap aws://account-id/ap-northeast-2
 cdk deploy --all
 ```
 
+설치가 완료되면 아래와 같은 Output이 나옵니다. 
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/766b4d33-13c9-49b1-9462-832120f73109)
+
+9) Output의 websocketurl을 복사한 후, 'korean-chatbot-using-amazon-bedrock/html/'의 "chat.js"를 열어서 아래와 같이 endpoint를 업데이트 합니다.
+
+![noname](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/d38d5606-5ebf-43d5-b2d3-190e5bc3fcdb)
+
+
 9) HTMl 파일을 S3에 복사합니다.
 
-아래와 같이 Output의 HtmlUpdateCommend을 붙여넣기 합니다. 아래 경우에 "aws s3 cp ../html/ s3://storage-for-korean-chatbot-us-west-2/html --recursive"입니다.
-![noname](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/624e7ed5-b5e2-4b6b-b584-27f7189cfa7e)
+아래와 같이 Output의 HtmlUpdateCommend을 붙여넣기 합니다. 
 
-이때의 결과는 아래와 같습니다.
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/130bae3d-3bde-43a8-8bcb-55cee1e06e42)
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/6d73b377-8cca-4910-9cbd-4aaf1351be2a)
 
-  
-
-9) 설치가 완료되면 브라우저에서 아래와 같이 WebUrl를 확인하여 브라우저를 이용하여 접속합니다.
+9) WebUrl를 선택하여 브라우저로 접속합니다.
 
