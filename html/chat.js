@@ -1,4 +1,4 @@
-const endpoint = 'wss://l0f3oo32fe.execute-api.us-west-2.amazonaws.com/dev';
+const endpoint = 'wss://231cnjqqra.execute-api.us-west-2.amazonaws.com/dev';
 const langstate = 'korean'; // korean or english
 let webSocket
 let isConnected = false;

@@ -485,7 +485,7 @@ def store_document_for_kendra(path, s3_file_name, requestId):
     source_uri = path + encoded_name    
     #print('source_uri: ', source_uri)
     ext = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
-    #print('ext: ', ext)
+    print('ext: ', ext)
 
     # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
     if(ext == 'PPTX'):
