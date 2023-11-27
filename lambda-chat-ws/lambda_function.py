@@ -496,6 +496,8 @@ def store_document_for_kendra(path, s3_file_name, requestId):
         file_type = 'MS_EXCEL'      
     elif(ext == 'DOC' or ext == 'DOCX'):
         file_type = 'MS_WORD'
+    else:
+        file_type = ext
 
     kendra_client = boto3.client(
         service_name='kendra', 
