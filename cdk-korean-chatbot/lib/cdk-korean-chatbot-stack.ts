@@ -76,17 +76,23 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }
 
     // copy web application files into s3 bucket
-    new s3Deploy.BucketDeployment(this, `upload-HTML-for-${projectName}`, {
-      sources: [s3Deploy.Source.asset("../html/")],
+    //new s3Deploy.BucketDeployment(this, `upload-HTML-for-${projectName}`, {
+    //  sources: [s3Deploy.Source.asset("../html/")],
+    //  destinationBucket: s3Bucket,
+    //});    
+    new s3Deploy.BucketDeployment(this, `upload-contents-for-${projectName}`, {
+      sources: [
+        s3Deploy.Source.asset("../contents/faq/")
+      ],
       destinationBucket: s3Bucket,
-      // destinationKeyPrefix: 'html' + '/'
+      destinationKeyPrefix: 'contents/faq/' 
     });    
+    
     new cdk.CfnOutput(this, 'HtmlUpdateCommend', {
       value: 'aws s3 cp ../html/ ' + 's3://' + s3Bucket.bucketName + '/ --recursive',
       description: 'copy commend for web pages',
     });
-    
-    new cdk.CfnOutput(this, `UploadFAQContents-for-${projectName}`, {
+    new cdk.CfnOutput(this, `FaqUploadCommand`, {
       value: 'aws s3 cp ../contents/faq '+'s3://'+s3Bucket.bucketName+'/contents/faq --recursive',
       description: 'The commend for uploading contents of FAQ',
     });
