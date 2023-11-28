@@ -739,8 +739,22 @@ def get_revised_question(connectionId, requestId, query):
     print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
-        condense_template = """{chat_history}
-        Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성하여 질문만 전달합니다.
+        #condense_template = """{chat_history}
+
+        #Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성하여 질문만 전달합니다.
+
+        #<question>            
+        #{question}
+        #</question>
+            
+        #Assistant: 새로운 질문:"""
+
+        condense_template = """
+        <history>
+        {chat_history}
+        </history>
+
+        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 생성하세요.
 
         <question>            
         {question}
