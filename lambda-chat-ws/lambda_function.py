@@ -762,12 +762,27 @@ def get_revised_question(connectionId, requestId, query):
             
         Assistant: 새로운 질문:"""
     else: 
-        condense_template = """{chat_history}    
+        #condense_template = """{chat_history}    
+        #Answer only with the new question.
+
+        #Human: How would you ask the question considering the previous conversation: {question}
+
+        #Assistant: Standalone question:"""
+        condense_template = """
+        <history>
+        {chat_history}
+        </history>
         Answer only with the new question.
 
-        Human: How would you ask the question considering the previous conversation: {question}
+        Human: using <history>, rephrase the follow up <question> to be a standalone question.
+         
+        <quesion>
+        {question}
+        </question>
 
         Assistant: Standalone question:"""
+
+        #Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
 
     print('condense_template: ', condense_template)
 
