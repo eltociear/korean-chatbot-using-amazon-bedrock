@@ -47,7 +47,7 @@ opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
-top_k = 8
+top_k = os.environ.get('numberOfRelevantDocs', '10')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 useMultiProcessing = os.environ.get('useMultiProcessing', 'false')
@@ -948,7 +948,7 @@ def retrieve_from_Kendra(query, top_k):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = top_k,
+                    PageSize = int(top_k/2),
                     QueryResultTypeFilter = "QUESTION_ANSWER",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
@@ -968,7 +968,7 @@ def retrieve_from_Kendra(query, top_k):
                         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
                         #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
-                        if confidence == 'VERY_HIGH': 
+                        if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
                             relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
 
                             if len(relevant_docs) >= top_k:
