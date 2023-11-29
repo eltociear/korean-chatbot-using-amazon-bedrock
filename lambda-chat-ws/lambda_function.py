@@ -47,15 +47,13 @@ opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
-numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
-top_k = int(numberOfRelevantDocs)
-print('top_k: ', top_k)
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 useMultiProcessing = os.environ.get('useMultiProcessing', 'false')
-
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
+numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
+top_k = int(numberOfRelevantDocs)
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -793,6 +791,8 @@ def get_revised_question(connectionId, requestId, query):
 
     print('condense_template: ', condense_template)
 
+    print('start prompt!')
+
     condense_prompt_claude = PromptTemplate.from_template(condense_template)
         
     condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
@@ -800,8 +800,7 @@ def get_revised_question(connectionId, requestId, query):
     chat_history = extract_chat_history_from_memory()
     try:         
         revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
-
-        print('revised_question: '+revised_question)
+        # print('revised_question: '+revised_question)
 
     except Exception:
         err_msg = traceback.format_exc()
