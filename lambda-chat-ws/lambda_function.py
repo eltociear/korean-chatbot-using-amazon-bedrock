@@ -359,7 +359,7 @@ def get_prompt_template(query, convType):
             Assistant:"""           
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
-            prompt_template = """\n\nHere is pieces of context, contained in <context> tags. 
+            prompt_template = """\n\nThis <context> has the information of the next question.
             
             <context>
             {context}
