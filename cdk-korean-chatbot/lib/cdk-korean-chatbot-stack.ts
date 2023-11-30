@@ -37,6 +37,7 @@ let opensearch_url = "";
 const debugMessageMode = 'false'; // if true, debug messages will be delivered to the client.
 const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
+const maxOutputTokens = '1000000';
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -548,7 +549,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         debugMessageMode: debugMessageMode,
         rag_method: rag_method,
         useMultiProcessing: useMultiProcessing,
-        numberOfRelevantDocs: numberOfRelevantDocs
+        numberOfRelevantDocs: numberOfRelevantDocs,
+        maxOutputTokens: maxOutputTokens
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  

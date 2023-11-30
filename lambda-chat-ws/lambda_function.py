@@ -52,6 +52,7 @@ path = os.environ.get('path')
 useMultiProcessing = os.environ.get('useMultiProcessing', 'false')
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
+maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 
@@ -83,7 +84,7 @@ def get_parameter(modelId):
         }
     elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2' or modelId == 'anthropic.claude-v2:1':
         return {
-            "max_tokens_to_sample":200000, # 8k    16382
+            "max_tokens_to_sample":maxOutputTokens, # 8k    
             "temperature":0.1,
             "top_k":250,
             "top_p":0.9,
