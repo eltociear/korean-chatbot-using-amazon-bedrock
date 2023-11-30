@@ -171,9 +171,7 @@ def get_prompt_template(query, convType):
 
             <question>            
             {input}
-            </question>
-
-            
+            </question>            
             
             Assistant:"""
         elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
@@ -193,19 +191,19 @@ def get_prompt_template(query, convType):
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
-            prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 
-        
+            prompt_template = """다음의 <context>는 질문과 관련된 정보입니다.
+             
             <context>
             {context}
             </context>
 
-            <question>            
-            {question}
-            </question>
-
             Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
+            Human: {question}
+            
             Assistant:"""
+
+            #Human: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
                 
         elif convType == "translation":  # for translation, input
             prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 
