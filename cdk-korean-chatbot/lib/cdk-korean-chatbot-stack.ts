@@ -19,7 +19,7 @@ const region = process.env.CDK_DEFAULT_REGION;
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
-const model_id = "anthropic.claude-v2"; // anthropic.claude-v1, anthropic.claude-v2
+const model_id = "anthropic.claude-v2:1:200k"; // anthropic.claude-v1, anthropic.claude-v2, anthropic.claude-v2:1:200k
 const projectName = `korean-chatbot`; 
 
 const bucketName = `storage-for-${projectName}-${region}`; 
