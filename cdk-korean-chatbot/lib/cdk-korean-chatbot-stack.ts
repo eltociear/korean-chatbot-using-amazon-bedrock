@@ -37,7 +37,7 @@ let opensearch_url = "";
 const debugMessageMode = 'false'; // if true, debug messages will be delivered to the client.
 const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
-const maxOutputTokens = '1000000';
+const maxOutputTokens = '8196';
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
