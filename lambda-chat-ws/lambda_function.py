@@ -365,7 +365,7 @@ def get_prompt_template(query, convType):
             {context}
             </context>
 
-            Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+            Provide a concise answer to the question using <context>. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
                         
             Human: {question}
 
