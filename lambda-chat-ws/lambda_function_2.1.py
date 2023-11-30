@@ -171,9 +171,7 @@ def get_prompt_template(query, convType):
 
             <question>            
             {input}
-            </question>
-
-            
+            </question>            
             
             Assistant:"""
         elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
@@ -193,19 +191,19 @@ def get_prompt_template(query, convType):
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
-            prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 
-        
+            prompt_template = """다음의 <context>는 질문과 관련된 정보입니다.
+             
             <context>
             {context}
             </context>
 
-            <question>            
-            {question}
-            </question>
+            Assistant의 이름은 서연이고 아래의 질문에 정확히 답변합니다. 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
-            Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
-
+            Human: {question}
+            
             Assistant:"""
+
+            #Human: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
                 
         elif convType == "translation":  # for translation, input
             prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 
@@ -361,13 +359,15 @@ def get_prompt_template(query, convType):
             Assistant:"""           
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
-            prompt_template = """\n\nHuman: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+            prompt_template = """\n\nHuman: This <context> has information for the following question.
             
             <context>
             {context}
             </context>
-                        
-            <question>
+
+            Provide a concise answer to the question. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+
+            <question>            
             {question}
             </question>
 
@@ -877,7 +877,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 if attribute["Key"] == "QuestionText":
                     question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
             answer = query_result["DocumentExcerpt"]["Text"]
-            excerpt = f"Question: {question_text} \nAnswer: {answer}"
+            excerpt = f"{question_text} {answer}"
             excerpt = excerpt.replace("\n"," ") 
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
