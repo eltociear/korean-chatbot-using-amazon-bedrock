@@ -359,15 +359,17 @@ def get_prompt_template(query, convType):
             Assistant:"""           
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
-            prompt_template = """\n\nThis <context> has information for the following question.
+            prompt_template = """\n\nHuman: This <context> has information for the following question.
             
             <context>
             {context}
             </context>
 
             Provide a concise answer to the question using <context>. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
-                        
-            Human: {question}
+
+            <question>            
+            {question}
+            </question>
 
             Assistant:"""
 
