@@ -197,7 +197,7 @@ def get_prompt_template(query, convType):
             {context}
             </context>
 
-            Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            Assistant의 이름은 서연이고 아래의 질문에 정확히 답변합니다. 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             Human: {question}
             
