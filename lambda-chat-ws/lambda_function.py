@@ -160,19 +160,23 @@ def get_prompt_template(query, convType):
 
     if word_kor and word_kor != 'None':
         if convType == "normal": # for General Conversation
-            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. 
 
             <history>
             {history}
             </history>
 
+            Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+
             <question>            
             {input}
             </question>
+
+            
             
             Assistant:"""
         elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
-            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. 
 
             <history>
             {history}
@@ -181,12 +185,14 @@ def get_prompt_template(query, convType):
             <question>            
             {input}
             </question>
+
+            Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
             
             Assistant:"""
 
         elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
-            prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 
         
             <context>
             {context}
@@ -196,14 +202,18 @@ def get_prompt_template(query, convType):
             {question}
             </question>
 
+            Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+
             Assistant:"""
                 
         elif convType == "translation":  # for translation, input
-            prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
+            prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 
 
             <translation>
             {input}
             </translation>
+
+            머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
                         
             Assistant:"""
 
@@ -225,20 +235,24 @@ def get_prompt_template(query, convType):
             Assistant:"""
 
         elif convType == "extraction":  # information extraction
-            prompt_template = """\n\nHuman: 다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요.
+            prompt_template = """\n\nHuman: 다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 
 
             <text>
             {input}
             </text>
+
+            입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요.
 
             Assistant:"""
 
         elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
-            prompt_template = """\n\nHuman: 아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요.
+            prompt_template = """\n\nHuman: 아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 
             
             <text>
             {input}
             </text>
+
+            이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요.
 
             Assistant:"""
 
