@@ -864,7 +864,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 if attribute["Key"] == "QuestionText":
                     question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
             answer = query_result["DocumentExcerpt"]["Text"]
-            excerpt = f"Question: {question_text} \nAnswer: {answer}"
+            excerpt = f"{question_text} {answer}"
             excerpt = excerpt.replace("\n"," ") 
         else: 
             excerpt = query_result["DocumentExcerpt"]["Text"]
@@ -940,8 +940,7 @@ def retrieve_from_Kendra(query, top_k):
             relevant_docs = []
             retrieve_docs = []
             for query_result in resp["ResultItems"]:
-                confidence = query_result["ScoreAttributes"]['ScoreConfidence']
-
+                #confidence = query_result["ScoreAttributes"]['ScoreConfidence']
                 #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': only for "en"
                 retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
                 # print('retrieve_docs: ', retrieve_docs)
