@@ -1430,6 +1430,9 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     print('Conversation Type: ', convType)
 
+    global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
+    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selectedLLM
+
     if selectedLLM == nLLMs:
         selectedLLM = 0
     else:
@@ -1469,10 +1472,7 @@ def getResponse(connectionId, jsonBody):
         client=boto3_bedrock,
         region_name = bedrock_region,
         model_id = 'amazon.titan-embed-text-v1' 
-    )
-
-    global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
-    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
+    )    
     
     if "rag_type" in jsonBody:
         rag_type = jsonBody['rag_type']  # RAG type
