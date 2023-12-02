@@ -86,7 +86,9 @@ parameters = get_parameter(modelId)
 
 print('nLLMs: ', nLLMs)
 print('profileOfLLMs: ',  profileOfLLMs)
-print('profileOfLLMs[0]: ',  profileOfLLMs[0])
+
+LLMInfo = json.loads(profileOfLLMs)
+print('LLMInfo[0]: ',  LLMInfo[0])
 
 bedrock_client = []
 llms = []
