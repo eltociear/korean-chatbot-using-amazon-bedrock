@@ -90,7 +90,7 @@ print('profileOfLLMs: ',  profileOfLLMs)
 bedrock_client = []
 llms = []
 for i in range(nLLMs):
-    profile = profileOfLLMs[i]
+    profile = json.loads(profileOfLLMs[i])
     
     print('i: ', i)
     print('profile: ', profile)
