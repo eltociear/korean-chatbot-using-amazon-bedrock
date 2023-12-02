@@ -19,11 +19,11 @@ const region = process.env.CDK_DEFAULT_REGION;
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
-const model_id = "anthropic.claude-v2:1"; // anthropic.claude-v1, anthropic.claude-v2, anthropic.claude-v2:1
+// const model_id = "anthropic.claude-v2:1"; // anthropic.claude-v1, anthropic.claude-v2, anthropic.claude-v2:1
 const projectName = `korean-chatbot`; 
 
 const bucketName = `storage-for-${projectName}-${region}`; 
-const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
+// const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
 const maxOutputTokens = '8196';
 
 const kendra_region = "us-west-2"; 
@@ -547,9 +547,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       memorySize: 8192,
       role: roleLambdaWebsocket,
       environment: {
-        bedrock_region: bedrock_region,
+        // bedrock_region: bedrock_region,
         kendra_region: kendra_region,
-        model_id: model_id,
+        // model_id: model_id,
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,

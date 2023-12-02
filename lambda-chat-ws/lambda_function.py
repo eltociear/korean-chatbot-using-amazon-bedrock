@@ -6,9 +6,8 @@ import datetime
 from io import BytesIO
 import PyPDF2
 import csv
-import sys, traceback
+import traceback
 import re
-import base64
 from urllib import parse
 
 from langchain.prompts import PromptTemplate
@@ -17,7 +16,6 @@ from langchain.docstore.document import Document
 from langchain.chains.summarize import load_summarize_chain
 from langchain.llms.bedrock import Bedrock
 from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from botocore.config import Config
@@ -34,10 +32,10 @@ s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
-bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
+#bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
-modelId = os.environ.get('model_id', 'anthropic.claude-v2')
-print('model_id: ', modelId)
+#modelId = os.environ.get('model_id', 'anthropic.claude-v2')
+#print('model_id: ', modelId)
 isReady = False   
 isDebugging = False
 rag_type = os.environ.get('rag_type', 'faiss')
@@ -57,6 +55,8 @@ numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 nLLMs = int(os.environ.get('nLLMs'))
 profileOfLLMs = json.loads(os.environ.get('profileOfLLMs'))
+
+selectedLLM = 0
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -81,42 +81,6 @@ def get_parameter(modelId):
             "top_p":0.9,
             "stop_sequences": [HUMAN_PROMPT]            
         }
-parameters = get_parameter(modelId)
-
-
-print('nLLMs: ', nLLMs)
-print('profileOfLLMs: ',  profileOfLLMs)
-
-mId = 0
-profile = profileOfLLMs[mId]
-bedrock_region =  profile['bedrock_region']
-modelId = profile['model_id']
-
-# bedrock   
-boto3_bedrock = boto3.client(
-    service_name='bedrock-runtime',
-    region_name=bedrock_region,
-    config=Config(
-        retries = {
-            'max_attempts': 30
-        }            
-    )
-)
-
-# langchain for bedrock
-llm = Bedrock(
-    model_id=modelId, 
-    client=boto3_bedrock, 
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
-    model_kwargs=parameters)
-
-# embedding for RAG
-bedrock_embeddings = BedrockEmbeddings(
-    client=boto3_bedrock,
-    region_name = bedrock_region,
-    model_id = 'amazon.titan-embed-text-v1' 
-)
 
 map_chain = dict() # For RAG
 map_chat = dict() # For general conversation  
@@ -478,7 +442,7 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
 
-def store_document_for_opensearch(docs, userId, requestId):
+def store_document_for_opensearch(bedrock_embeddings, docs, userId, requestId):
     print('store document into opensearch')
     new_vectorstore = OpenSearchVectorSearch(
         index_name="rag-index-"+userId+'-'+requestId,
@@ -628,7 +592,7 @@ def load_csv_document(s3_file_name):
 
     return docs
 
-def get_summary(texts):    
+def get_summary(llm, texts):    
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+') 
     word_kor = pattern_hangul.search(str(texts))
@@ -745,7 +709,7 @@ def extract_chat_history_from_memory():
 
     return chat_history
 
-def get_revised_question(connectionId, requestId, query):    
+def get_revised_question(llm, connectionId, requestId, query):    
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
     word_kor = pattern_hangul.search(str(query))
@@ -1264,7 +1228,7 @@ def _get_chat_history(chat_history):
     #print('buffer: ', buffer)
     return buffer
 
-def create_ConversationalRetrievalChain(PROMPT, retriever):  
+def create_ConversationalRetrievalChain(llm, PROMPT, retriever):  
     condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
 
     <history>
@@ -1295,9 +1259,9 @@ def create_ConversationalRetrievalChain(PROMPT, retriever):
 
     return qa
 
-def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):    
+def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId):    
     if rag_method == 'RetrievalQA': # RetrievalQA
-        revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
+        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
@@ -1344,7 +1308,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
     elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
         PROMPT = get_prompt_template(text, convType)
         if rag_type == 'kendra':
-            qa = create_ConversationalRetrievalChain(PROMPT, retriever=kendraRetriever)            
+            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
         elif rag_type == 'opensearch': # opensearch
             vectorstoreRetriever = vectorstore_opensearch.as_retriever(
                 search_type="similarity", 
@@ -1352,7 +1316,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
                     "k": 5
                 }
             )
-            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
+            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
         elif rag_type == 'faiss': # faiss
             vectorstoreRetriever = vectorstore_faiss.as_retriever(
                 search_type="similarity", 
@@ -1360,7 +1324,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
                     "k": 5
                 }
             )
-            qa = create_ConversationalRetrievalChain(PROMPT, retriever=vectorstoreRetriever)
+            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
         
         result = qa({"question": text})
         
@@ -1374,7 +1338,7 @@ def get_answer_using_RAG(text, rag_type, convType, connectionId, requestId):
             msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
     
     elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
-        revised_question = get_revised_question(connectionId, requestId, text) # generate new prompt using chat history
+        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
@@ -1436,7 +1400,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 
     return msg
 
-def get_answer_from_PROMPT(text, convType, connectionId, requestId):
+def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId):
     PROMPT = get_prompt_template(text, convType)
     #print('PROMPT: ', PROMPT)
 
@@ -1466,8 +1430,47 @@ def getResponse(connectionId, jsonBody):
     convType = jsonBody['convType']  # conversation type
     print('Conversation Type: ', convType)
 
-    global llm, modelId, vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
-    global parameters, map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
+    if selectedLLM == nLLMs:
+        selectedLLM = 0
+    else:
+        selectedLLM = selectedLLM + 1
+    
+    profile = profileOfLLMs[selectedLLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
+    )
+    parameters = get_parameter(modelId)
+
+    print('nLLMs: ', nLLMs)
+    print('profileOfLLMs: ',  profileOfLLMs)
+
+    # langchain for bedrock
+    llm = Bedrock(
+        model_id=modelId, 
+        client=boto3_bedrock, 
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters)
+
+    # embedding for RAG
+    bedrock_embeddings = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = 'amazon.titan-embed-text-v1' 
+    )
+
+    global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
+    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode
     
     if "rag_type" in jsonBody:
         rag_type = jsonBody['rag_type']  # RAG type
@@ -1599,7 +1602,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
                     else: 
-                        msg = get_answer_using_RAG(text, rag_type, convType, connectionId, requestId)     
+                        msg = get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId)     
                 
                 elif convType == 'normal' or convType == 'funny':      # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
@@ -1614,7 +1617,7 @@ def getResponse(connectionId, jsonBody):
                         sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")    
                 else: 
-                    msg = get_answer_from_PROMPT(text, convType, connectionId, requestId)
+                    msg = get_answer_from_PROMPT(llm, text, convType, connectionId, requestId)
                 
         elif type == 'document':
             object = body
@@ -1629,7 +1632,7 @@ def getResponse(connectionId, jsonBody):
                     texts.append(doc.page_content)
                 print('texts: ', texts)
 
-                msg = get_summary(texts)
+                msg = get_summary(llm, texts)
 
             elif file_type == 'pdf' or file_type == 'txt':
                 texts = load_document(file_type, object)
@@ -1675,7 +1678,7 @@ def getResponse(connectionId, jsonBody):
                                     store_document_for_faiss(doc, vectorstore_faiss)
                                                                 
                             elif rag_type == 'opensearch':    
-                                store_document_for_opensearch(docs, userId, requestId)
+                                store_document_for_opensearch(bedrock_embeddings, docs, userId, requestId)
                     
                 else:
                     from multiprocessing import Process
@@ -1684,7 +1687,7 @@ def getResponse(connectionId, jsonBody):
                     
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
                         # opensearch
-                        p2 = Process(target=store_document_for_opensearch, args=(docs, userId, requestId,))
+                        p2 = Process(target=store_document_for_opensearch, args=(bedrock_embeddings, docs, userId, requestId,))
                         p2.start(); p2.join()
 
                         # faiss
