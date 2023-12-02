@@ -40,7 +40,7 @@ const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
 
 const nLLMs = "2";
-const profileOfLLMs = JSON.stringify([
+const profileOfLLMs = [
   {
     "bedrock_region": "us-west-2",
     "model_type": "claude",
@@ -53,7 +53,7 @@ const profileOfLLMs = JSON.stringify([
     "model_id": "anthropic.claude-v2",
     "maxOutputTokens": "8196"
   },
-]);
+];
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

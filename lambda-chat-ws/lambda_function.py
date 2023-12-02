@@ -56,7 +56,10 @@ maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 nLLMs = int(os.environ.get('nLLMs'))
-profileOfLLMs = json.loads(os.environ.get('profileOfLLMs'))
+profileOfLLMs = os.environ.get('profileOfLLMs')
+print('profileOfLLMs: ', profileOfLLMs)
+LLM_info = json.loads(profileOfLLMs)
+print('LLM_info: ', LLM_info)
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -90,7 +93,7 @@ print('profileOfLLMs: ',  profileOfLLMs)
 bedrock_client = []
 llms = []
 for i in range(nLLMs):
-    profile = json.loads(profileOfLLMs[i])
+    profile = profileOfLLMs[i]
     
     print('i: ', i)
     print('profile: ', profile)
