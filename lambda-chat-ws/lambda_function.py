@@ -57,9 +57,6 @@ numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 nLLMs = int(os.environ.get('nLLMs'))
 profileOfLLMs = os.environ.get('profileOfLLMs')
-print('profileOfLLMs: ', profileOfLLMs)
-LLM_info = json.loads(profileOfLLMs)
-print('LLM_info: ', LLM_info)
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -89,6 +86,7 @@ parameters = get_parameter(modelId)
 
 print('nLLMs: ', nLLMs)
 print('profileOfLLMs: ',  profileOfLLMs)
+print('profileOfLLMs[0]: ',  profileOfLLMs[0])
 
 bedrock_client = []
 llms = []
