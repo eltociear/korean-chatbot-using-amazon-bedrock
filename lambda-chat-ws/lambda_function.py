@@ -107,13 +107,13 @@ for i in range(nLLMs):
         )
     )
 
-    llms[i] = Bedrock(
+    llms = Bedrock(
         model_id=modelId, 
         client=bedrock_client, 
         streaming=True,
         callbacks=[StreamingStdOutCallbackHandler()],
         model_kwargs=parameters)
-    msgs = llms[i]('hello')
+    msgs = llms('hello')
 
     print('msgs: ', msgs)
 
