@@ -1506,9 +1506,10 @@ def getResponse(connectionId, jsonBody):
         model_id = 'amazon.titan-embed-text-v1' 
     )    
     
-    if jsonBody['rag_type]']:
-        rag_type = jsonBody['rag_type']  # RAG type
-        print('rag_type: ', rag_type)
+    if 'rag_type' in jsonBody:
+        if jsonBody['rag_type]']:
+            rag_type = jsonBody['rag_type']  # RAG type
+            print('rag_type: ', rag_type)
 
     # create memory
     if convType=='qa':
