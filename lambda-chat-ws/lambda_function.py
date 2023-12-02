@@ -1437,7 +1437,9 @@ def getResponse(connectionId, jsonBody):
     
     profile = profileOfLLMs[selectedLLM]
     bedrock_region =  profile['bedrock_region']
+    print('bedrock_region: ', bedrock_region)
     modelId = profile['model_id']
+    print('modelId: ', modelId)
 
     # bedrock   
     boto3_bedrock = boto3.client(
