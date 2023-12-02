@@ -65,15 +65,15 @@ print('connection_url: ', connection_url)
 
 HUMAN_PROMPT = "\n\nHuman:"
 AI_PROMPT = "\n\nAssistant:"
-def get_parameter(modelId):
-    if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge': 
+def get_parameter(modelId, model_type):
+    if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge' or model_type=='titan': 
         return {
             "maxTokenCount":1024,
             "stopSequences":[],
             "temperature":0,
             "topP":0.9
         }
-    elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2' or modelId == 'anthropic.claude-v2:1':
+    elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2' or modelId == 'anthropic.claude-v2:1' or model_type=='claude':
         return {
             "max_tokens_to_sample":maxOutputTokens, # 8k    
             "temperature":0.1,
@@ -1433,6 +1433,7 @@ def getResponse(connectionId, jsonBody):
     global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
 
+    # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
@@ -1449,7 +1450,7 @@ def getResponse(connectionId, jsonBody):
             }            
         )
     )
-    parameters = get_parameter(modelId)
+    parameters = get_parameter(modelId, profile['model_type'])
 
     # langchain for bedrock
     llm = Bedrock(

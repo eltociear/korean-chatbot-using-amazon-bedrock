@@ -39,7 +39,7 @@ const debugMessageMode = 'false'; // if true, debug messages will be delivered t
 const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
 
-const number_of_LLMs = "2";
+const number_of_LLMs = "2"; // total number of LLMs to use
 const profile_of_LLMs = JSON.stringify([
   {
     "bedrock_region": "us-west-2",
