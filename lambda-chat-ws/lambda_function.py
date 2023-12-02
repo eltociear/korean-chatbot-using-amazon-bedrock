@@ -1433,11 +1433,6 @@ def getResponse(connectionId, jsonBody):
     global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selectedLLM
 
-    if selectedLLM == nLLMs:
-        selectedLLM = 0
-    else:
-        selectedLLM = selectedLLM + 1
-    
     profile = profileOfLLMs[selectedLLM]
     bedrock_region =  profile['bedrock_region']
     print('bedrock_region: ', bedrock_region)
@@ -1729,6 +1724,11 @@ def getResponse(connectionId, jsonBody):
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
 
+    if selectedLLM == nLLMs:
+        selectedLLM = 0
+    else:
+        selectedLLM = selectedLLM + 1
+        
     return msg
 
 def lambda_handler(event, context):
