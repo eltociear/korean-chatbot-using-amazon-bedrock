@@ -53,10 +53,10 @@ roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
-nLLMs = int(os.environ.get('nLLMs'))
-profileOfLLMs = json.loads(os.environ.get('profileOfLLMs'))
+number_of_LLMs = int(os.environ.get('number_of_LLMs'))
+profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 
-selectedLLM = 0
+selected_LLM = 0
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -1431,14 +1431,14 @@ def getResponse(connectionId, jsonBody):
     print('Conversation Type: ', convType)
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
-    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selectedLLM
+    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
 
-    profile = profileOfLLMs[selectedLLM]
+    profile = profile_of_LLMs[selected_LLM]
     bedrock_region =  profile['bedrock_region']
-    print('bedrock_region: ', bedrock_region)
     modelId = profile['model_id']
-    print('modelId: ', modelId)
-
+    print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print('profile: ', profile)
+    
     # bedrock   
     boto3_bedrock = boto3.client(
         service_name='bedrock-runtime',
@@ -1451,8 +1451,8 @@ def getResponse(connectionId, jsonBody):
     )
     parameters = get_parameter(modelId)
 
-    print('nLLMs: ', nLLMs)
-    print('profileOfLLMs: ',  profileOfLLMs)
+    print('number_of_LLMs: ', number_of_LLMs)
+    print('profile_of_LLMs: ', profile_of_LLMs)
 
     # langchain for bedrock
     llm = Bedrock(
@@ -1724,11 +1724,11 @@ def getResponse(connectionId, jsonBody):
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
 
-    if selectedLLM == nLLMs:
-        selectedLLM = 0
+    if selected_LLM >= number_of_LLMs-1:
+        selected_LLM = 0
     else:
-        selectedLLM = selectedLLM + 1
-        
+        selected_LLM = selected_LLM + 1
+
     return msg
 
 def lambda_handler(event, context):

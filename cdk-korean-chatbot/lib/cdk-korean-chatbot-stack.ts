@@ -39,8 +39,8 @@ const debugMessageMode = 'false'; // if true, debug messages will be delivered t
 const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
 
-const nLLMs = "2";
-const profileOfLLMs = JSON.stringify([
+const number_of_LLMs = "2";
+const profile_of_LLMs = JSON.stringify([
   {
     "bedrock_region": "us-west-2",
     "model_type": "claude",
@@ -567,8 +567,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useMultiProcessing: useMultiProcessing,
         numberOfRelevantDocs: numberOfRelevantDocs,
         maxOutputTokens: maxOutputTokens,
-        nLLMs:nLLMs,
-        profileOfLLMs:profileOfLLMs
+        number_of_LLMs:number_of_LLMs,
+        profile_of_LLMs:profile_of_LLMs
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
