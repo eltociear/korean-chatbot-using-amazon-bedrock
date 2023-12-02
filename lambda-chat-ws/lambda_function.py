@@ -1437,7 +1437,7 @@ def getResponse(connectionId, jsonBody):
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
     print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
-    print('profile: ', profile)
+    # print('profile: ', profile)
     
     # bedrock   
     boto3_bedrock = boto3.client(
@@ -1450,9 +1450,6 @@ def getResponse(connectionId, jsonBody):
         )
     )
     parameters = get_parameter(modelId)
-
-    print('number_of_LLMs: ', number_of_LLMs)
-    print('profile_of_LLMs: ', profile_of_LLMs)
 
     # langchain for bedrock
     llm = Bedrock(
@@ -1469,7 +1466,7 @@ def getResponse(connectionId, jsonBody):
         model_id = 'amazon.titan-embed-text-v1' 
     )    
     
-    if "rag_type" in jsonBody:
+    if jsonBody['rag_type]']:
         rag_type = jsonBody['rag_type']  # RAG type
         print('rag_type: ', rag_type)
 
