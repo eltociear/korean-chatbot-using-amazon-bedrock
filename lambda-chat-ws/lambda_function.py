@@ -130,8 +130,6 @@ boto3_bedrock = boto3.client(
     )
 )
 
-
-
 # langchain for bedrock
 llm = Bedrock(
     model_id=modelId, 
