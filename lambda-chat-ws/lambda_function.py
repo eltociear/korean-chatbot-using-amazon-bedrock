@@ -55,7 +55,7 @@ roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
-nLLMs = int(os.environ.get('nLLMs'),1)
+nLLMs = int(os.environ.get('nLLMs'),'1')
 profileOfLLMs = json.loads(os.environ.get('profileOfLLMs'))
 
 # websocket
