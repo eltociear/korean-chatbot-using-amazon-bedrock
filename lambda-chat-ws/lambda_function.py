@@ -108,7 +108,7 @@ for i in range(nLLMs):
     )
 
     llms = Bedrock(
-        model_id=modelId, 
+        model_id=profile['model_id'], 
         client=bedrock_client, 
         streaming=True,
         callbacks=[StreamingStdOutCallbackHandler()],
