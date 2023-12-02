@@ -1507,7 +1507,7 @@ def getResponse(connectionId, jsonBody):
     )    
     
     if 'rag_type' in jsonBody:
-        if jsonBody['rag_type]']:
+        if jsonBody['rag_type']:
             rag_type = jsonBody['rag_type']  # RAG type
             print('rag_type: ', rag_type)
 
