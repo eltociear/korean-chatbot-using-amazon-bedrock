@@ -55,22 +55,13 @@ roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
+nLLMs = int(os.environ.get('nLLMs'),1)
+profileOfLLMs = json.loads(os.environ.get('profileOfLLMs'))
 
 # websocket
 connection_url = os.environ.get('connection_url')
 client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
 print('connection_url: ', connection_url)
-
-# bedrock   
-boto3_bedrock = boto3.client(
-    service_name='bedrock-runtime',
-    region_name=bedrock_region,
-    config=Config(
-        retries = {
-            'max_attempts': 30
-        }            
-    )
-)
 
 HUMAN_PROMPT = "\n\nHuman:"
 AI_PROMPT = "\n\nAssistant:"
@@ -91,6 +82,53 @@ def get_parameter(modelId):
             "stop_sequences": [HUMAN_PROMPT]            
         }
 parameters = get_parameter(modelId)
+
+
+print('nLLMs: ', nLLMs)
+print('profileOfLLMs: ',  profileOfLLMs)
+
+bedrock_client = []
+llms = []
+for i in range(nLLMs):
+    profile = profileOfLLMs[i]
+    
+    print('i: ', i)
+    print('profile: ', profile)
+
+    bedrock_client[i] = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=profile['bedrock_region'],
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
+    )
+
+    llms[i] = Bedrock(
+        model_id=modelId, 
+        client=bedrock_client[0], 
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters)
+    msgs = llms[i]('hello')
+
+    print('msgs: ', msgs)
+
+
+
+# bedrock   
+boto3_bedrock = boto3.client(
+    service_name='bedrock-runtime',
+    region_name=bedrock_region,
+    config=Config(
+        retries = {
+            'max_attempts': 30
+        }            
+    )
+)
+
+
 
 # langchain for bedrock
 llm = Bedrock(

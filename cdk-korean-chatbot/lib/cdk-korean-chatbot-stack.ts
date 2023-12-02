@@ -24,8 +24,9 @@ const projectName = `korean-chatbot`;
 
 const bucketName = `storage-for-${projectName}-${region}`; 
 const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
-const kendra_region = "us-west-2"; 
+const maxOutputTokens = '8196';
 
+const kendra_region = "us-west-2"; 
 const rag_type = 'kendra';  // faiss, opensearch, kendra
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
@@ -37,7 +38,22 @@ let opensearch_url = "";
 const debugMessageMode = 'false'; // if true, debug messages will be delivered to the client.
 const useMultiProcessing = 'false';
 const numberOfRelevantDocs = '10';
-const maxOutputTokens = '8196';
+
+const nLLMs = "2";
+const profileOfLLMs = JSON.stringify([
+  {
+    "bedrock_region": "us-west-2",
+    "model_type": "claude",
+    "model_id": "anthropic.claude-v2:1",
+    "maxOutputTokens": "8196"
+  },
+  {
+    "bedrock_region": "us-east-1",
+    "model_type": "claude",
+    "model_id": "anthropic.claude-v2",
+    "maxOutputTokens": "8196"
+  },
+]);
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -550,7 +566,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         rag_method: rag_method,
         useMultiProcessing: useMultiProcessing,
         numberOfRelevantDocs: numberOfRelevantDocs,
-        maxOutputTokens: maxOutputTokens
+        maxOutputTokens: maxOutputTokens,
+        nLLMs:nLLMs,
+        profileOfLLMs:profileOfLLMs
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
