@@ -58,6 +58,17 @@ profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 
 selected_LLM = 0
 
+
+from langchain.globals import set_llm_cache
+
+from langchain.cache import RedisSemanticCache
+from langchain.embeddings import OpenAIEmbeddings
+
+set_llm_cache(RedisSemanticCache(
+    redis_url="redis://localhost:6379",
+    embedding=OpenAIEmbeddings()
+))
+
 # websocket
 connection_url = os.environ.get('connection_url')
 client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
@@ -731,7 +742,7 @@ def get_revised_question(llm, connectionId, requestId, query):
         {chat_history}
         </history>
 
-        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요.
+        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요. <question>이 <history>와 관련이 없다면, <question>의 내용을 전달합니다.
 
         <question>            
         {question}
@@ -879,7 +890,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             }
     return doc_info
 
-def retrieve_from_Kendra(query, top_k):
+def retrieve_from_Kendra(query, top_k, bedrock_embeddings):
     print('query: ', query)
 
     index_id = kendraIndex    
@@ -1015,7 +1026,47 @@ def retrieve_from_Kendra(query, top_k):
     for i, rel_doc in enumerate(relevant_docs):
         print(f'## Document {i+1}: {json.dumps(rel_doc)}')  
 
-    return relevant_docs
+    if len(relevant_docs) >= 1:
+        return check_confidence(query, relevant_docs, bedrock_embeddings)
+    else:
+        return relevant_docs
+
+def check_confidence(query, relevant_docs, bedrock_embeddings):
+    excerpts = []
+    for i, doc in enumerate(relevant_docs):
+        print('doc: ', doc)
+        excerpts.append(
+            Document(
+                page_content=doc['metadata']['excerpt'],
+                metadata={
+                    'name': doc['metadata']['title'],
+                    'order':i,
+                }
+            )
+        )  
+    print('excerpts: ', excerpts)
+
+    embeddings = bedrock_embeddings
+    vectorstore_confidence = FAISS.from_documents(
+        excerpts,  # documents
+        embeddings  # embeddings
+    )            
+    rel_documents = vectorstore_confidence.similarity_search_with_score(query)
+
+    docs = []
+    for i, document in enumerate(rel_documents):
+        print(f'## Document {i+1}: {document}')
+
+        order = document[0].metadata['order']
+        name = document[0].metadata['name']
+        confidence = document[1]
+        print(f"{order} {name}: {confidence}")
+
+        docs.append(relevant_docs[order])
+    
+    print('selected docs: ', docs)
+
+    return docs
 
 def get_reference(docs, rag_method, rag_type):
     if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
@@ -1120,8 +1171,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
         relevant_documents = vectorstore_faiss.similarity_search_with_score(query)
         
-        relevant_documents1 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
-        print('relevant_documents1: ',relevant_documents1)
+        #relevant_documents1 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
+        #print('relevant_documents1: ',relevant_documents1)
         
         for i, document in enumerate(relevant_documents):
             if i>=top_k:
@@ -1259,7 +1310,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId):    
+def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):    
     if rag_method == 'RetrievalQA': # RetrievalQA
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
@@ -1346,7 +1397,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId)
         #print('PROMPT: ', PROMPT)
 
         if rag_type == 'kendra':
-            relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
+            relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k, bedrock_embeddings=bedrock_embeddings)
         else:
             relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
         print('relevant_docs: ', json.dumps(relevant_docs))
@@ -1597,7 +1648,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
                     else: 
-                        msg = get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId)     
+                        msg = get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings)     
                 
                 elif convType == 'normal' or convType == 'funny':      # normal
                     msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
