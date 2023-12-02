@@ -55,19 +55,7 @@ numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 number_of_LLMs = int(os.environ.get('number_of_LLMs'))
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
-
 selected_LLM = 0
-
-
-from langchain.globals import set_llm_cache
-
-from langchain.cache import RedisSemanticCache
-from langchain.embeddings import OpenAIEmbeddings
-
-set_llm_cache(RedisSemanticCache(
-    redis_url="redis://localhost:6379",
-    embedding=OpenAIEmbeddings()
-))
 
 # websocket
 connection_url = os.environ.get('connection_url')
