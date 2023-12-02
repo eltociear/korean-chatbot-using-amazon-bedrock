@@ -87,37 +87,10 @@ parameters = get_parameter(modelId)
 print('nLLMs: ', nLLMs)
 print('profileOfLLMs: ',  profileOfLLMs)
 
-bedrock_client = []
-llms = []
-for i in range(nLLMs):
-    profile = profileOfLLMs[i]
-    
-    print('i: ', i)
-    print('profile: ', profile)
-    print('region: ', profile['bedrock_region'])
-    
-
-    bedrock_client = boto3.client(
-        service_name='bedrock-runtime',
-        region_name=profile['bedrock_region'],
-        config=Config(
-            retries = {
-                'max_attempts': 30
-            }            
-        )
-    )
-
-    llms = Bedrock(
-        model_id=profile['model_id'], 
-        client=bedrock_client, 
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
-        model_kwargs=parameters)
-    msgs = llms('hello')
-
-    print('msgs: ', msgs)
-
-
+mId = 0
+profile = profileOfLLMs[mId]
+bedrock_region =  profile['bedrock_region']
+modelId = profile['model_id']
 
 # bedrock   
 boto3_bedrock = boto3.client(
