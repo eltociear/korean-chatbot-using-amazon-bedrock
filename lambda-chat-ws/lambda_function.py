@@ -47,7 +47,7 @@ enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
-useMultiProcessing = os.environ.get('useMultiProcessing', 'false')
+useMultipleUpload = os.environ.get('useMultipleUpload', 'false')
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
@@ -1053,7 +1053,8 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
         confidence = document[1]
         print(f"{order} {name}: {confidence}")
 
-        docs.append(relevant_docs[order])
+        if confidence < 200:
+            docs.append(relevant_docs[order])
     
     # print('selected docs: ', docs)
 
@@ -1696,7 +1697,7 @@ def getResponse(connectionId, jsonBody):
                                 
             if convType == 'qa':
                 start_time = time.time()
-                if useMultiProcessing == 'false':                    
+                if useMultipleUpload == 'false':                    
                     print('rag_type: ', rag_type)                
                     if rag_type=='kendra':      
                         print('upload to kendra: ', object)           
