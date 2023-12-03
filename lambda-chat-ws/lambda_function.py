@@ -1022,7 +1022,7 @@ def retrieve_from_Kendra(query, top_k, bedrock_embeddings):
 def check_confidence(query, relevant_docs, bedrock_embeddings):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
-        print('doc: ', doc)
+        # print('doc: ', doc)
         excerpts.append(
             Document(
                 page_content=doc['metadata']['excerpt'],
@@ -1032,7 +1032,7 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
                 }
             )
         )  
-    print('excerpts: ', excerpts)
+    # print('excerpts: ', excerpts)
 
     embeddings = bedrock_embeddings
     vectorstore_confidence = FAISS.from_documents(
@@ -1055,7 +1055,7 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
 
         docs.append(relevant_docs[order])
     
-    print('selected docs: ', docs)
+    # print('selected docs: ', docs)
 
     return docs
 
