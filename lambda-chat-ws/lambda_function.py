@@ -1048,7 +1048,6 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
     )
 
     docs = []
-    pos = []
     for i, document in enumerate(rel_documents):
         print(f'## Document {i+1}: {document}')
 
@@ -1059,21 +1058,8 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
 
         relevant_docs[order]['assessed_score'] = int(assessed_score)
 
-        pos.append([i, int(assessed_score)])
-
-    print('pos: ', pos)
-
-    n_pos = sorted(pos, key=lambda x:x[1])
-
-    print('n_pos: ', n_pos)
-
-    for p in n_pos:     
-        print('p:', p)   
-        if p[1] < 200:
-            docs.append(relevant_docs[p[0]])
-        else:
-            break
-    
+        if assessed_score < 200:
+            docs.append(relevant_docs[order])    
     # print('selected docs: ', docs)
 
     return docs
