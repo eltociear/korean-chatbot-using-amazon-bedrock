@@ -730,7 +730,7 @@ def get_revised_question(llm, connectionId, requestId, query):
         {chat_history}
         </history>
 
-        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요. <question>이 <history>와 관련이 없다면, <question>의 내용을 전달합니다.
+        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요.
 
         <question>            
         {question}
