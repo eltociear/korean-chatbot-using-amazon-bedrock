@@ -1071,7 +1071,7 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
         print('p:', p)   
         if p[1] < 200:
             docs.append(relevant_docs[p[0]])
-        else
+        else:
             break
     
     # print('selected docs: ', docs)
