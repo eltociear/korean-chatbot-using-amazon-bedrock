@@ -36,7 +36,7 @@ const opensearch_passwd = "Wifi1234!";
 const enableReference = 'true';
 let opensearch_url = "";
 const debugMessageMode = 'true'; // if true, debug messages will be delivered to the client.
-const useMultiProcessing = 'true';
+const useMultipleUpload = 'true';
 const numberOfRelevantDocs = '10';
 
 const number_of_LLMs = "2"; // total number of LLMs to use
@@ -564,7 +564,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         roleArn: roleLambdaWebsocket.roleArn,
         debugMessageMode: debugMessageMode,
         rag_method: rag_method,
-        useMultiProcessing: useMultiProcessing,
+        useMultipleUpload: useMultipleUpload,
         numberOfRelevantDocs: numberOfRelevantDocs,
         maxOutputTokens: maxOutputTokens,
         number_of_LLMs:number_of_LLMs,
