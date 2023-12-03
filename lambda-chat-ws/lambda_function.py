@@ -1039,7 +1039,10 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
         excerpts,  # documents
         embeddings  # embeddings
     )            
-    rel_documents = vectorstore_confidence.similarity_search_with_score(query)
+    rel_documents = vectorstore_confidence.similarity_search_with_score(
+        query=query,
+        k=top_k
+    )
 
     docs = []
     for i, document in enumerate(rel_documents):
