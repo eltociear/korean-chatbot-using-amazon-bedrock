@@ -813,6 +813,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                 "title": document_title,
                 "excerpt": excerpt,
             },
+            "assessed_score": "",
         }
             
     else: # query API
@@ -858,6 +859,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                         "_excerpt_page_number": page
                     }
                 },
+                "assessed_score": "",
                 "query_id": query_id,
                 "feedback_token": feedback_token
             }
@@ -873,6 +875,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
                     "title": document_title,
                     "excerpt": excerpt,
                 },
+                "assessed_score": "",
                 "query_id": query_id,
                 "feedback_token": feedback_token
             }
@@ -1050,10 +1053,12 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
 
         order = document[0].metadata['order']
         name = document[0].metadata['name']
-        confidence = document[1]
-        print(f"{order} {name}: {confidence}")
+        assessed_score = document[1]
+        print(f"{order} {name}: {assessed_score}")
 
-        if confidence < 200:
+        relevant_docs[order]['assessed_score'] = assessed_score
+
+        if assessed_score < 200:
             docs.append(relevant_docs[order])
     
     # print('selected docs: ', docs)
