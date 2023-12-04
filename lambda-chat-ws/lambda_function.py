@@ -602,9 +602,9 @@ def get_summary(llm, texts):
         #prompt_template = """\n\nHuman: 다음 텍스트를 요약해서 500자 이내로 설명하세오.
         prompt_template = """\n\nHuman: 아래 <text>는 문서에서 추출한 텍스트입니다. 친절한 AI Assistant로서 아래와 같이 정리해주세요.
         
-        - 50자 미안의 제목을 <title></title> 안에 넣을것
-        - 300자 미안의 설명을 <description></description> 안에 넣을것
-        - 500자 미만의 내용 요약을 <summarization></summarization> 안에 넣을것
+        - 50자 미안의 제목을 <title>Name: </title> 안에 넣을것
+        - 300자 미안의 설명을 <description>설명: </description> 안에 넣을것
+        - 500자 미만의 내용 요약을 <summarization>요약: </summarization> 안에 넣을것
         - 10자 미안의 애용과 과련된 테그 5개를 <tag></tag> 테그 안에 생성할 것
 
         모든 생성 결과는 한국어로 해주세요. 결과에 개행문자인 "\m"과 글자 수와 같은 부가정보는 절대 포함하지 마세요.
