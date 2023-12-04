@@ -1573,8 +1573,8 @@ def getResponse(connectionId, jsonBody):
     # rag sources
     if convType == 'qa' and rag_type == 'opensearch':
         vectorstore_opensearch = OpenSearchVectorSearch(
-            #index_name = "rag-index-*", # all
-            index_name = 'rag-index-'+userId+'-*',
+            index_name = "rag-index-*", # all
+            #index_name = 'rag-index-'+userId+'-*',
             is_aoss = False,
             ef_search = 1024, # 512(default)
             m=48,
