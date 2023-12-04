@@ -938,7 +938,8 @@ def retrieve_from_Kendra(query, top_k, bedrock_embeddings):
                 resp =  kendra_client.query(
                     IndexId = index_id,
                     QueryText = query,
-                    PageSize = int(top_k/2),
+                    # PageSize = int(top_k/2),
+                    PageSize = top_k,
                     QueryResultTypeFilter = "QUESTION_ANSWER",  # 'QUESTION_ANSWER', 'ANSWER', "DOCUMENT"
                     AttributeFilter = {
                         "EqualsTo": {      
