@@ -1361,10 +1361,11 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             return_source_documents=True,
             chain_type_kwargs={"prompt": PROMPT}
         )
+
+        isTyping(connectionId, requestId)        
         result = qa({"query": revised_question})    
         print('result: ', result)
 
-        isTyping(connectionId, requestId)
         msg = readStreamMsg(connectionId, requestId, result['result'])
 
         source_documents = result['source_documents']
@@ -1425,8 +1426,8 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         print('relevant_context: ', relevant_context)
 
         try: 
-            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             isTyping(connectionId, requestId)
+            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
         except Exception:
             err_msg = traceback.format_exc()
@@ -1452,9 +1453,9 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
     conversation.prompt = get_prompt_template(text, convType)
     try: 
+        isTyping(connectionId, requestId)    
         stream = conversation.predict(input=text)
         #print('stream: ', stream)                    
-        isTyping(connectionId, requestId)    
         msg = readStreamMsg(connectionId, requestId, stream)
     except Exception:
         err_msg = traceback.format_exc()
@@ -1475,8 +1476,8 @@ def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId):
     #print('PROMPT: ', PROMPT)
 
     try: 
-        stream = llm(PROMPT.format(input=text))
         isTyping(connectionId, requestId)
+        stream = llm(PROMPT.format(input=text))
         msg = readStreamMsg(connectionId, requestId, stream)
     except Exception:
         err_msg = traceback.format_exc()
