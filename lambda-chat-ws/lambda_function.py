@@ -690,6 +690,15 @@ def getAllowTime():
 
     return timeStr
 
+def isTyping(connectionId, requestId):    
+    msg_proceeding = {
+        'request_id': requestId,
+        'msg': 'Proceeding...',
+        'status': 'proceeding'
+    }
+    #print('result: ', json.dumps(result))
+    sendMessage(connectionId, msg_proceeding)
+
 def readStreamMsg(connectionId, requestId, stream):
     msg = ""
     if stream:
@@ -1355,6 +1364,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         result = qa({"query": revised_question})    
         print('result: ', result)
 
+        isTyping(connectionId, requestId)
         msg = readStreamMsg(connectionId, requestId, result['result'])
 
         source_documents = result['source_documents']
@@ -1416,6 +1426,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
         try: 
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+            isTyping(connectionId, requestId)
             msg = readStreamMsg(connectionId, requestId, stream)
         except Exception:
             err_msg = traceback.format_exc()
@@ -1442,7 +1453,8 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
     conversation.prompt = get_prompt_template(text, convType)
     try: 
         stream = conversation.predict(input=text)
-        #print('stream: ', stream)                        
+        #print('stream: ', stream)                    
+        isTyping(connectionId, requestId)    
         msg = readStreamMsg(connectionId, requestId, stream)
     except Exception:
         err_msg = traceback.format_exc()
@@ -1464,6 +1476,7 @@ def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId):
 
     try: 
         stream = llm(PROMPT.format(input=text))
+        isTyping(connectionId, requestId)
         msg = readStreamMsg(connectionId, requestId, stream)
     except Exception:
         err_msg = traceback.format_exc()
