@@ -1409,18 +1409,15 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
         print('relevant_docs: ', json.dumps(relevant_docs))
 
-        relevant_context = ""
+        relevant_context = " "
         for document in relevant_docs:
             relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
 
         try: 
             isTyping(connectionId, requestId)
-            if relevant_context:
-                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-            else:
-                stream = llm(PROMPT.format(context=" ", question=revised_question))
-
+            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+            msg = readStreamMsg(connectionId, requestId, stream)
         except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
