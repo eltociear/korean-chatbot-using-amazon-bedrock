@@ -1685,7 +1685,7 @@ def getResponse(connectionId, jsonBody):
     load_chat_history(userId, allowTime, convType)
 
     # rag sources
-    if convType == 'qa' and rag_type == 'opensearch':
+    if convType == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
         vectorstore_opensearch = OpenSearchVectorSearch(
             index_name = "rag-index-*", # all
             #index_name = 'rag-index-'+userId+'-*',
@@ -1697,7 +1697,7 @@ def getResponse(connectionId, jsonBody):
             opensearch_url=opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
-    elif convType == 'qa' and rag_type == 'faiss':
+    elif convType == 'qa' and (rag_type == 'faiss' or rag_type == 'all'):
         print('isReady = ', isReady)
 
     start = int(time.time())    
