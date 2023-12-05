@@ -1409,10 +1409,13 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
         print('relevant_docs: ', json.dumps(relevant_docs))
 
-        relevant_context = "No Context"
+        relevant_context = ""
         for document in relevant_docs:
             relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
+
+        if relevant_context=="":
+            relevant_context = "No relevant context"
 
         try: 
             isTyping(connectionId, requestId)
