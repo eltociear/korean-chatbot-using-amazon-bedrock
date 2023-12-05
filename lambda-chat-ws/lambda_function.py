@@ -1390,10 +1390,11 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         relevant_docs = []
         for reg in capabilities:            
             if reg == 'kendra':
-                rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)                
+                rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)      
+                print('rel_docs (kendra): '+json.dumps(rel_docs))
             else:
                 rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
-            #print('rel_docs: ', rel_docs)
+                print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
 
             if(len(rel_docs)>=1):
                 for doc in rel_docs:
