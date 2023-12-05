@@ -161,7 +161,7 @@ def get_prompt_template(query, convType):
                     
             Assistant:"""
 
-        elif (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
+        elif (convType=='qa' and rag_type=='all') or (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
@@ -1389,7 +1389,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
         PROMPT = get_prompt_template(revised_question, convType)
-        #print('PROMPT: ', PROMPT)
+        print('PROMPT: ', PROMPT)
 
         relevant_docs = []
         for reg in capabilities:            
@@ -1413,9 +1413,6 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         for document in relevant_docs:
             relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
-
-        if relevant_context=="":
-            relevant_context = "No relevant context"
 
         try: 
             isTyping(connectionId, requestId)
