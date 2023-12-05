@@ -459,6 +459,14 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/992c8385-f897-4411-b6cf-b185465e8690)
 
+#### 날짜 꺼내기
+
+메뉴에서 "Timestamp Extraction"을 선택하고, 
+
+<img width="861" alt="image" src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/d767819a-4c12-40e5-873f-33bef3d222f7">
+
+
+
 #### 어린이와 대화 (Few shot example)
 
 대화의 상대에 맞추어서 질문에 답변을하여야 합니다. 이를테면 [General Conversation]에서 "산타가 크리스마스에 선물을 가져다 줄까?"로 질문을 하면 아래와 같이 답변합니다.
