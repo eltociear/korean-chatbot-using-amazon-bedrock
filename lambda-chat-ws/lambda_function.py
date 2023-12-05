@@ -1396,8 +1396,9 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             if reg == 'kendra':
                 rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
             else:
-                rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
-            relevant_docs.append(rel_docs)
+                rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
+            relevant_docs.append(rel_docs)        
+        print('relevant_docs: ', relevant_docs)
         
         if len(relevant_docs) >= 1:
             relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
