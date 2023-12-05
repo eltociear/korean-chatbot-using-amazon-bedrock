@@ -1235,7 +1235,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
     relevant_docs = []
-    if rag_type == 'faiss':
+    if rag_type == 'faiss' or rag_type == 'all':
         #relevant_documents = vectorstore_faiss.similarity_search(query)
         #query_embedding = bedrock_embeddings.embed_query(query)
         #print('query_embedding: ', query_embedding)
@@ -1295,7 +1295,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             
             relevant_docs.append(doc_info)
             
-    elif rag_type == 'opensearch':
+    elif rag_type == 'opensearch' or rag_type == 'all':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
 
         for i, document in enumerate(relevant_documents):
@@ -1538,7 +1538,6 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
             if len(relevant_docs)>=1 and enableReference=='true':
                 msg = msg+get_reference(relevant_docs, rag_method, rag_type)
-
 
     if isDebugging==True:   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -1834,7 +1833,7 @@ def getResponse(connectionId, jsonBody):
                                         
                     else:
                         if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
-                            if rag_type == 'faiss':
+                            if rag_type == 'faiss' or rag_type == 'all':
                                 if isReady == False:   
                                     embeddings = bedrock_embeddings
                                     vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
@@ -1845,7 +1844,7 @@ def getResponse(connectionId, jsonBody):
                                 else:
                                     store_document_for_faiss(doc, vectorstore_faiss)
                                                                 
-                            elif rag_type == 'opensearch':    
+                            elif rag_type == 'opensearch' or rag_type == 'all':    
                                 store_document_for_opensearch(bedrock_embeddings, docs, userId, requestId)
                     
                 else:
