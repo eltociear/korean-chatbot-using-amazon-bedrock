@@ -288,17 +288,17 @@ def get_prompt_template(query, convType):
 
             이때의 예제는 아래와 같습니다.
             <example>
-            2023년 12월 5일 18시 26분
+            2022년 11월 3일 18시 26분
             </example>
             <result>
-                <year>2023</year>
-                <month>12</month>
-                <day>05</day>
+                <year>2022</year>
+                <month>11</month>
+                <day>03</day>
                 <hour>18</hour>
                 <minute>26</minute>
             </result>
 
-            결과에 개행문자인 "\m"과 글자 수와 같은 부가정보는 절대 포함하지 마세요.
+            결과에 개행문자인 "\n"과 글자 수와 같은 부가정보는 절대 포함하지 마세요.
 
             <text>
             {input}
@@ -960,7 +960,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             }
     return doc_info
 
-def retrieve_from_Kendra(query, top_k, bedrock_embeddings):
+def retrieve_from_Kendra(query, top_k):
     print('query: ', query)
 
     index_id = kendraIndex    
@@ -1096,10 +1096,7 @@ def retrieve_from_Kendra(query, top_k, bedrock_embeddings):
     for i, rel_doc in enumerate(relevant_docs):
         print(f'## Document {i+1}: {json.dumps(rel_doc)}')  
 
-    if len(relevant_docs) >= 1:
-        return check_confidence(query, relevant_docs, bedrock_embeddings)
-    else:
-        return relevant_docs
+    return relevant_docs
 
 def check_confidence(query, relevant_docs, bedrock_embeddings):
     excerpts = []
@@ -1386,7 +1383,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
     return qa
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):    
-    if rag_method == 'RetrievalQA': # RetrievalQA
+    if rag_type == 'all':
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
@@ -1394,89 +1391,17 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         PROMPT = get_prompt_template(revised_question, convType)
         #print('PROMPT: ', PROMPT)
 
-        if rag_type=='kendra':
-            retriever = kendraRetriever
-        elif rag_type=='opensearch':
-            retriever = vectorstore_opensearch.as_retriever(
-                search_type="similarity", 
-                search_kwargs={
-                    #"k": 3, 'score_threshold': 0.8
-                    "k": top_k
-                }
-            )
-        elif rag_type=='faiss':
-            retriever = vectorstore_faiss.as_retriever(
-                search_type="similarity", 
-                search_kwargs={
-                    #"k": 3, 'score_threshold': 0.8
-                    "k": top_k
-                }
-            )
-
-        qa = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": PROMPT}
-        )
-
-        isTyping(connectionId, requestId)        
-        result = qa({"query": revised_question})    
-        print('result: ', result)
-
-        msg = readStreamMsg(connectionId, requestId, result['result'])
-
-        source_documents = result['source_documents']
-        print('source_documents: ', source_documents)
-
-        if len(source_documents)>=1 and enableReference=='true':
-            msg = msg+get_reference(source_documents, rag_method, rag_type)    
-
-    elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
-        PROMPT = get_prompt_template(text, convType)
-        if rag_type == 'kendra':
-            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
-        elif rag_type == 'opensearch': # opensearch
-            vectorstoreRetriever = vectorstore_opensearch.as_retriever(
-                search_type="similarity", 
-                search_kwargs={
-                    "k": 5
-                }
-            )
-            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
-        elif rag_type == 'faiss': # faiss
-            vectorstoreRetriever = vectorstore_faiss.as_retriever(
-                search_type="similarity", 
-                search_kwargs={
-                    "k": 5
-                }
-            )
-            qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
+        relevant_docs = []
+        for reg in capabilities:            
+            if reg == 'kendra':
+                rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
+            else:
+                rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+            relevant_docs.append(rel_docs)
         
-        result = qa({"question": text})
-        
-        msg = result['answer']
-        print('\nquestion: ', result['question'])    
-        print('answer: ', result['answer'])    
-        # print('chat_history: ', result['chat_history'])    
-        print('source_documents: ', result['source_documents']) 
+        if len(relevant_docs) >= 1:
+            relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
 
-        if len(result['source_documents'])>=1 and enableReference=='true':
-            msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
-    
-    elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
-        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-        print('revised_question: ', revised_question)
-        if debugMessageMode=='true':
-            sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        PROMPT = get_prompt_template(revised_question, convType)
-        #print('PROMPT: ', PROMPT)
-
-        if rag_type == 'kendra':
-            relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k, bedrock_embeddings=bedrock_embeddings)
-        else:
-            relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
         print('relevant_docs: ', json.dumps(relevant_docs))
 
         relevant_context = ""
@@ -1497,6 +1422,121 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
         if len(relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(relevant_docs, rag_method, rag_type)
+        
+    else:
+        if rag_method == 'RetrievalQA': # RetrievalQA
+            revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
+            print('revised_question: ', revised_question)
+            if debugMessageMode=='true':
+                sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+            PROMPT = get_prompt_template(revised_question, convType)
+            #print('PROMPT: ', PROMPT)
+
+            if rag_type=='kendra':
+                retriever = kendraRetriever
+            elif rag_type=='opensearch':
+                retriever = vectorstore_opensearch.as_retriever(
+                    search_type="similarity", 
+                    search_kwargs={
+                        #"k": 3, 'score_threshold': 0.8
+                        "k": top_k
+                    }
+                )
+            elif rag_type=='faiss':
+                retriever = vectorstore_faiss.as_retriever(
+                    search_type="similarity", 
+                    search_kwargs={
+                        #"k": 3, 'score_threshold': 0.8
+                        "k": top_k
+                    }
+                )
+
+            qa = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=retriever,
+                return_source_documents=True,
+                chain_type_kwargs={"prompt": PROMPT}
+            )
+
+            isTyping(connectionId, requestId)        
+            result = qa({"query": revised_question})    
+            print('result: ', result)
+
+            msg = readStreamMsg(connectionId, requestId, result['result'])
+
+            source_documents = result['source_documents']
+            print('source_documents: ', source_documents)
+
+            if len(source_documents)>=1 and enableReference=='true':
+                msg = msg+get_reference(source_documents, rag_method, rag_type)    
+
+        elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
+            PROMPT = get_prompt_template(text, convType)
+            if rag_type == 'kendra':
+                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
+            elif rag_type == 'opensearch': # opensearch
+                vectorstoreRetriever = vectorstore_opensearch.as_retriever(
+                    search_type="similarity", 
+                    search_kwargs={
+                        "k": 5
+                    }
+                )
+                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
+            elif rag_type == 'faiss': # faiss
+                vectorstoreRetriever = vectorstore_faiss.as_retriever(
+                    search_type="similarity", 
+                    search_kwargs={
+                        "k": 5
+                    }
+                )
+                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
+            
+            result = qa({"question": text})
+            
+            msg = result['answer']
+            print('\nquestion: ', result['question'])    
+            print('answer: ', result['answer'])    
+            # print('chat_history: ', result['chat_history'])    
+            print('source_documents: ', result['source_documents']) 
+
+            if len(result['source_documents'])>=1 and enableReference=='true':
+                msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
+        
+        elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
+            revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
+            print('revised_question: ', revised_question)
+            if debugMessageMode=='true':
+                sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+            PROMPT = get_prompt_template(revised_question, convType)
+            #print('PROMPT: ', PROMPT)
+
+            if rag_type == 'kendra':
+                relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
+                if len(relevant_docs) >= 1:
+                    relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
+            else:
+                relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+            print('relevant_docs: ', json.dumps(relevant_docs))
+
+            relevant_context = ""
+            for document in relevant_docs:
+                relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+            print('relevant_context: ', relevant_context)
+
+            try: 
+                isTyping(connectionId, requestId)
+                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+                msg = readStreamMsg(connectionId, requestId, stream)
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)       
+
+                sendErrorMessage(connectionId, requestId, err_msg)    
+                raise Exception ("Not able to request to LLM")    
+
+            if len(relevant_docs)>=1 and enableReference=='true':
+                msg = msg+get_reference(relevant_docs, rag_method, rag_type)
 
 
     if isDebugging==True:   # extract chat history for debug
