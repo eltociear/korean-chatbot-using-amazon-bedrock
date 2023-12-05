@@ -3,6 +3,7 @@ const langstate = 'korean'; // korean or english
 
 console.log('feedback...');
 feedback = document.getElementById('feedback');
+feedback.style.display = 'none';    
 
 let webSocket
 let isConnected = false;
@@ -124,9 +125,8 @@ function connect(endpoint, type) {
                     addReceivedMessage(response.request_id, response.msg);  
                 }                
                 else if(response.status == 'istyping') {
-                    feedback.innerHTML = '<p><em>typing a message...</em></p>';
-                    //feedback.style.display = 'none';
-                    feedback.style.display = 'yes';
+                    feedback.style.display = 'inline';
+                    // feedback.innerHTML = '<i>typing a message...</i>'; 
                 }
                 else if(response.status == 'proceeding') {
                     feedback.style.display = 'none';
