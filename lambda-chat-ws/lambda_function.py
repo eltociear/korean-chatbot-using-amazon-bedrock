@@ -1395,8 +1395,8 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         for reg in capabilities:            
             if reg == 'kendra':
                 rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
-            else:
-                rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
+          #  else:
+           #     rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
             relevant_docs.append(rel_docs)        
         print('relevant_docs: ', relevant_docs)
         
