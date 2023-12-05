@@ -278,12 +278,12 @@ def get_prompt_template(query, convType):
          #   아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요..
 
         elif convType == "timestamp-extraction":  # Child Conversation (few shot)
-            prompt_template = """\n\nHuman: 아래의 <text></text>을 시간을 포함한 텍스트입니다. 친절한 AI Assistant로서 시간을 추출하여 아래의 <example></example>과 같이 정리해주세요.
+            prompt_template = """\n\nHuman: 아래의 <text>는 시간을 포함한 텍스트입니다. 친절한 AI Assistant로서 시간을 추출하여 아래를 참조하여 <example>과 같이 정리해주세요.
             
             - 년도를 추출해서 <year>/<year>로 넣을것 
             - 월을 추출해서 <month>/<month>로 넣을것
             - 일을 추출해서 <day>/<day>로 넣을것
-            - 시간을 추출해서 <hour>/<hour>로 넣을것, 이때 시간은 24H으로 표시할것
+            - 시간을 추출해서 24H으로 정리해서 <hour>/<hour>에 넣을것
             - 분을 추출해서 <minute>/<minute>로 넣을것
 
             이때의 예제는 아래와 같습니다.
@@ -296,7 +296,9 @@ def get_prompt_template(query, convType):
                 <day>05</day>
                 <hour>18</hour>
                 <minute>26</minute>
-            </result>            
+            </result>
+
+            결과에 개행문자인 "\m"과 글자 수와 같은 부가정보는 절대 포함하지 마세요.
 
             <text>
             {input}
