@@ -694,7 +694,7 @@ def isTyping(connectionId, requestId):
     msg_proceeding = {
         'request_id': requestId,
         'msg': 'Proceeding...',
-        'status': 'proceeding'
+        'status': 'istyping'
     }
     #print('result: ', json.dumps(result))
     sendMessage(connectionId, msg_proceeding)

@@ -1,5 +1,9 @@
 const endpoint = 'wss://231cnjqqra.execute-api.us-west-2.amazonaws.com/dev';
 const langstate = 'korean'; // korean or english
+
+console.log('feedback...');
+feedback = document.getElementById('feedback');
+
 let webSocket
 let isConnected = false;
 webSocket = connect(endpoint, 'initial');
@@ -114,18 +118,27 @@ function connect(endpoint, type) {
                 }
                 // console.log('response: ', response);
 
-                if(response.status == 'completed') {                    
-                    console.log('received message: ', response.msg);                         
+                if(response.status == 'completed') {          
+                    feedback.style.display = 'none';          
+                    console.log('received message: ', response.msg);                  
                     addReceivedMessage(response.request_id, response.msg);  
                 }                
+                else if(response.status == 'istyping') {
+                    feedback.innerHTML = '<p><em>typing a message...</em></p>';
+                    //feedback.style.display = 'none';
+                    feedback.style.display = 'yes';
+                }
                 else if(response.status == 'proceeding') {
+                    feedback.style.display = 'none';
                     addReceivedMessage(response.request_id, response.msg);  
                 }                
                 else if(response.status == 'debug') {
+                    feedback.style.display = 'none';
                     console.log('debug: ', response.msg);
                     addNotifyMessage(response.msg);
                 }          
                 else if(response.status == 'error') {
+                    feedback.style.display = 'none';
                     console.log('error: ', response.msg);
                     addNotifyMessage(response.msg);
                 }   
