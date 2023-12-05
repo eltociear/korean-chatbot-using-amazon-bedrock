@@ -1383,7 +1383,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
     return qa
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):    
-    if rag_type == 'all':
+    if rag_type == 'all': # kendra, opensearch, faiss
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
@@ -1397,12 +1397,12 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                 rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)                
             else:
                 rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
-            print('rel_docs: ', rel_docs)
+            #print('rel_docs: ', rel_docs)
 
             if(len(rel_docs)>=1):
                 for doc in rel_docs:
                     relevant_docs.append(doc)
-        print('relevant_docs: ', relevant_docs)
+        #print('relevant_docs: ', relevant_docs)
         
         if len(relevant_docs) >= 1:
             relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
@@ -1416,12 +1416,14 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
 
         try: 
             isTyping(connectionId, requestId)
-            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-            msg = readStreamMsg(connectionId, requestId, stream)
+            if relevant_context:
+                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+            else:
+                stream = llm(PROMPT.format(context=" ", question=revised_question))
+
         except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
-
             sendErrorMessage(connectionId, requestId, err_msg)    
             raise Exception ("Not able to request to LLM")    
 
