@@ -1168,9 +1168,9 @@ def get_reference(docs, rag_method, rag_type):
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
 
     elif rag_method == 'RetrievalPrompt':
-        if rag_type == 'kendra':
-            reference = "\n\nFrom\n"
-            for i, doc in enumerate(docs):
+        reference = "\n\nFrom\n"
+        for i, doc in enumerate(docs):
+            if doc['rag_type'] == 'kendra':
                 if doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                         uri = doc['metadata']['source']
                         name = doc['metadata']['title']
@@ -1197,9 +1197,7 @@ def get_reference(docs, rag_method, rag_type):
                             reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a> ({doc['assessed_score']})\n"
                         elif uri:
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a> ({doc['assessed_score']})\n"
-        elif rag_type == 'opensearch':
-            reference = "\n\nFrom\n"
-            for i, doc in enumerate(docs):
+            elif doc['rag_type'] == 'opensearch':
                 print(f'## Document {i+1}: {doc}')
                 
                 page = ""
@@ -1211,9 +1209,7 @@ def get_reference(docs, rag_method, rag_type):
 
                 reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
         
-        elif rag_type == 'faiss':
-            reference = "\n\nFrom\n"
-            for i, doc in enumerate(docs):
+            elif doc['rag_type'] == 'faiss':
                 print(f'## Document {i+1}: {doc}')
                 
                 page = ""
@@ -1389,7 +1385,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
         PROMPT = get_prompt_template(revised_question, convType)
-        print('PROMPT: ', PROMPT)
+        # print('PROMPT: ', PROMPT)
 
         relevant_docs = []
         for reg in capabilities:            
@@ -1549,7 +1545,6 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
     
-
     return msg
 
 def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
