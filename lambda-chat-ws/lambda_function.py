@@ -1231,7 +1231,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
     relevant_docs = []
-    if (rag_type == 'faiss' or rag_type == 'all') and isReady:
+    if rag_type == 'faiss' and isReady:
         #relevant_documents = vectorstore_faiss.similarity_search(query)
         #query_embedding = bedrock_embeddings.embed_query(query)
         #print('query_embedding: ', query_embedding)
@@ -1293,7 +1293,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             
             relevant_docs.append(doc_info)
             
-    elif rag_type == 'opensearch' or rag_type == 'all':
+    elif rag_type == 'opensearch':
         relevant_documents = vectorstore_opensearch.similarity_search(query)
 
         for i, document in enumerate(relevant_documents):
@@ -1446,7 +1446,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                         "k": top_k
                     }
                 )
-            elif rag_type=='faiss':
+            elif rag_type=='faiss' and isReady:
                 retriever = vectorstore_faiss.as_retriever(
                     search_type="similarity", 
                     search_kwargs={
@@ -1487,7 +1487,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                     }
                 )
                 qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
-            elif rag_type == 'faiss': # faiss
+            elif rag_type == 'faiss' and isReady: # faiss
                 vectorstoreRetriever = vectorstore_faiss.as_retriever(
                     search_type="similarity", 
                     search_kwargs={
