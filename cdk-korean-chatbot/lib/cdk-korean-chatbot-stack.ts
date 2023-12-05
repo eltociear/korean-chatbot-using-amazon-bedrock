@@ -54,7 +54,7 @@ const profile_of_LLMs = JSON.stringify([
     "maxOutputTokens": "8196"
   },
 ]);
-const capabilities = JSON.stringify(["opensearch", "kendra", "faiss"]);
+const capabilities = JSON.stringify(["kendra", "opensearch", "faiss"]);
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
