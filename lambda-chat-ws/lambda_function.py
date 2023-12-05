@@ -56,6 +56,8 @@ top_k = int(numberOfRelevantDocs)
 number_of_LLMs = int(os.environ.get('number_of_LLMs'))
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 selected_LLM = 0
+capabilities = json.loads(os.environ.get('capabilities'))
+print('capabilities: ', capabilities)
 
 # websocket
 connection_url = os.environ.get('connection_url')

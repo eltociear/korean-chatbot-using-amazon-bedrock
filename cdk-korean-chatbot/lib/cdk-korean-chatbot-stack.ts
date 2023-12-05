@@ -54,6 +54,7 @@ const profile_of_LLMs = JSON.stringify([
     "maxOutputTokens": "8196"
   },
 ]);
+const capabilities = JSON.stringify(["opensearch", "kendra", "faiss"]);
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -568,7 +569,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         numberOfRelevantDocs: numberOfRelevantDocs,
         maxOutputTokens: maxOutputTokens,
         number_of_LLMs:number_of_LLMs,
-        profile_of_LLMs:profile_of_LLMs
+        profile_of_LLMs:profile_of_LLMs,
+        capabilities: capabilities
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
