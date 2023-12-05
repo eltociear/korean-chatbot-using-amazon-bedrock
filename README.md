@@ -461,11 +461,21 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 #### 날짜 꺼내기
 
-메뉴에서 "Timestamp Extraction"을 선택하고, 
+메뉴에서 "Timestamp Extraction"을 선택하고, "지금은 2023년 12월 5일 18시 26분이야"라고 입력하면 prompt를 이용해 아래처럼 시간을 추출합니다.
 
 <img width="861" alt="image" src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/d767819a-4c12-40e5-873f-33bef3d222f7">
 
+실제 결과 메시지는 아래와 같습니다. 
 
+```xml
+<result>
+<year>2023</year>
+<month>12</month>
+<day>05</day>
+<hour>18</hour>
+<minute>26</minute>
+</result>
+```
 
 #### 어린이와 대화 (Few shot example)
 
