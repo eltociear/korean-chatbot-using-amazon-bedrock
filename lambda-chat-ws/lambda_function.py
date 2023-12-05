@@ -1235,7 +1235,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
     print('query: ', query)
 
     relevant_docs = []
-    if rag_type == 'faiss' or rag_type == 'all':
+    if (rag_type == 'faiss' or rag_type == 'all') and isReady:
         #relevant_documents = vectorstore_faiss.similarity_search(query)
         #query_embedding = bedrock_embeddings.embed_query(query)
         #print('query_embedding: ', query_embedding)
@@ -1398,8 +1398,10 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             else:
                 rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
             print('rel_docs: ', rel_docs)
-            for doc in rel_docs:
-                relevant_docs.append(doc)
+
+            if(len(rel_docs)>=1):
+                for doc in rel_docs:
+                    relevant_docs.append(doc)
         print('relevant_docs: ', relevant_docs)
         
         if len(relevant_docs) >= 1:
