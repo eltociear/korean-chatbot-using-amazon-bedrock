@@ -37,7 +37,7 @@ const enableReference = 'true';
 let opensearch_url = "";
 const debugMessageMode = 'true'; // if true, debug messages will be delivered to the client.
 const useMultipleUpload = 'true';
-const numberOfRelevantDocs = '10';
+const numberOfRelevantDocs = '8';
 
 const number_of_LLMs = "2"; // total number of LLMs to use
 const profile_of_LLMs = JSON.stringify([
