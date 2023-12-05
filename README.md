@@ -459,11 +459,12 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/992c8385-f897-4411-b6cf-b185465e8690)
 
-#### 날짜 꺼내기
+#### 날짜/시간 추출하기
 
 메뉴에서 "Timestamp Extraction"을 선택하고, "지금은 2023년 12월 5일 18시 26분이야"라고 입력하면 prompt를 이용해 아래처럼 시간을 추출합니다.
 
-<img width="861" alt="image" src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/d767819a-4c12-40e5-873f-33bef3d222f7">
+![noname](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/7dd7e659-498c-4898-801c-b72830bf254b)
+
 
 실제 결과 메시지는 아래와 같습니다. 
 
