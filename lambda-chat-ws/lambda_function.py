@@ -1271,6 +1271,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
+                    "assessed_score": "",
                 }
 
             else: 
@@ -1287,6 +1288,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
+                    "assessed_score": "",
                 }
             
             relevant_docs.append(doc_info)
@@ -1321,6 +1323,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 },
                 #"query_id": query_id,
                 #"feedback_token": feedback_token
+                "assessed_score": "",
             }
             relevant_docs.append(doc_info)
 
