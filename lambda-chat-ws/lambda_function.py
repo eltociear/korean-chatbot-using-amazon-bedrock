@@ -27,6 +27,7 @@ from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
+from multiprocessing import Process
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -960,7 +961,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             }
     return doc_info
 
-def retrieve_from_Kendra(query, top_k):
+def retrieve_from_kendra(query, top_k):
     print('query: ', query)
 
     index_id = kendraIndex    
@@ -1174,12 +1175,12 @@ def get_reference(docs, rag_method, rag_type):
                 if doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                         uri = doc['metadata']['source']
                         name = doc['metadata']['title']
-                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a> ({doc['assessed_score']})\n"
+                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
                         excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
-                        reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a> ({doc['assessed_score']})\n"
+                        reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
                     else:
                         uri = ""
                         if "title" in doc['metadata']:
@@ -1194,9 +1195,9 @@ def get_reference(docs, rag_method, rag_type):
                                 page = doc['metadata']['document_attributes']['_excerpt_page_number']
                                                 
                         if page: 
-                            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a> ({doc['assessed_score']})\n"
+                            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
                         elif uri:
-                            reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a> ({doc['assessed_score']})\n"
+                            reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
             elif doc['rag_type'] == 'opensearch':
                 print(f'## Document {i+1}: {doc}')
                 
@@ -1207,7 +1208,7 @@ def get_reference(docs, rag_method, rag_type):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
-                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>\n"
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
         
             elif doc['rag_type'] == 'faiss':
                 print(f'## Document {i+1}: {doc}')
@@ -1218,12 +1219,11 @@ def get_reference(docs, rag_method, rag_type):
                         page = doc['metadata']['document_attributes']['_excerpt_page_number']
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
-                confidence = doc['confidence']
 
                 if page: 
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
                 elif uri:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
         
     return reference
 
@@ -1393,7 +1393,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         relevant_docs = []
         for reg in capabilities:            
             if reg == 'kendra':
-                rel_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)      
+                rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
                 print('rel_docs (kendra): '+json.dumps(rel_docs))
             else:
                 rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
@@ -1516,12 +1516,15 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             #print('PROMPT: ', PROMPT)
 
             if rag_type == 'kendra':
-                relevant_docs = retrieve_from_Kendra(query=revised_question, top_k=top_k)
+                relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
                 if len(relevant_docs) >= 1:
                     relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
             else:
                 relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
+
+            #p1 = Process(target=store_document_for_kendra, args=(path, object, requestId,))
+            #p1.start(); p1.join()
 
             relevant_context = ""
             for document in relevant_docs:
@@ -1849,8 +1852,7 @@ def getResponse(connectionId, jsonBody):
                             elif rag_type == 'opensearch' or rag_type == 'all':    
                                 store_document_for_opensearch(bedrock_embeddings, docs, userId, requestId)
                     
-                else:
-                    from multiprocessing import Process
+                else:                    
                     p1 = Process(target=store_document_for_kendra, args=(path, object, requestId,))
                     p1.start(); p1.join()
                     
