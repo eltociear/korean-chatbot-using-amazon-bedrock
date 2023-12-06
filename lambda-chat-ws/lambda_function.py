@@ -1175,12 +1175,12 @@ def get_reference(docs, rag_method, rag_type):
                 if doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                         uri = doc['metadata']['source']
                         name = doc['metadata']['title']
-                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
                         excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
-                        reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                        reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                     else:
                         uri = ""
                         if "title" in doc['metadata']:
@@ -1195,9 +1195,9 @@ def get_reference(docs, rag_method, rag_type):
                                 page = doc['metadata']['document_attributes']['_excerpt_page_number']
                                                 
                         if page: 
-                            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                            reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                         elif uri:
-                            reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                            reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
             elif doc['rag_type'] == 'opensearch':
                 print(f'## Document {i+1}: {doc}')
                 
@@ -1208,7 +1208,7 @@ def get_reference(docs, rag_method, rag_type):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
-                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
         
             elif doc['rag_type'] == 'faiss':
                 print(f'## Document {i+1}: {doc}')
@@ -1221,9 +1221,9 @@ def get_reference(docs, rag_method, rag_type):
                 name = doc['metadata']['title']
 
                 if page: 
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 elif uri:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a> {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
         
     return reference
 
@@ -1253,6 +1253,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             page = document[0].metadata['page']
             uri = document[0].metadata['uri']
             confidence = document[1]
+            assessed_score = document[1]
             
             if page:
                 doc_info = {
@@ -1271,7 +1272,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
-                    "assessed_score": "",
+                    "assessed_score": assessed_score,
                 }
 
             else: 
@@ -1288,7 +1289,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
-                    "assessed_score": "",
+                    "assessed_score": assessed_score,
                 }
             
             relevant_docs.append(doc_info)
