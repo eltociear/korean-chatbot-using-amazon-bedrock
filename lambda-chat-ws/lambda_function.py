@@ -27,7 +27,7 @@ from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
-from multiprocessing import Process
+from multiprocessing import Process, Array
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -49,7 +49,7 @@ debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
 useMultipleUpload = os.environ.get('useMultipleUpload', 'false')
-useMultipleRAG = False
+useMultipleRAG = True
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
@@ -1357,14 +1357,17 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_from_RAG(query, top_k, rag_type):
+def retrieve_process_from_RAG(query, top_k, rag_type, relevant_docs):
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
         print('rel_docs (kendra): '+json.dumps(rel_docs))
     else:
         rel_docs = retrieve_from_vectorstore(query=query, top_k=top_k, rag_type=rag_type)
         print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
-    return rel_docs
+    
+    if(len(rel_docs)>=1):
+        for doc in rel_docs:
+            relevant_docs.append(doc)
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1381,25 +1384,26 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         if useMultipleRAG == False:
             print('Sequencial processing for multiple RAG starts')
             for reg in capabilities:            
-                #if reg == 'kendra':
-                #    rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
-                #    print('rel_docs (kendra): '+json.dumps(rel_docs))
-                #else:
-                #    rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
-                #    print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
-                rel_docs = retrieve_from_RAG(revised_question, top_k, reg)
-
+                if reg == 'kendra':
+                    rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
+                    print('rel_docs (kendra): '+json.dumps(rel_docs))
+                else:
+                    rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
+                    print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
+                
                 if(len(rel_docs)>=1):
                     for doc in rel_docs:
                         relevant_docs.append(doc)
         else:
             print('Parallel processing for multiple RAG starts')
         
-        #print('relevant_docs: ', relevant_docs)
-    
-        #p1 = Process(target=store_document_for_kendra, args=(path, object, requestId,))
-            #p1.start(); p1.join()
+            p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
+            p1.start()            
+            p1.join()
+            print('relevant_docs using multiprocessing: ', relevant_docs)
+            
         print('processing time for RAG: ', str(time.time() - start_time))
+        #print('relevant_docs: ', relevant_docs)
         
         if len(relevant_docs) >= 1:
             relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
