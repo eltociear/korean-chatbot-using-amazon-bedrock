@@ -1382,7 +1382,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):    
+def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
     if rag_type == 'all': # kendra, opensearch, faiss
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
@@ -1567,7 +1567,7 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
         print('error message: ', err_msg)        
         
         sendErrorMessage(connectionId, requestId, err_msg)    
-        raise Exception ("Not able to request to LLM")     
+        raise Exception ("Not able to request to LLM")
 
     if isDebugging==True:   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
@@ -1589,7 +1589,7 @@ def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_typ
         print('error message: ', err_msg)        
         
         sendErrorMessage(connectionId, requestId, err_msg)    
-        raise Exception ("Not able to request to LLM")    
+        raise Exception ("Not able to request to LLM")
     
     return msg
 
@@ -1660,7 +1660,7 @@ def getResponse(connectionId, jsonBody):
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
-        if rag_type=='faiss' and isReady==False:        
+        if rag_type=='faiss' and isReady==False:
             if userId in map_chat:  
                 memory_chat = map_chat[userId]
                 print('memory_chat exist. reuse it!')    
@@ -1788,7 +1788,7 @@ def getResponse(connectionId, jsonBody):
                         print('error message: ', err_msg)        
 
                         sendErrorMessage(connectionId, requestId, err_msg)    
-                        raise Exception ("Not able to request to LLM")    
+                        raise Exception ("Not able to request to LLM")
                 else: 
                     msg = get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_type)
                 
