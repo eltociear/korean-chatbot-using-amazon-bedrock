@@ -1403,40 +1403,31 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         else:
             print('Parallel processing for multiple RAG starts')
 
-            #plimit = Process.cpu_count()
-            #print('plimit: ', plimit)
-
             processes = []
             parent_connections = []
 
-
-            parent_conn, child_conn = Pipe()
-            parent_connections.append(parent_conn)
+            for rag in capabilities:
+                print('rag: ', rag)
             
-            process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, capabilities[0]))
-            processes.append(process)
-
-            process.start()
-            #for process in processes:
-            #    process.start()
-            print(parent_conn.recv()) 
-
-            #for process in processes:
-            #    process.join()
-            process.join()
+                parent_conn, child_conn = Pipe()
+                parent_connections.append(parent_conn)
             
-            #instances_total = 0
-            #for parent_connection in parent_connections:
-            #    instances_total += parent_connection.recv()[0]
-            
+                process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, rag))
+                processes.append(process)
 
-            #p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, capabilities[0]))
-
-            #p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
-            #p.start()            
-            #print('relevant_docs using multiprocessing: ', q.get())
-            #p.join()
+            for process in processes:
+                process.start()
             
+            for parent_conn in parent_connections:
+                rel_docs = parent_conn.recv()
+                print("rel_docs: ", rel_docs) 
+
+                if(len(rel_docs)>=1):
+                    for doc in rel_docs:
+                        relevant_docs.append(doc)    
+
+            for process in processes:
+                process.join()
             
         print('processing time for RAG: ', str(time.time() - start_time_for_rag))
         #print('relevant_docs: ', relevant_docs)
