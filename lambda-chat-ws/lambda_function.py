@@ -27,7 +27,7 @@ from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Pipe
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -1357,7 +1357,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(q, query, top_k, rag_type):
+def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
@@ -1369,7 +1369,9 @@ def retrieve_process_from_RAG(q, query, top_k, rag_type):
     if(len(rel_docs)>=1):
         for doc in rel_docs:
             relevant_docs.append(doc)    
-    q.put(relevant_docs)
+    
+    conn.send(relevant_docs)
+    conn.close()
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1400,14 +1402,41 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                         relevant_docs.append(doc)
         else:
             print('Parallel processing for multiple RAG starts')
-        
-            q = Queue()
-            p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, capabilities[0]))
+
+            plimit = Process.cpu_count()
+            print('plimit: ', plimit)
+
+            processes = []
+            parent_connections = []
+
+
+            #parent_conn, child_conn = Pipe()
+            conn = Pipe()
+            # parent_connections.append(parent_conn)
+            
+            p = Process(target=retrieve_process_from_RAG, args=(conn, revised_question, top_k, capabilities[0]))
+            # processes.append(process)
+
+            p.start()
+            #for process in processes:
+            #    process.start()
+            print(conn.recv()) 
+
+            #for process in processes:
+            #    process.join()
+            p.join()
+            
+            #instances_total = 0
+            #for parent_connection in parent_connections:
+            #    instances_total += parent_connection.recv()[0]
+            
+
+            #p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, capabilities[0]))
 
             #p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
-            p.start()            
-            print('relevant_docs using multiprocessing: ', q.get())
-            p.join()
+            #p.start()            
+            #print('relevant_docs using multiprocessing: ', q.get())
+            #p.join()
             
             
         print('processing time for RAG: ', str(time.time() - start_time_for_rag))
