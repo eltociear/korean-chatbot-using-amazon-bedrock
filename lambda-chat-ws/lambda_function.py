@@ -1252,7 +1252,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             name = document[0].metadata['name']
             page = document[0].metadata['page']
             uri = document[0].metadata['uri']
-            confidence = document[1]
+            confidence = int(document[1])
             assessed_score = int(document[1])
             
             if page:
