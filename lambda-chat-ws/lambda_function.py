@@ -1357,7 +1357,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(q, query, top_k, rag_type, relevant_docs):
+def retrieve_process_from_RAG(q, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
@@ -1402,7 +1402,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             print('Parallel processing for multiple RAG starts')
         
             q = Queue()
-            p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, rag_type, capabilities[0]))
+            p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, capabilities[0]))
 
             #p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
             p.start()            
