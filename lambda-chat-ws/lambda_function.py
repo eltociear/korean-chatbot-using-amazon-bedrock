@@ -27,7 +27,7 @@ from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
-from multiprocessing import Process, Array
+from multiprocessing import Process, Queue
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -1373,16 +1373,18 @@ def retrieve_process_from_RAG(q, query, top_k, rag_type, relevant_docs):
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
     if rag_type == 'all': # kendra, opensearch, faiss
+        start_time_for_revise = time.time()
+
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
         PROMPT = get_prompt_template(revised_question, convType, rag_type)
-        print('PROMPT: ', PROMPT)
+        # print('PROMPT: ', PROMPT)        
+        print('processing time for revise question: ', str(time.time() - start_time_for_revise))
 
         relevant_docs = []
-
-        start_time = time.time()
+        start_time_for_rag = time.time()
         if useMultipleRAG == False:
             print('Sequencial processing for multiple RAG starts')
             for reg in capabilities:            
@@ -1399,9 +1401,8 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         else:
             print('Parallel processing for multiple RAG starts')
         
-            ctx = Process.get_context('spawn')            
-            q = ctx.Queue()
-            p = ctx.Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, rag_type, capabilities[0]))
+            q = Queue()
+            p = Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, rag_type, capabilities[0]))
 
             #p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
             p.start()            
@@ -1409,7 +1410,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             p.join()
             
             
-        print('processing time for RAG: ', str(time.time() - start_time))
+        print('processing time for RAG: ', str(time.time() - start_time_for_rag))
         #print('relevant_docs: ', relevant_docs)
         
         if len(relevant_docs) >= 1:
