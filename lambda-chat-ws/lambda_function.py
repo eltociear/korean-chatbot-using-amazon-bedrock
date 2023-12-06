@@ -1387,7 +1387,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                 #else:
                 #    rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
                 #    print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
-                rel_docs = retrieve_from_RAG(revised_question, top_k, rag_type)
+                rel_docs = retrieve_from_RAG(revised_question, top_k, reg)
 
                 if(len(rel_docs)>=1):
                     for doc in rel_docs:
@@ -1399,7 +1399,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
     
         #p1 = Process(target=store_document_for_kendra, args=(path, object, requestId,))
             #p1.start(); p1.join()
-        print('processing time: ', str(time.time() - start_time))
+        print('processing time for RAG: ', str(time.time() - start_time))
         
         if len(relevant_docs) >= 1:
             relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
