@@ -1403,28 +1403,27 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         else:
             print('Parallel processing for multiple RAG starts')
 
-            plimit = Process.cpu_count()
-            print('plimit: ', plimit)
+            #plimit = Process.cpu_count()
+            #print('plimit: ', plimit)
 
             processes = []
             parent_connections = []
 
 
-            #parent_conn, child_conn = Pipe()
-            conn = Pipe()
-            # parent_connections.append(parent_conn)
+            parent_conn, child_conn = Pipe()
+            parent_connections.append(parent_conn)
             
-            p = Process(target=retrieve_process_from_RAG, args=(conn, revised_question, top_k, capabilities[0]))
-            # processes.append(process)
+            process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, capabilities[0]))
+            processes.append(process)
 
-            p.start()
+            process.start()
             #for process in processes:
             #    process.start()
-            print(conn.recv()) 
+            print(parent_conn.recv()) 
 
             #for process in processes:
             #    process.join()
-            p.join()
+            process.join()
             
             #instances_total = 0
             #for parent_connection in parent_connections:
