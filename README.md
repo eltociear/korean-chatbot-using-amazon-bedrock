@@ -8,6 +8,8 @@ Multiple RAG에서는 각 RAG가 관련 문서(Relevant Documents)를 생성하�
 
 Multiple LLM을 사용하게 되는 케이스에는 1) 다른 종류의 LLM을 사용하는 케이스 2) 같은 LLM을 다른 리전에서 사용하는 케이스가 있을 수 있습니다. LLM마다 잘하는 범위가 다를수 있으므로 다른 LLM의 결과를 통합해야할 수 있습니다. 또한, Bedrock On Demend의 경우에 단위시간당 보낼수 있는 Reuqest의 숫자 및 Token의 숫자가 제한되므로, 다른 리전의 동일 모델을 사용할 수 있다면, Provisioned로 사용하기 어려운 경우에 유용하게 이용될 수 있습니다. 1)의 경우에는 동시에 같은 요청을 보내서 다른 응답을 통합하는 과정이 필요하며, 2의 경우에는 Load를 분배하고 관리하는 방법이 필요합니다.
 
+실행시간을 단축하기 위하여 Multi Thread를 사용합니다. [Lambda의 Multi thread](https://aws.amazon.com/ko/blogs/compute/parallel-processing-in-python-with-aws-lambda/)을 사용하므로써 연속적인 작업(sequencial job)을 병렬처리 할 수 있습니다.
+
 
 ## 아키텍처 개요
 
