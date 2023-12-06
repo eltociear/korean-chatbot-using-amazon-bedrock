@@ -1388,7 +1388,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         relevant_docs = []
         start_time_for_rag = time.time()
         if useMultipleRAG == False:
-            print('Sequencial processing for multiple RAG starts')
+            print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
                 if reg == 'kendra':
                     rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
@@ -1401,26 +1401,22 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                     for doc in rel_docs:
                         relevant_docs.append(doc)
         else:
-            print('Parallel processing for multiple RAG starts')
-
+            print('start the parallel processing for multiple RAG')
+            
             processes = []
             parent_connections = []
-
             for rag in capabilities:
-                print('rag: ', rag)
-            
                 parent_conn, child_conn = Pipe()
                 parent_connections.append(parent_conn)
             
                 process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, rag))
                 processes.append(process)
-
+                
             for process in processes:
                 process.start()
             
             for parent_conn in parent_connections:
                 rel_docs = parent_conn.recv()
-                print("rel_docs: ", rel_docs) 
 
                 if(len(rel_docs)>=1):
                     for doc in rel_docs:
