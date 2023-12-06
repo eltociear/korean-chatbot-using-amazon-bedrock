@@ -33,13 +33,11 @@ s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
-#bedrock_region = os.environ.get('bedrock_region', 'us-west-2')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
-#modelId = os.environ.get('model_id', 'anthropic.claude-v2')
-#print('model_id: ', modelId)
+number_of_LLMs = int(os.environ.get('number_of_LLMs'))
+profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 isReady = False   
 isDebugging = False
-rag_type = os.environ.get('rag_type', 'faiss')
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -55,8 +53,6 @@ roleArn = os.environ.get('roleArn')
 maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
-number_of_LLMs = int(os.environ.get('number_of_LLMs'))
-profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
@@ -131,14 +127,14 @@ def sendErrorMessage(connectionId, requestId, msg):
     print('error: ', json.dumps(errorMsg))
     sendMessage(connectionId, errorMsg)
 
-def get_prompt_template(query, convType, rag_type):
+def get_prompt_template(query, conv_type, rag_type):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
     word_kor = pattern_hangul.search(str(query))
     print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
-        if convType == "normal": # for General Conversation
+        if conv_type == "normal": # for General Conversation
             prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             <history>
@@ -150,7 +146,7 @@ def get_prompt_template(query, convType, rag_type):
             </question>
             
             Assistant:"""
-        elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
+        elif conv_type=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
             prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
             <history>
@@ -163,7 +159,7 @@ def get_prompt_template(query, convType, rag_type):
                     
             Assistant:"""
 
-        elif (convType=='qa' and rag_type=='all') or (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  
+        elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
@@ -177,7 +173,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
                 
-        elif convType == "translation":  # for translation, input
+        elif conv_type == "translation":  # for translation, input
             prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
 
             <translation>
@@ -186,7 +182,7 @@ def get_prompt_template(query, convType, rag_type):
                         
             Assistant:"""
 
-        elif convType == "sentiment":  # for sentiment, input
+        elif conv_type == "sentiment":  # for sentiment, input
             prompt_template = """\n\nHuman: 아래의 <example> review와 Extracted Topic and sentiment 인 <result>가 있습니다.
             <example>
             객실은 작지만 깨끗하고 편안합니다. 프론트 데스크는 정말 분주했고 체크인 줄도 길었지만, 직원들은 프로페셔널하고 매우 유쾌하게 각 사람을 응대했습니다. 우리는 다시 거기에 머물것입니다.
@@ -204,7 +200,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
 
-        elif convType == "extraction":  # information extraction
+        elif conv_type == "extraction":  # information extraction
             prompt_template = """\n\nHuman: 다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요.
 
             <text>
@@ -213,7 +209,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
 
-        elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
+        elif conv_type == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
             prompt_template = """\n\nHuman: 아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요.
             
             <text>
@@ -222,7 +218,7 @@ def get_prompt_template(query, convType, rag_type):
         
             Assistant:"""
 
-        elif convType == "grammar":  # Checking Grammatical Errors
+        elif conv_type == "grammar":  # Checking Grammatical Errors
             prompt_template = """\n\nHuman: 다음의 <article>에서 문장의 오류를 찾아서 설명하고, 오류가 수정된 문장을 답변 마지막에 추가하여 주세요.
 
             <article>
@@ -231,7 +227,7 @@ def get_prompt_template(query, convType, rag_type):
             
             Assistant: """
 
-        elif convType == "step-by-step":  # compelex question 
+        elif conv_type == "step-by-step":  # compelex question 
             prompt_template = """\n\nHuman: 다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
 
             {input}
@@ -242,7 +238,7 @@ def get_prompt_template(query, convType, rag_type):
             
             Assistant:"""
 
-        elif convType == "like-child":  # Child Conversation (few shot)
+        elif conv_type == "like-child":  # Child Conversation (few shot)
             prompt_template = """\n\nHuman: 다음 대화를 완성하기 위해 "A"로 말하는 다음 줄을 작성하세요. Assistant는 유치원 선생님처럼 대화를 합니다.
             
             Q: 이빨 요정은 실제로 있을까?
@@ -251,7 +247,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""      
 
-        elif convType == "timestamp-extraction":  # Child Conversation (few shot)
+        elif conv_type == "timestamp-extraction":  # Child Conversation (few shot)
             prompt_template = """\n\nHuman: 아래의 <text>는 시간을 포함한 텍스트입니다. 친절한 AI Assistant로서 시간을 추출하여 아래를 참조하여 <example>과 같이 정리해주세요.
             
             - 년도를 추출해서 <year>/<year>로 넣을것 
@@ -280,7 +276,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""  
 
-        elif convType == "funny": # for free conversation
+        elif conv_type == "funny": # for free conversation
             prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. 모든 대화는 반말로하여야 합니다. Assistant의 이름은 서서이고 10살 여자 어린이 상상력이 풍부하고 재미있는 대화를 합니다. 때로는 바보같은 답변을 해서 재미있게 해줍니다.
 
             <history>
@@ -293,7 +289,7 @@ def get_prompt_template(query, convType, rag_type):
             
             Assistant:"""     
 
-        elif convType == "get-weather":  # getting weather (function calling)
+        elif conv_type == "get-weather":  # getting weather (function calling)
             prompt_template = """\n\nHuman: In this environment you have access to a set of tools you can use to answer the user's question.
 
             You may call them like this. Only invoke one function at a time and wait for the results before invoking another function:
@@ -328,7 +324,7 @@ def get_prompt_template(query, convType, rag_type):
             Assistant:"""
 
     else:  # English
-        if convType == "normal": # for General Conversation
+        if conv_type == "normal": # for General Conversation
             prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
             <history>
@@ -341,7 +337,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
 
-        elif convType=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
+        elif conv_type=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
             prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
 
             <history>
@@ -354,7 +350,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""           
 
-        elif (convType=='qa' and rag_type=='all') or (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and rag_type=='faiss' and isReady):  # for RAG
+        elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  # for RAG
             prompt_template = """\n\nHuman: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
             
             <context>
@@ -369,7 +365,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
 
-        elif convType=="translation": 
+        elif conv_type=="translation": 
             prompt_template = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
             
             <article>
@@ -378,7 +374,7 @@ def get_prompt_template(query, convType, rag_type):
                         
             Assistant:"""
         
-        elif convType == "sentiment":  # for sentiment, input
+        elif conv_type == "sentiment":  # for sentiment, input
             prompt_template = """\n\nHuman: Here is <example> review and extracted topics and sentiments as <result>.
 
             <example>
@@ -396,7 +392,7 @@ def get_prompt_template(query, convType, rag_type):
             
             Assistant:"""
 
-        elif convType == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
+        elif conv_type == "pii":  # removing PII(personally identifiable information) containing name, phone number, address
             prompt_template = """\n\nHuman: We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
             It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. Put it in <result> tags.
 
@@ -408,14 +404,14 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
 
-        elif convType == "extraction":  # for sentiment, input
+        elif conv_type == "extraction":  # for sentiment, input
             prompt_template = """\n\nHuman: Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text.  If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags.
 
             {input}
 
             Assistant:"""
 
-        elif convType == "grammar":  # Checking Grammatical Errors
+        elif conv_type == "grammar":  # Checking Grammatical Errors
             prompt_template = """\n\nHuman: Here is an article, contained in <article> tags:
 
             <article>
@@ -426,7 +422,7 @@ def get_prompt_template(query, convType, rag_type):
             
             Assistant: """
 
-        elif convType == "step-by-step":  # compelex question 
+        elif conv_type == "step-by-step":  # compelex question 
             prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
             
             {input}
@@ -437,7 +433,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""
         
-        elif convType == "like-child":  # Child Conversation (few shot)
+        elif conv_type == "like-child":  # Child Conversation (few shot)
             prompt_template = """\n\nHuman: Please complete the conversation by writing the next line, speaking as "A". You will be acting as a kindergarten teacher.
 
             Q: Is the tooth fairy real?
@@ -446,7 +442,7 @@ def get_prompt_template(query, convType, rag_type):
 
             Assistant:"""       
 
-        elif convType == "funny": # for free conversation
+        elif conv_type == "funny": # for free conversation
             prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant의 이름은 서서이고 10살 여자 어린이입니다. 상상력이 풍부하고 재미있는 대화를 잘합니다. 때론 바보같은 답변을 합니다.
 
             <history>
@@ -675,7 +671,7 @@ def get_summary(llm, texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chat_history(userId, allowTime, convType):
+def load_chat_history(userId, allowTime, conv_type):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -698,10 +694,10 @@ def load_chat_history(userId, allowTime, convType):
                 print('Human: ', text)
                 print('Assistant: ', msg)        
 
-            #if (convType=='qa' and rag_type=='opensearch') or (convType=='qa' and rag_type=='kendra') or (convType=='qa' and #rag_type=='faiss' and isReady):
+            #if (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and #rag_type=='faiss' and isReady):
             #    memory_chain.chat_memory.add_user_message(text)
             #    memory_chain.chat_memory.add_ai_message(msg)           
-            #elif convType=='qa' and rag_type=='faiss' and isReady==False:
+            #elif conv_type=='qa' and rag_type=='faiss' and isReady==False:
             #    memory_chain.chat_memory.add_user_message(text)
             #    memory_chain.chat_memory.add_ai_message(msg)  
 
@@ -709,7 +705,7 @@ def load_chat_history(userId, allowTime, convType):
             #else:
             #    memory_chat.save_context({"input": text}, {"output": msg})       
 
-            if convType=='qa':
+            if conv_type=='qa':
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)        
                 
@@ -1373,7 +1369,7 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     conn.send(relevant_docs)
     conn.close()
 
-def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
+def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
 
@@ -1381,7 +1377,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        PROMPT = get_prompt_template(revised_question, convType, rag_type)
+        PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
         print('processing time for revise question: ', str(time.time() - start_time_for_revise))
 
@@ -1459,7 +1455,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             print('revised_question: ', revised_question)
             if debugMessageMode=='true':
                 sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-            PROMPT = get_prompt_template(revised_question, convType, rag_type)
+            PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
             if rag_type=='kendra':
@@ -1502,7 +1498,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                 msg = msg+get_reference(source_documents, rag_method, rag_type)    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
-            PROMPT = get_prompt_template(text, convType, rag_type)
+            PROMPT = get_prompt_template(text, conv_type, rag_type)
             if rag_type == 'kendra':
                 qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
             elif rag_type == 'opensearch': # opensearch
@@ -1538,7 +1534,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             print('revised_question: ', revised_question)
             if debugMessageMode=='true':
                 sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-            PROMPT = get_prompt_template(revised_question, convType, rag_type)
+            PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
             if rag_type == 'kendra':
@@ -1577,8 +1573,8 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
     
     return msg
 
-def get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type):
-    conversation.prompt = get_prompt_template(text, convType, rag_type)
+def get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type):
+    conversation.prompt = get_prompt_template(text, conv_type, rag_type)
     try: 
         isTyping(connectionId, requestId)    
         stream = conversation.predict(input=text)
@@ -1598,8 +1594,8 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 
     return msg
 
-def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_type):
-    PROMPT = get_prompt_template(text, convType, rag_type)
+def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId, rag_type):
+    PROMPT = get_prompt_template(text, conv_type, rag_type)
     #print('PROMPT: ', PROMPT)
 
     try: 
@@ -1626,10 +1622,15 @@ def getResponse(connectionId, jsonBody):
     # print('type: ', type)
     body = jsonBody['body']
     # print('body: ', body)
-    convType = jsonBody['convType']  # conversation type
-    print('Conversation Type: ', convType)
+    conv_type = jsonBody['conv_type']  # conversation type
+    print('Conversation Type: ', conv_type)
 
-    global vectorstore_opensearch, vectorstore_faiss, enableReference, rag_type
+    if 'rag_type' in jsonBody:
+        if jsonBody['rag_type']:
+            rag_type = jsonBody['rag_type']  # RAG type
+            print('rag_type: ', rag_type)
+
+    global vectorstore_opensearch, vectorstore_faiss, enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
 
     # Multi-LLM
@@ -1665,14 +1666,9 @@ def getResponse(connectionId, jsonBody):
         region_name = bedrock_region,
         model_id = 'amazon.titan-embed-text-v1' 
     )    
-    
-    if 'rag_type' in jsonBody:
-        if jsonBody['rag_type']:
-            rag_type = jsonBody['rag_type']  # RAG type
-            print('rag_type: ', rag_type)
-
+        
     # create memory
-    if convType=='qa':
+    if conv_type=='qa':
         if userId in map_chain:  
             memory_chain = map_chain[userId]
             print('memory_chain exist. reuse it!')
@@ -1709,10 +1705,10 @@ def getResponse(connectionId, jsonBody):
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     allowTime = getAllowTime()
-    load_chat_history(userId, allowTime, convType)
+    load_chat_history(userId, allowTime, conv_type)
 
     # rag sources
-    if convType == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
+    if conv_type == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
         vectorstore_opensearch = OpenSearchVectorSearch(
             index_name = "rag-index-*", # all
             #index_name = 'rag-index-'+userId+'-*',
@@ -1724,7 +1720,7 @@ def getResponse(connectionId, jsonBody):
             opensearch_url=opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
-    elif convType == 'qa' and (rag_type == 'faiss' or rag_type == 'all'):
+    elif conv_type == 'qa' and (rag_type == 'faiss' or rag_type == 'all'):
         print('isReady = ', isReady)
 
     start = int(time.time())    
@@ -1777,7 +1773,7 @@ def getResponse(connectionId, jsonBody):
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
-                if convType == "qa": 
+                if conv_type == "qa": 
                     memory_chain.clear()
                     map_chain[userId] = memory_chain
                 else:
@@ -1788,21 +1784,21 @@ def getResponse(connectionId, jsonBody):
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:          
-                if convType == 'qa':   # question & answering
+                if conv_type == 'qa':   # question & answering
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
                     if rag_type == 'faiss' and isReady==False:                               
-                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type)      
+                        msg = get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type)      
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
                     else: 
-                        msg = get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings)     
+                        msg = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
                 
-                elif convType == 'normal' or convType == 'funny':      # normal
-                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type)
+                elif conv_type == 'normal' or conv_type == 'funny':      # normal
+                    msg = get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type)
                 
-                elif convType == 'none':   # no prompt
+                elif conv_type == 'none':   # no prompt
                     try: 
                         msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
                     except Exception:
@@ -1812,7 +1808,7 @@ def getResponse(connectionId, jsonBody):
                         sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")
                 else: 
-                    msg = get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_type)
+                    msg = get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId, rag_type)
                 
         elif type == 'document':
             object = body
@@ -1851,7 +1847,7 @@ def getResponse(connectionId, jsonBody):
             else:
                 msg = "uploaded file: "+object
                                 
-            if convType == 'qa':
+            if conv_type == 'qa':
                 start_time = time.time()
                 if useMultipleUpload == 'false':                    
                     print('rag_type: ', rag_type)                

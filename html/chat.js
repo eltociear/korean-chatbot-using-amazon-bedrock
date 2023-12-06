@@ -178,7 +178,7 @@ if(userId=="") {
 }
 console.log('userId: ', userId);
 
-let conversationType = localStorage.getItem('convType'); // set convType if exists 
+let conversationType = localStorage.getItem('conv_type'); // set conv_type if exists 
 if(conversationType=="") {
     conversationType = "normal";
 }
@@ -263,23 +263,23 @@ function onSend(e) {
 
         
         if(conversationType=='qa-all') {
-            convType = 'qa',
+            conv_type = 'qa',
             rag_type = 'all'
         }
         else if(conversationType=='qa-kendra') {
-            convType = 'qa',
+            conv_type = 'qa',
             rag_type = 'kendra'
         }
         else if(conversationType=='qa-opensearch') {
-            convType = 'qa',
+            conv_type = 'qa',
             rag_type = 'opensearch'
         }
         else if(conversationType=='qa-faiss') {
-            convType = 'qa',
+            conv_type = 'qa',
             rag_type = 'faiss'
         }
         else {
-            convType = conversationType,
+            conv_type = conversationType,
             rag_type = ''
         }
         
@@ -289,7 +289,7 @@ function onSend(e) {
             "request_time": requestTime,        
             "type": "text",
             "body": message.value,
-            "convType": convType,
+            "conv_type": conv_type,
             "rag_type": rag_type
         })
         
@@ -547,23 +547,23 @@ attachFile.addEventListener('click', function(){
                             console.log(xmlHttp.responseText);
 
                             if(conversationType=='qa-all') {
-                                convType = 'qa',
+                                conv_type = 'qa',
                                 rag_type = 'all'
                             }
                             else if(conversationType=='qa-kendra') {
-                                convType = 'qa',
+                                conv_type = 'qa',
                                 rag_type = 'kendra'
                             }
                             else if(conversationType=='qa-opensearch') {
-                                convType = 'qa',
+                                conv_type = 'qa',
                                 rag_type = 'opensearch'
                             }
                             else if(conversationType=='qa-faiss') {
-                                convType = 'qa',
+                                conv_type = 'qa',
                                 rag_type = 'faiss'
                             }
                             else {
-                                convType = conversationType,
+                                conv_type = conversationType,
                                 rag_type = ''
                             }
                                            
@@ -574,7 +574,7 @@ attachFile.addEventListener('click', function(){
                                 "request_time": requestTime,
                                 "type": "document",
                                 "body": filename,
-                                "convType": convType,
+                                "conv_type": conv_type,
                                 "rag_type": rag_type
                             })
                         }

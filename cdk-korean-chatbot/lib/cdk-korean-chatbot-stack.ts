@@ -27,7 +27,6 @@ const bucketName = `storage-for-${projectName}-${region}`;
 const maxOutputTokens = '8196';
 
 const kendra_region = "us-west-2"; 
-const rag_type = 'kendra';  // faiss, opensearch, kendra
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
@@ -555,7 +554,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         s3_prefix: s3_prefix,
         callLogTableName: callLogTableName,
         connection_url: connection_url,
-        rag_type: rag_type,
         enableReference: enableReference,
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd,
