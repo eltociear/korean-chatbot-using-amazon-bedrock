@@ -10,7 +10,7 @@ if(userId != '') {
     userInput.value = userId;
 }
 
-let conversationType = localStorage.getItem('convType'); // set conversationType if exists 
+let conversationType = localStorage.getItem('conv_type'); // set conversationType if exists 
 if(conversationType != '') {
     convtypeInput.value = conversationType;
 }
@@ -29,8 +29,8 @@ function onSubmit(e) {
     localStorage.setItem('userId',userInput.value);
     console.log('Save Profile> userId:', userInput.value)    
 
-    localStorage.setItem('convType',convtypeInput.value);
-    console.log('Save Profile> convtype:', convtypeInput.value)
+    localStorage.setItem('conv_type',convtypeInput.value);
+    console.log('Save Profile> conv_type:', convtypeInput.value)
 
     window.location.href = "chat.html";
 }
