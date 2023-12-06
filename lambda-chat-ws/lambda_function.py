@@ -130,7 +130,7 @@ def sendErrorMessage(connectionId, requestId, msg):
     print('error: ', json.dumps(errorMsg))
     sendMessage(connectionId, errorMsg)
 
-def get_prompt_template(query, convType):
+def get_prompt_template(query, convType, rag_type):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
     word_kor = pattern_hangul.search(str(query))
@@ -1388,7 +1388,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        PROMPT = get_prompt_template(revised_question, convType)
+        PROMPT = get_prompt_template(revised_question, convType, rag_type)
         # print('PROMPT: ', PROMPT)
 
         relevant_docs = []
@@ -1434,7 +1434,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             print('revised_question: ', revised_question)
             if debugMessageMode=='true':
                 sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-            PROMPT = get_prompt_template(revised_question, convType)
+            PROMPT = get_prompt_template(revised_question, convType, rag_type)
             #print('PROMPT: ', PROMPT)
 
             if rag_type=='kendra':
@@ -1477,7 +1477,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
                 msg = msg+get_reference(source_documents, rag_method, rag_type)    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
-            PROMPT = get_prompt_template(text, convType)
+            PROMPT = get_prompt_template(text, convType, rag_type)
             if rag_type == 'kendra':
                 qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
             elif rag_type == 'opensearch': # opensearch
@@ -1513,7 +1513,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             print('revised_question: ', revised_question)
             if debugMessageMode=='true':
                 sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-            PROMPT = get_prompt_template(revised_question, convType)
+            PROMPT = get_prompt_template(revised_question, convType, rag_type)
             #print('PROMPT: ', PROMPT)
 
             if rag_type == 'kendra':
@@ -1555,8 +1555,8 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
     
     return msg
 
-def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
-    conversation.prompt = get_prompt_template(text, convType)
+def get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type):
+    conversation.prompt = get_prompt_template(text, convType, rag_type)
     try: 
         isTyping(connectionId, requestId)    
         stream = conversation.predict(input=text)
@@ -1576,8 +1576,8 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 
     return msg
 
-def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId):
-    PROMPT = get_prompt_template(text, convType)
+def get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_type):
+    PROMPT = get_prompt_template(text, convType, rag_type)
     #print('PROMPT: ', PROMPT)
 
     try: 
@@ -1770,7 +1770,7 @@ def getResponse(connectionId, jsonBody):
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
                     if rag_type == 'faiss' and isReady==False:                               
-                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
+                        msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type)      
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
@@ -1778,7 +1778,7 @@ def getResponse(connectionId, jsonBody):
                         msg = get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings)     
                 
                 elif convType == 'normal' or convType == 'funny':      # normal
-                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)
+                    msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId, rag_type)
                 
                 elif convType == 'none':   # no prompt
                     try: 
@@ -1790,7 +1790,7 @@ def getResponse(connectionId, jsonBody):
                         sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")    
                 else: 
-                    msg = get_answer_from_PROMPT(llm, text, convType, connectionId, requestId)
+                    msg = get_answer_from_PROMPT(llm, text, convType, connectionId, requestId, rag_type)
                 
         elif type == 'document':
             object = body
