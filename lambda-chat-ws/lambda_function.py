@@ -1594,8 +1594,8 @@ def get_answer_from_conversation(text, conversation, conv_type, connectionId, re
 
     return msg
 
-def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId, rag_type):
-    PROMPT = get_prompt_template(text, conv_type, rag_type)
+def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
+    PROMPT = get_prompt_template(text, conv_type, "")
     #print('PROMPT: ', PROMPT)
 
     try: 
@@ -1808,7 +1808,7 @@ def getResponse(connectionId, jsonBody):
                         sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")
                 else: 
-                    msg = get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId, rag_type)
+                    msg = get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId)
                 
         elif type == 'document':
             object = body
