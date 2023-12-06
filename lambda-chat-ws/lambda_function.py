@@ -1411,7 +1411,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
             
                 process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, rag))
                 processes.append(process)
-                
+
             for process in processes:
                 process.start()
             
@@ -1439,9 +1439,11 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         print('relevant_context: ', relevant_context)
 
         try: 
+            start_time_for_inference = time.time()
             isTyping(connectionId, requestId)
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
+            print('processing time for inference: ', str(time.time() - start_time_for_inference))
         except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
