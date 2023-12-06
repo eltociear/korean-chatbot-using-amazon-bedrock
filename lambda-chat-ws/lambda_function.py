@@ -863,7 +863,7 @@ def get_revised_question(llm, connectionId, requestId, query):
         print('error message: ', err_msg)                
 
         sendErrorMessage(connectionId, requestId, err_msg)        
-        raise Exception ("Not able to request to LLM")    
+        raise Exception ("Not able to request to LLM")
     
     return revised_question
 
@@ -1040,7 +1040,7 @@ def retrieve_from_kendra(query, top_k):
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)
-                raise Exception ("Not able to query from Kendra")                
+                raise Exception ("Not able to query from Kendra")
 
             for doc in retrieve_docs:                
                 if len(relevant_docs) >= top_k:
@@ -1389,7 +1389,7 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         if debugMessageMode=='true':
             sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
         PROMPT = get_prompt_template(revised_question, convType, rag_type)
-        # print('PROMPT: ', PROMPT)
+        print('PROMPT: ', PROMPT)
 
         relevant_docs = []
         for reg in capabilities:            
