@@ -359,6 +359,8 @@ def get_prompt_template(query, convType, rag_type):
             <context>
             {context}
             </context>
+
+            Go directly into the main points without the preamble. Do not include any additional information like newline characters "\n" or character counts in the result.
                         
             <question>
             {question}
