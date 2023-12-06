@@ -1357,7 +1357,8 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(query, top_k, rag_type, relevant_docs):
+def retrieve_process_from_RAG(q, query, top_k, rag_type, relevant_docs):
+    relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
         print('rel_docs (kendra): '+json.dumps(rel_docs))
@@ -1367,7 +1368,8 @@ def retrieve_process_from_RAG(query, top_k, rag_type, relevant_docs):
     
     if(len(rel_docs)>=1):
         for doc in rel_docs:
-            relevant_docs.append(doc)
+            relevant_docs.append(doc)    
+    q.put(relevant_docs)
 
 def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId, bedrock_embeddings):
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1397,10 +1399,15 @@ def get_answer_using_RAG(llm, text, rag_type, convType, connectionId, requestId,
         else:
             print('Parallel processing for multiple RAG starts')
         
-            p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
-            p1.start()            
-            p1.join()
-            print('relevant_docs using multiprocessing: ', relevant_docs)
+            ctx = Process.get_context('spawn')            
+            q = ctx.Queue()
+            p = ctx.Process(target=retrieve_process_from_RAG, args=(q,revised_question, top_k, rag_type, capabilities[0]))
+
+            #p1 = Process(target=retrieve_process_from_RAG, args=(revised_question, top_k, rag_type, capabilities[0]))
+            p.start()            
+            print('relevant_docs using multiprocessing: ', q.get())
+            p.join()
+            
             
         print('processing time for RAG: ', str(time.time() - start_time))
         #print('relevant_docs: ', relevant_docs)
