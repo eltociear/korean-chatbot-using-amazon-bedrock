@@ -43,9 +43,7 @@ Multiple LLM을 사용하게 되는 케이스에는 1) 다른 종류의 LLM을 �
 
 ### Bedrock을 LangChain으로 연결
 
-현재(2023년 9월) Bedrock의 상용으로 제한없이 AWS Bedrock을 사용할 수 있습니다. [Bedrock](https://python.langchain.com/docs/integrations/providers/bedrock)을 import하여 LangChain로 application을 개발할 수 있습니다. 여기서는 bedrock_region으로 us-east-1을 사용합니다. 
-
-아래와 같이 bedrock client를 정의합니다. 서비스이름은 "bedrock-runtime"입니다.
+[Bedrock](https://python.langchain.com/docs/integrations/providers/bedrock)을 import하여 LangChain로 application을 개발할 수 있습니다. 아래와 같이 bedrock client를 정의합니다. 서비스이름은 "bedrock-runtime"입니다.
 
 ```python
 import boto3
@@ -102,8 +100,6 @@ modelInfo = bedrock_client.list_foundation_models()
 print('models: ', modelInfo)
 ```
 
-
-
 ### Embedding
 
 [BedrockEmbeddings](https://python.langchain.com/docs/integrations/text_embedding/bedrock)을 이용하여 Embedding을 합니다. 'amazon.titan-embed-text-v1'은 Titan Embeddings Generation 1 (G1)을 의미하며 8k token을 지원합니다.
@@ -116,174 +112,12 @@ bedrock_embeddings = BedrockEmbeddings(
 )
 ```
 
-## Knowledge Database 정의
+## Knowledge Store 
 
-여기서는 Knowledge Database로 OpenSearch, Faiss, Kendra에 대해 알아봅니다.
-
-### OpenSearch
-
-[OpenSearchVectorSearch](https://api.python.langchain.com/en/latest/vectorstores/langchain.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.html)을 이용해 vector store를 정의합니다. 여기서 engine은 기본값이 nmslib이지만 필요에 따라 faiss나 lucene를 선택할 수 있습니다.
-
-```python
-from langchain.vectorstores import OpenSearchVectorSearch
-
-vectorstore = OpenSearchVectorSearch(
-    index_name = 'rag-index-'+userId+'-*',
-    is_aoss = False,
-    ef_search = 1024, # 512(default)
-    m=48,
-    #engine="faiss",  # default: nmslib
-    embedding_function = bedrock_embeddings,
-    opensearch_url=opensearch_url,
-    http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
-)
-```
-
-OpenSearch를 이용한 vector store에 데이터는 아래와 같이 add_documents()로 넣을 수 있습니다. 여기서는 index를 이용해 개인화된 RAG를 적용하기 위하여 아래와 같이 index를 userId와 requestId로 정의한 후에 new vector store를 정의하여 이용합니다.
-
-```python
-new_vectorstore = OpenSearchVectorSearch(
-    index_name="rag-index-"+userId+'-'+requestId,
-    is_aoss = False,
-    #engine="faiss",  # default: nmslib
-    embedding_function = bedrock_embeddings,
-    opensearch_url = opensearch_url,
-    http_auth=(opensearch_account, opensearch_passwd),
-)
-new_vectorstore.add_documents(docs)      
-```
-
-관련된 문서(relevant docs)는 아래처럼 검색할 수 있습니다.
-
-```python
-relevant_documents = vectorstore.similarity_search(query)
-```
-
-### Faiss
-
-아래와 같이 Faiss를 vector store로 정의합니다. 여기서 Faiss는 in-memory vectore store로 인스턴스가 유지될 동안만 사용할 수 있습니다. 또한 faiss vector store에 데이터를 넣기 위해 add_documents()를 이용합니다. 데이터를 넣은 상태에서 검색을 할 수 있으므로, 아래와 같이 isReady를 체크합니다. 
-
-```python
-vectorstore = FAISS.from_documents( # create vectorstore from a document
-    docs,  # documents
-    bedrock_embeddings  # embeddings
-)
-isReady = True
-
-vectorstore.add_documents(docs)
-```
-
-관련된 문서(relevant docs)는 아래처럼 검색할 수 있습니다.
-
-```python
-query_embedding = vectorstore.embedding_function(query)
-relevant_documents = vectorstore.similarity_search_by_vector(query_embedding)
-```
-
-### Kendra
-
-Kendra는 embedding이 필요하지 않으므로 아래와 같이 index_id를 설정하여 retriever를 지정합니다.
-
-```python
-from langchain.retrievers import AmazonKendraRetriever
-kendraRetriever = AmazonKendraRetriever(index_id=kendraIndex)
-```
-
-[kendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.kendra.AmazonKendraRetriever.html?highlight=kendraretriever#langchain.retrievers.kendra.AmazonKendraRetriever)를 이용해 아래와 같이 관련된 문서를 검색할 수 있습니다.
-
-```python
-relevant_documents = kendraRetriever.get_relevant_documents(query)
-```
-
-### 관련된 문서를 포함한 RAG 구현
-
-실제 결과는 [RetrievalQA](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval_qa.base.RetrievalQA.html?highlight=retrievalqa#langchain.chains.retrieval_qa.base.RetrievalQA)을 이용해 얻습니다.
-
-relevant_documents = vectorstore.similarity_search(query)
-
-```python
-qa = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=retriever,
-    return_source_documents=True,
-    chain_type_kwargs={"prompt": PROMPT}
-)
-result = qa({"query": query})    
-```
-
-여기서 retriever는 아래와 같이 정의합니다. 여기서 kendra의 retriever는 [AmazonKendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.kendra.AmazonKendraRetriever.html?highlight=kendraretriever#langchain.retrievers.kendra.AmazonKendraRetriever)로 정의하고, opensearch와 faiss는 [VectorStore](https://api.python.langchain.com/en/latest/schema/langchain.schema.vectorstore.VectorStore.html?highlight=as_retriever#langchain.schema.vectorstore.VectorStore.as_retriever)을 이용합니다.
-
-```python
-if rag_type=='kendra':
-    retriever = kendraRetriever
-elif rag_type=='opensearch' or rag_type=='faiss':
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", 
-        search_kwargs={
-            "k": 3
-        }
-    )
-```
+여기서는 Knowledge Store로 OpenSearch, Faiss, Kendra을 이용합니다.
 
 
-### Reference 표시하기
 
-아래와 같이 kendra는 doc의 metadata에서 reference에 대한 정보를 추출합니다. 여기서 file의 이름은 doc.metadata['title']을 이용하고, 페이지는 doc.metadata['document_attributes']['_excerpt_page_number']을 이용해 얻습니다. URL은 cloudfront의 url과 S3 bucket의 key, object를 조합하여 구성합니다. opensearch와 faiss는 파일명, page 숫자, 경로(URL path)를 metadata의 'name', 'page', 'url'을 통해 얻습니다.
-
-```python
-def get_reference(docs, rag_type):
-    if rag_type == 'kendra':
-        reference = "\n\nFrom\n"
-        for doc in docs:
-            name = doc.metadata['title']
-            url = path+name
-
-            if doc.metadata['document_attributes']:
-                page = doc.metadata['document_attributes']['_excerpt_page_number']
-                reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-            else:
-                reference = reference + f"in <a href={url} target=_blank>{name}</a>\n"
-    else:
-        reference = "\n\nFrom\n"
-        for doc in docs:
-            name = doc.metadata['name']
-            page = doc.metadata['page']
-            url = doc.metadata['url']
-        
-            reference = reference + f"{page}page in <a href={url} target=_blank>{name}</a>\n"
-        
-    return reference
-```
-
-
-### Prompt의 생성
-
-RAG와 대화 이력(chat history)를 모두 이용해 질문의 답변을 얻기 위해서는 [ConversationalRetrievalChain](https://api.python.langchain.com/en/latest/chains/langchain.chains.conversational_retrieval.base.ConversationalRetrievalChain.html?highlight=conversationalretrievalchain#langchain.chains.conversational_retrieval.base.ConversationalRetrievalChain)을 이용하거나, history와 현재의 prompt로 새로운 prompt를 생성한 이후에 retrivalQA를 이용해 얻을수 있습니다.
-
-대화 이력(chat history)를 고려한 현재의 prompt를 생성하는 방법은 아래와 같습니다. 여기서는 prompt template에 "rephrase the follow up question"를 포함하여 새로운 질문을 생성합니다. 
-
-```python
-generated_prompt = get_generated_prompt(text)
-
-def get_generated_prompt(query):    
-    condense_template = """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.
-
-    Chat History:
-    {chat_history}
-    Follow Up Input: {question}
-    Standalone question:"""
-    CONDENSE_QUESTION_PROMPT = PromptTemplate(
-        template = condense_template, input_variables = ["chat_history", "question"]
-    )
-    
-    chat_history = extract_chat_history_from_memory()
-    
-    question_generator_chain = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
-    return question_generator_chain.run({"question": query, "chat_history": chat_history})
-```
-
-이후, 생성된 질문과 RetrievalQA를 이용해 RAG 적용한 결과를 얻을 수 있습니다.
 
 ## 메모리에 대화 저장
 
@@ -505,16 +339,6 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 cdk destroy --all
 ```
 
-## 문제점
-
-Retrive는 [ScoreAttributes](https://docs.aws.amazon.com/kendra/latest/APIReference/API_ScoreAttributes.html)는 한국어에 대해 항상 "NOT_AVAILABLE" 이므로, 전혀 관련없는 문서들이 RAG에 검색이 될 수 있습니다. 
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/2b0f90b9-f584-4274-a42c-cf9f196bcac7)
-
-
-## 결론
-
-AWS 서울 리전에서 Amazon Bedrock과 vector store를 이용하여 질문과 답변(Question/Answering)을 수행하는 chatbot을 구현하였습니다. Amazon Bedrock은 여러 종류의 대용량 언어 모델중에 한개를 선택하여 사용할 수 있습니다. 여기서는 Amazon Titan을 이용하여 RAG 동작을 구현하였고, 대용량 언어 모델의 환각(hallucination) 문제를 해결할 수 있었습니다. 또한 Chatbot 어플리케이션 개발을 위해 LangChain을 활용하였고, IaC(Infrastructure as Code)로 AWS CDK를 이용하였습니다. 대용량 언어 모델은 향후 다양한 어플리케이션에서 효과적으로 활용될것으로 기대됩니다. Amazon Bedrock을 이용하여 대용량 언어 모델을 개발하면 기존 AWS 인프라와 손쉽게 연동하고 다양한 어플리케이션을 효과적으로 개발할 수 있습니다.
 
 
 
