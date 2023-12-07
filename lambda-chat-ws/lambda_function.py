@@ -50,7 +50,7 @@ useParallelUpload = os.environ.get('useParallelUpload', 'true')
 useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
-numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
+numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '8')
 top_k = int(numberOfRelevantDocs)
 selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
@@ -1836,7 +1836,7 @@ def getResponse(connectionId, jsonBody):
                             page_content=texts[i],
                             metadata={
                                 'name': object,
-                                'page':i+1,
+                                #'page':i+1,
                                 'uri': path+parse.quote(object)
                             }
                         )
@@ -1850,7 +1850,7 @@ def getResponse(connectionId, jsonBody):
                                 
             if conv_type == 'qa':
                 start_time = time.time()
-                if useMultipleUpload == 'false':                    
+                if useParallelUpload == 'false':                    
                     print('rag_type: ', rag_type)                
                     if rag_type=='kendra':      
                         print('upload to kendra: ', object)           
