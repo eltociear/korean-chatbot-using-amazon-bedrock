@@ -671,7 +671,7 @@ def get_summary(llm, texts):
         # return summary[1:len(summary)-1]   
         return summary
     
-def load_chat_history(userId, allowTime, conv_type):
+def load_chat_history(userId, allowTime, conv_type, rag_type):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -1625,6 +1625,7 @@ def getResponse(connectionId, jsonBody):
     conv_type = jsonBody['conv_type']  # conversation type
     print('Conversation Type: ', conv_type)
 
+    rag_type = ""
     if 'rag_type' in jsonBody:
         if jsonBody['rag_type']:
             rag_type = jsonBody['rag_type']  # RAG type
@@ -1705,7 +1706,7 @@ def getResponse(connectionId, jsonBody):
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     allowTime = getAllowTime()
-    load_chat_history(userId, allowTime, conv_type)
+    load_chat_history(userId, allowTime, conv_type, rag_type)
 
     # rag sources
     if conv_type == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
