@@ -46,11 +46,10 @@ enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
-useMultipleUpload = os.environ.get('useMultipleUpload', 'false')
-useMultipleRAG = True
+useParallelUpload = os.environ.get('useParallelUpload', 'true')
+useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
 roleArn = os.environ.get('roleArn')
-maxOutputTokens = int(os.environ.get('maxOutputTokens'))
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '10')
 top_k = int(numberOfRelevantDocs)
 selected_LLM = 0
@@ -1383,7 +1382,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         relevant_docs = []
         start_time_for_rag = time.time()
-        if useMultipleRAG == False:
+        if useParallelRAG == 'false':
             print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
                 if reg == 'kendra':
