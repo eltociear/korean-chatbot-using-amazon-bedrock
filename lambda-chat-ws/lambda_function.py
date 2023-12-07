@@ -1207,14 +1207,15 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         #print('query_embedding: ', query_embedding)
         #relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
 
-        relevant_documents = vectorstore_faiss.similarity_search_with_score(query)
+        relevant_documents = vectorstore_faiss.similarity_search_with_score(
+            query = query,
+            k = top_k,
+        )
         
         #relevant_documents1 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
         #print('relevant_documents1: ',relevant_documents1)
         
         for i, document in enumerate(relevant_documents):
-            if i>=top_k:
-                break
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
             print(f'## Document {i+1}: {document}')
@@ -1265,11 +1266,12 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             relevant_docs.append(doc_info)
             
     elif rag_type == 'opensearch':
-        relevant_documents = vectorstore_opensearch.similarity_search(query)
+        relevant_documents = vectorstore_opensearch.similarity_search(
+            query = query,
+            k = top_k,
+        )
 
         for i, document in enumerate(relevant_documents):
-            if i>=top_k:
-                break
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
             print(f'## Document {i+1}: {document}')
