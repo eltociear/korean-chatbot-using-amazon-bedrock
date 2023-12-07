@@ -1651,7 +1651,7 @@ def getResponse(connectionId, jsonBody):
             }            
         )
     )
-    parameters = get_parameter(modelId, profile['model_type'], profile['maxOutputTokens'])
+    parameters = get_parameter(modelId, profile['model_type'], int(profile['maxOutputTokens']))
 
     # langchain for bedrock
     llm = Bedrock(
@@ -1721,7 +1721,7 @@ def getResponse(connectionId, jsonBody):
             opensearch_url=opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
         )
-    elif conv_type == 'qa' and (rag_type == 'faiss' or rag_type == 'all'):
+    elif conv_type == 'qa' and rag_type == 'faiss':
         print('isReady = ', isReady)
 
     start = int(time.time())    
