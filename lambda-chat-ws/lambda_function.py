@@ -712,7 +712,7 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
                 if rag_type=='faiss' and isReady==False:
                     memory_chat.save_context({"input": text}, {"output": msg})
             else:
-                memory_chat.save_context({"input": text}, {"output": msg})   
+                memory_chat.save_context({"input": text}, {"output": msg})
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
