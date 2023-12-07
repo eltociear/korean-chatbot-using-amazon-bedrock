@@ -19,13 +19,8 @@ const region = process.env.CDK_DEFAULT_REGION;
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
-// const model_id = "anthropic.claude-v2:1"; // anthropic.claude-v1, anthropic.claude-v2, anthropic.claude-v2:1
 const projectName = `korean-chatbot`; 
-
 const bucketName = `storage-for-${projectName}-${region}`; 
-// const bedrock_region = "us-west-2";  // "us-east-1" "us-west-2" 
-const maxOutputTokens = '8196';
-
 const kendra_region = "us-west-2"; 
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
@@ -565,7 +560,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         rag_method: rag_method,
         useMultipleUpload: useMultipleUpload,
         numberOfRelevantDocs: numberOfRelevantDocs,
-        maxOutputTokens: maxOutputTokens,
         number_of_LLMs:number_of_LLMs,
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities

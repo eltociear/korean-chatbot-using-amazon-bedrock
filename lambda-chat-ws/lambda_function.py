@@ -64,7 +64,7 @@ print('connection_url: ', connection_url)
 
 HUMAN_PROMPT = "\n\nHuman:"
 AI_PROMPT = "\n\nAssistant:"
-def get_parameter(modelId, model_type):
+def get_parameter(modelId, model_type, maxOutputTokens):
     if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge' or model_type=='titan': 
         return {
             "maxTokenCount":1024,
@@ -1651,7 +1651,7 @@ def getResponse(connectionId, jsonBody):
             }            
         )
     )
-    parameters = get_parameter(modelId, profile['model_type'])
+    parameters = get_parameter(modelId, profile['model_type'], profile['maxOutputTokens'])
 
     # langchain for bedrock
     llm = Bedrock(
