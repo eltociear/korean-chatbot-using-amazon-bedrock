@@ -1379,6 +1379,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             name = document[0].metadata['name']
             page = document[0].metadata['page']
             uri = document[0].metadata['uri']
+            excerpt = document[0].page_content
             confidence = document[1]
             assessed_score = document[1]
 
@@ -1391,7 +1392,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     #"document_id": document_id,
                     "source": uri,
                     "title": name,
-                    "excerpt": document.page_content,
+                    "excerpt": excerpt,
                     "document_attributes": {
                         "_excerpt_page_number": page
                     }
