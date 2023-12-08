@@ -83,20 +83,6 @@ def get_parameter(model_type, maxOutputTokens):
 map_chain = dict() # For RAG
 map_chat = dict() # For general conversation  
 
-kendraRetriever = AmazonKendraRetriever(
-    index_id=kendraIndex, 
-    top_k=top_k, 
-    region_name=kendra_region,
-    attribute_filter = {
-        "EqualsTo": {      
-            "Key": "_language_code",
-            "Value": {
-                "StringValue": "ko"
-            }
-        },
-    },
-)
-
 def sendMessage(id, body):
     try:
         client.post_to_connection(
@@ -837,101 +823,107 @@ def get_revised_question(llm, connectionId, requestId, query):
     
     return revised_question
 
-def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
+kendraRetriever = AmazonKendraRetriever(
+    index_id=kendraIndex, 
+    top_k=top_k, 
+    region_name=kendra_region,
+    attribute_filter = {
+        "EqualsTo": {      
+            "Key": "_language_code",
+            "Value": {
+                "StringValue": "ko"
+            }
+        },
+    },
+)
+
+kendra_method = "kendra_retriever" # custom_retriever or kendra_retriever
+
+def retrieve_from_kendra(query, top_k):
+    if kendra_method == 'kendra_retriever':
+        relevant_docs = retrieve_from_kendra_using_kendra_retriever(query, top_k)
+    else: 
+        relevant_docs = retrieve_from_kendra_using_custom_retriever(query, top_k)
+    
+    return relevant_docs
+
+def retrieve_from_kendra_using_kendra_retriever(query, top_k):
+    print('query: ', query)
+
+    relevant_docs = []
+    relevant_documents = kendraRetriever.get_relevant_documents(
+        query=query,
+        top_k=top_k,
+    )
+    #print('length of relevant_documents: ', len(relevant_documents))
+    #print('relevant_documents: ', relevant_documents)
+
     rag_type = "kendra"
-    if(apiType == 'retrieve'): # retrieve API
-        excerpt = query_result["Content"]
-        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
-        document_id = query_result["DocumentId"] 
-        document_title = query_result["DocumentTitle"]
         
-        document_uri = ""
-        document_attributes = query_result["DocumentAttributes"]
-        for attribute in document_attributes:
-            if attribute["Key"] == "_source_uri":
-                document_uri = str(attribute["Value"]["StringValue"])        
-        if document_uri=="":  
-            document_uri = query_result["DocumentURI"]
+    for i, document in enumerate(relevant_documents):
+        #print('document.page_content:', document.page_content)
+        #print('document.metadata:', document.metadata)
+        print(f'## Document {i+1}: {document}')
 
-        doc_info = {
-            "rag_type": rag_type,
-            "api_type": apiType,
-            "confidence": confidence,
-            "metadata": {
-                "document_id": document_id,
-                "source": document_uri,
-                "title": document_title,
-                "excerpt": excerpt,
-            },
-            "assessed_score": "",
-        }
+        result_id = document.metadata['result_id']
+        document_id = document.metadata['document_id']
+        # source = document.metadata['source']
+        title = document.metadata['title']
+        excerpt = document.metadata['excerpt']
+        if "_source_uri" in document.metadata['document_attributes']:
+            uri = document.metadata['document_attributes']['_source_uri']
+        if "_excerpt_page_number" in document.metadata['document_attributes']:            
+            page = document.metadata['document_attributes']['_excerpt_page_number']
+
+        #confidence = int(document[1])
+        #assessed_score = int(document[1])
+        confidence = ""
+        assessed_score = ""
             
-    else: # query API
-        query_result_type = query_result["Type"]
-        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
-        document_id = query_result["DocumentId"] 
-        document_title = ""
-        if "Text" in query_result["DocumentTitle"]:
-            document_title = query_result["DocumentTitle"]["Text"]
-        document_uri = query_result["DocumentURI"]
-        feedback_token = query_result["FeedbackToken"] 
-
-        page = ""
-        document_attributes = query_result["DocumentAttributes"]
-        for attribute in document_attributes:
-            if attribute["Key"] == "_excerpt_page_number":
-                page = str(attribute["Value"]["LongValue"])
-
-        if query_result_type == "QUESTION_ANSWER":
-            question_text = ""
-            additional_attributes = query_result["AdditionalAttributes"]
-            for attribute in additional_attributes:
-                if attribute["Key"] == "QuestionText":
-                    question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
-            answer = query_result["DocumentExcerpt"]["Text"]
-            excerpt = f"{question_text} {answer}"
-            excerpt = excerpt.replace("\n"," ") 
-        else: 
-            excerpt = query_result["DocumentExcerpt"]["Text"]
-
         if page:
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                #"api_type": apiType,
                 "confidence": confidence,
                 "metadata": {
-                    "type": query_result_type,
+                    #"type": query_result_type,
                     "document_id": document_id,
-                    "source": document_uri,
-                    "title": document_title,
+                    "source": uri,
+                    "title": title,
                     "excerpt": excerpt,
                     "document_attributes": {
                         "_excerpt_page_number": page
                     }
                 },
-                "assessed_score": "",
-                "query_id": query_id,
-                "feedback_token": feedback_token
+                #"query_id": query_id,
+                #"feedback_token": feedback_token
+                "assessed_score": assessed_score,
+                "result_id": result_id
             }
+
         else: 
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                #"api_type": apiType,
                 "confidence": confidence,
                 "metadata": {
-                    "type": query_result_type,
+                    #"type": query_result_type,
                     "document_id": document_id,
-                    "source": document_uri,
-                    "title": document_title,
+                    "source": uri,
+                    "title": title,
                     "excerpt": excerpt,
                 },
-                "assessed_score": "",
-                "query_id": query_id,
-                "feedback_token": feedback_token
+                #"query_id": query_id,
+                #"feedback_token": feedback_token
+                "assessed_score": assessed_score,
             }
-    return doc_info
+            
+        relevant_docs.append(doc_info)
+    
+    return relevant_docs    
+    
 
-def retrieve_from_kendra(query, top_k):
+def retrieve_from_kendra_using_custom_retriever(query, top_k):
     print('query: ', query)
 
     index_id = kendraIndex    
@@ -1111,6 +1103,102 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
 
     return docs
 
+def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
+    rag_type = "kendra"
+    if(apiType == 'retrieve'): # retrieve API
+        excerpt = query_result["Content"]
+        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+        document_id = query_result["DocumentId"] 
+        document_title = query_result["DocumentTitle"]
+        
+        document_uri = ""
+        document_attributes = query_result["DocumentAttributes"]
+        for attribute in document_attributes:
+            if attribute["Key"] == "_source_uri":
+                document_uri = str(attribute["Value"]["StringValue"])        
+        if document_uri=="":  
+            document_uri = query_result["DocumentURI"]
+
+        doc_info = {
+            "rag_type": rag_type,
+            "api_type": apiType,
+            "confidence": confidence,
+            "metadata": {
+                "document_id": document_id,
+                "source": document_uri,
+                "title": document_title,
+                "excerpt": excerpt,
+            },
+            "assessed_score": "",
+        }
+            
+    else: # query API
+        query_result_type = query_result["Type"]
+        confidence = query_result["ScoreAttributes"]['ScoreConfidence']
+        document_id = query_result["DocumentId"] 
+        document_title = ""
+        if "Text" in query_result["DocumentTitle"]:
+            document_title = query_result["DocumentTitle"]["Text"]
+        document_uri = query_result["DocumentURI"]
+        feedback_token = query_result["FeedbackToken"] 
+
+        page = ""
+        document_attributes = query_result["DocumentAttributes"]
+        for attribute in document_attributes:
+            if attribute["Key"] == "_excerpt_page_number":
+                page = str(attribute["Value"]["LongValue"])
+
+        if query_result_type == "QUESTION_ANSWER":
+            question_text = ""
+            additional_attributes = query_result["AdditionalAttributes"]
+            for attribute in additional_attributes:
+                if attribute["Key"] == "QuestionText":
+                    question_text = str(attribute["Value"]["TextWithHighlightsValue"]["Text"])
+            answer = query_result["DocumentExcerpt"]["Text"]
+            excerpt = f"{question_text} {answer}"
+            excerpt = excerpt.replace("\n"," ") 
+        else: 
+            excerpt = query_result["DocumentExcerpt"]["Text"]
+
+        if page:
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "type": query_result_type,
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                    "document_attributes": {
+                        "_excerpt_page_number": page
+                    }
+                },
+                "assessed_score": "",
+                "query_id": query_id,
+                "feedback_token": feedback_token
+            }
+        else: 
+            doc_info = {
+                "rag_type": rag_type,
+                "api_type": apiType,
+                "confidence": confidence,
+                "metadata": {
+                    "type": query_result_type,
+                    "document_id": document_id,
+                    "source": document_uri,
+                    "title": document_title,
+                    "excerpt": excerpt,
+                },
+                "assessed_score": "",
+                "query_id": query_id,
+                "feedback_token": feedback_token
+            }
+    return doc_info
+
+
+
 def get_reference(docs, rag_method, rag_type):
     if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
         if rag_type == 'kendra':
@@ -1270,6 +1358,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             query = query,
             k = top_k,
         )
+        # similarity_search_with_score
 
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
