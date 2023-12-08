@@ -1380,8 +1380,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             page = document[0].metadata['page']
             uri = document[0].metadata['uri']
             excerpt = document[0].page_content
-            confidence = document[1]
-            assessed_score = document[1]
+            confidence = str(document[1])
+            assessed_score = str(document[1])
 
             doc_info = {
                 "rag_type": rag_type,
@@ -1399,7 +1399,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 },
                 #"query_id": query_id,
                 #"feedback_token": feedback_token
-                "assessed_score": str(assessed_score),
+                "assessed_score": assessed_score,
             }
             relevant_docs.append(doc_info)
 
