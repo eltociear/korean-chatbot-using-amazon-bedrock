@@ -870,8 +870,12 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         # source = document.metadata['source']
         title = document.metadata['title']
         excerpt = document.metadata['excerpt']
+
+        uri = ""
         if "_source_uri" in document.metadata['document_attributes']:
             uri = document.metadata['document_attributes']['_source_uri']
+
+        page = ""
         if "_excerpt_page_number" in document.metadata['document_attributes']:            
             page = document.metadata['document_attributes']['_excerpt_page_number']
 
@@ -1197,8 +1201,6 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
             }
     return doc_info
 
-
-
 def get_reference(docs, rag_method, rag_type):
     if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
         if rag_type == 'kendra':
@@ -1354,6 +1356,12 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             relevant_docs.append(doc_info)
             
     elif rag_type == 'opensearch':
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = query,
+            k = top_k,
+        )
+        print('(opensearch score) relevant_documents: ', relevant_documents)
+
         relevant_documents = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k,
