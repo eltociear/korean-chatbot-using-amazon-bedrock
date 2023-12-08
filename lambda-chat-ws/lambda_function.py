@@ -49,6 +49,7 @@ path = os.environ.get('path')
 useParallelUpload = os.environ.get('useParallelUpload', 'true')
 useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
+kendra_method = "kendra_retriever" # custom_retriever or kendra_retriever
 roleArn = os.environ.get('roleArn')
 numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '8')
 top_k = int(numberOfRelevantDocs)
@@ -837,8 +838,6 @@ kendraRetriever = AmazonKendraRetriever(
     },
 )
 
-kendra_method = "kendra_retriever" # custom_retriever or kendra_retriever
-
 def retrieve_from_kendra(query, top_k):
     if kendra_method == 'kendra_retriever':
         relevant_docs = retrieve_from_kendra_using_kendra_retriever(query, top_k)
@@ -859,7 +858,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
     #print('relevant_documents: ', relevant_documents)
 
     rag_type = "kendra"
-    apiType = "kendraRetriever"
+    api_type = "kendraRetriever"
 
     for i, document in enumerate(relevant_documents):
         #print('document.page_content:', document.page_content)
@@ -888,7 +887,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         if page:
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                "api_type": api_type,
                 "confidence": confidence,
                 "metadata": {
                     #"type": query_result_type,
@@ -909,7 +908,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         else: 
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                "api_type": api_type,
                 "confidence": confidence,
                 "metadata": {
                     #"type": query_result_type,
@@ -928,7 +927,6 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
     
     return relevant_docs    
     
-
 def retrieve_from_kendra_using_custom_retriever(query, top_k):
     print('query: ', query)
 
@@ -967,7 +965,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
             for query_result in resp["ResultItems"]:
                 #confidence = query_result["ScoreAttributes"]['ScoreConfidence']
                 #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': only for "en"
-                retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="retrieve", query_result=query_result))
+                retrieve_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, api_type="retrieve", query_result=query_result))
                 # print('retrieve_docs: ', retrieve_docs)
 
             print('Looking for FAQ...')
@@ -996,7 +994,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 
                         #if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
                         if confidence == 'VERY_HIGH' or confidence == 'HIGH': 
-                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, api_type="query", query_result=query_result))
 
                             if len(relevant_docs) >= top_k:
                                 break
@@ -1042,7 +1040,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
                         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
 
                         if confidence == 'VERY_HIGH' or confidence == 'HIGH' or confidence == 'MEDIUM': 
-                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, apiType="query", query_result=query_result))
+                            relevant_docs.append(extract_relevant_doc_for_kendra(query_id=query_id, api_type="query", query_result=query_result))
 
                             if len(relevant_docs) >= top_k:
                                 break
@@ -1109,9 +1107,9 @@ def check_confidence(query, relevant_docs, bedrock_embeddings):
 
     return docs
 
-def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
+def extract_relevant_doc_for_kendra(query_id, api_type, query_result):
     rag_type = "kendra"
-    if(apiType == 'retrieve'): # retrieve API
+    if(api_type == 'retrieve'): # retrieve API
         excerpt = query_result["Content"]
         confidence = query_result["ScoreAttributes"]['ScoreConfidence']
         document_id = query_result["DocumentId"] 
@@ -1127,7 +1125,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
 
         doc_info = {
             "rag_type": rag_type,
-            "api_type": apiType,
+            "api_type": api_type,
             "confidence": confidence,
             "metadata": {
                 "document_id": document_id,
@@ -1169,7 +1167,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
         if page:
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                "api_type": api_type,
                 "confidence": confidence,
                 "metadata": {
                     "type": query_result_type,
@@ -1188,7 +1186,7 @@ def extract_relevant_doc_for_kendra(query_id, apiType, query_result):
         else: 
             doc_info = {
                 "rag_type": rag_type,
-                "api_type": apiType,
+                "api_type": api_type,
                 "confidence": confidence,
                 "metadata": {
                     "type": query_result_type,
@@ -1234,7 +1232,7 @@ def get_reference(docs, rag_method, rag_type):
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
             if doc['rag_type'] == 'kendra':
-                if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever of langchain
+                if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
                     uri = doc['metadata']['source']
                     reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
@@ -1325,7 +1323,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             if page:
                 doc_info = {
                     "rag_type": rag_type,
-                    #"api_type": apiType,
+                    #"api_type": api_type,
                     "confidence": confidence,
                     "metadata": {
                         #"type": query_result_type,
@@ -1345,7 +1343,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             else: 
                 doc_info = {
                     "rag_type": rag_type,
-                    #"api_type": apiType,
+                    #"api_type": api_type,
                     "confidence": confidence,
                     "metadata": {
                         #"type": query_result_type,
@@ -1362,31 +1360,32 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             relevant_docs.append(doc_info)
             
     elif rag_type == 'opensearch':
+        #relevant_documents = vectorstore_opensearch.similarity_search(
+        #    query = query,
+        #    k = top_k,
+        #)
+
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
             k = top_k,
         )
         print('(opensearch score) relevant_documents: ', relevant_documents)
 
-        relevant_documents = vectorstore_opensearch.similarity_search(
-            query = query,
-            k = top_k,
-        )
-        # similarity_search_with_score
-
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
             print(f'## Document {i+1}: {document}')
 
-            name = document.metadata['name']
-            page = document.metadata['page']
-            uri = document.metadata['uri']
+            name = document[0].metadata['name']
+            page = document[0].metadata['page']
+            uri = document[0].metadata['uri']
+            confidence = document[1]
+            assessed_score = document[1]
 
             doc_info = {
                 "rag_type": rag_type,
-                #"api_type": apiType,
-                #"confidence": confidence,
+                #"api_type": api_type,
+                "confidence": confidence,
                 "metadata": {
                     #"type": query_result_type,
                     #"document_id": document_id,
@@ -1399,7 +1398,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 },
                 #"query_id": query_id,
                 #"feedback_token": feedback_token
-                "assessed_score": "",
+                "assessed_score": str(assessed_score),
             }
             relevant_docs.append(doc_info)
 
