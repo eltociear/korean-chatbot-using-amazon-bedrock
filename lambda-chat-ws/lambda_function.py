@@ -859,7 +859,8 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
     #print('relevant_documents: ', relevant_documents)
 
     rag_type = "kendra"
-        
+    apiType = "kendraRetriever"
+
     for i, document in enumerate(relevant_documents):
         #print('document.page_content:', document.page_content)
         #print('document.metadata:', document.metadata)
@@ -887,7 +888,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         if page:
             doc_info = {
                 "rag_type": rag_type,
-                #"api_type": apiType,
+                "api_type": apiType,
                 "confidence": confidence,
                 "metadata": {
                     #"type": query_result_type,
@@ -908,7 +909,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         else: 
             doc_info = {
                 "rag_type": rag_type,
-                #"api_type": apiType,
+                "api_type": apiType,
                 "confidence": confidence,
                 "metadata": {
                     #"type": query_result_type,
@@ -920,6 +921,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
                 #"query_id": query_id,
                 #"feedback_token": feedback_token
                 "assessed_score": assessed_score,
+                "result_id": result_id
             }
             
         relevant_docs.append(doc_info)
@@ -1232,10 +1234,14 @@ def get_reference(docs, rag_method, rag_type):
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
             if doc['rag_type'] == 'kendra':
-                if doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
-                        uri = doc['metadata']['source']
-                        name = doc['metadata']['title']
-                        reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                if doc['api_type'] == kendraRetriever: # provided by kendraRetriever of langchain
+                    name = doc['metadata']['title']
+                    uri = doc['metadata']['source']
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                elif doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
+                    uri = doc['metadata']['source']
+                    name = doc['metadata']['title']
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
