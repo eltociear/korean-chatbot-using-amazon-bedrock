@@ -879,8 +879,6 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
         if "_excerpt_page_number" in document.metadata['document_attributes']:            
             page = document.metadata['document_attributes']['_excerpt_page_number']
 
-        #confidence = int(document[1])
-        #assessed_score = int(document[1])
         confidence = ""
         assessed_score = ""
             
@@ -1065,7 +1063,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 
     return relevant_docs
 
-def check_confidence(query, relevant_docs, bedrock_embeddings):
+def priority_search(query, relevant_docs, bedrock_embeddings):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
@@ -1315,8 +1313,13 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             print(f'## Document {i+1}: {document}')
 
             name = document[0].metadata['name']
-            page = document[0].metadata['page']
-            uri = document[0].metadata['uri']
+            page = ""
+            if "page" in document[0].metadata:
+                page = document[0].metadata['page']
+            uri = ""
+            if "uri" in document[0].metadata:
+                uri = document[0].metadata['uri']
+
             confidence = int(document[1])
             assessed_score = int(document[1])
             
@@ -1377,30 +1380,53 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             print(f'## Document {i+1}: {document}')
 
             name = document[0].metadata['name']
-            page = document[0].metadata['page']
-            uri = document[0].metadata['uri']
+            print('mdtadata: ', document[0].metadata)
+            page = ""
+            if document[0].metadata['page']:
+                page = document[0].metadata['page']
+            uri = ""
+            if "uri" in document[0].metadata:
+                uri = document[0].metadata['uri']
+
             excerpt = document[0].page_content
             confidence = str(document[1])
             assessed_score = str(document[1])
 
-            doc_info = {
-                "rag_type": rag_type,
-                #"api_type": api_type,
-                "confidence": confidence,
-                "metadata": {
-                    #"type": query_result_type,
-                    #"document_id": document_id,
-                    "source": uri,
-                    "title": name,
-                    "excerpt": excerpt,
-                    "document_attributes": {
-                        "_excerpt_page_number": page
-                    }
-                },
-                #"query_id": query_id,
-                #"feedback_token": feedback_token
-                "assessed_score": assessed_score,
-            }
+            if page:
+                doc_info = {
+                    "rag_type": rag_type,
+                    #"api_type": api_type,
+                    "confidence": confidence,
+                    "metadata": {
+                        #"type": query_result_type,
+                        #"document_id": document_id,
+                        "source": uri,
+                        "title": name,
+                        "excerpt": excerpt,
+                        "document_attributes": {
+                            "_excerpt_page_number": page
+                        }
+                    },
+                    #"query_id": query_id,
+                    #"feedback_token": feedback_token
+                    "assessed_score": assessed_score,
+                }
+            else:
+                doc_info = {
+                    "rag_type": rag_type,
+                    #"api_type": api_type,
+                    "confidence": confidence,
+                    "metadata": {
+                        #"type": query_result_type,
+                        #"document_id": document_id,
+                        "source": uri,
+                        "title": name,
+                        "excerpt": excerpt,
+                    },
+                    #"query_id": query_id,
+                    #"feedback_token": feedback_token
+                    "assessed_score": assessed_score,
+                }
             relevant_docs.append(doc_info)
 
     return relevant_docs
@@ -1528,13 +1554,14 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('processing time for RAG: ', str(time.time() - start_time_for_rag))
         #print('relevant_docs: ', relevant_docs)
         
+        selected_relevant_docs = []
         if len(relevant_docs) >= 1:
-            relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
+            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
 
-        print('relevant_docs: ', json.dumps(relevant_docs))
+        print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
         relevant_context = ""
-        for document in relevant_docs:
+        for document in selected_relevant_docs:
             relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
         print('relevant_context: ', relevant_context)
 
@@ -1550,8 +1577,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             sendErrorMessage(connectionId, requestId, err_msg)    
             raise Exception ("Not able to request to LLM")    
 
-        if len(relevant_docs)>=1 and enableReference=='true':
-            msg = msg+get_reference(relevant_docs, rag_method, rag_type)
+        if len(selected_relevant_docs)>=1 and enableReference=='true':
+            msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
@@ -1644,7 +1671,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             if rag_type == 'kendra':
                 relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
                 if len(relevant_docs) >= 1:
-                    relevant_docs = check_confidence(revised_question, relevant_docs, bedrock_embeddings)
+                    relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
             else:
                 relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
