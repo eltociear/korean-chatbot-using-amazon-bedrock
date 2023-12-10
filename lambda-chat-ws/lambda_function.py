@@ -1386,7 +1386,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             else:
                 print('no page tag')
             page = ""
-            if document[0].metadata['page']:
+            if "page" in document[0].metadata:
                 page = document[0].metadata['page']
             uri = ""
             if "uri" in document[0].metadata:
