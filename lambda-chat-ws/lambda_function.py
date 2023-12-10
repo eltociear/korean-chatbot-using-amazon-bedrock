@@ -1381,6 +1381,10 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
             name = document[0].metadata['name']
             print('mdtadata: ', document[0].metadata)
+            if "page" in document[0].metadata:
+                print('page tag exist!')
+            else:
+                print('no page tag')
             page = ""
             if document[0].metadata['page']:
                 page = document[0].metadata['page']
