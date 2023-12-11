@@ -1383,7 +1383,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
             page = ""
             if "page" in document[0].metadata:
-                page = document[0].metadata['page']            
+                page = document[0].metadata['page']
             uri = ""
             if "uri" in document[0].metadata:
                 uri = document[0].metadata['uri']
