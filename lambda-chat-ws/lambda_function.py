@@ -1580,6 +1580,20 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         if len(selected_relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)
+        else:
+            from langchain.retrievers.web_research import WebResearchRetriever
+            from langchain.utilities import GoogleSearchAPIWrapper
+            search = GoogleSearchAPIWrapper()
+            web_research_retriever = WebResearchRetriever.from_llm(
+                vectorstore=vectorstore_opensearch,
+                llm=llm,
+                search=search,
+            )
+            from langchain.chains import RetrievalQAWithSourcesChain
+            qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
+                llm, retriever=web_research_retriever
+            )
+            msg = qa_chain({"question": revised_question})
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
