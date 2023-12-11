@@ -1295,7 +1295,7 @@ def get_reference(docs, rag_method, rag_type):
                 
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
-                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']}\n"
         
     return reference
 
@@ -1582,13 +1582,13 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('google search result: ', result)
 
                 for item in result['items']:
+                    api_type = "google api"
                     excerpt = item['snippet']
                     uri = item['link']
                     title = item['title']
                     confidence = ""
                     assessed_score = ""
-                    api_type = "google api"
-
+                    
                     doc_info = {
                         "rag_type": 'search',
                         "api_type": api_type,
