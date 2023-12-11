@@ -1576,6 +1576,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             api_key = google_api_key
             cse_id = google_cse_id 
             
+            relevant_docs = []
             try: 
                 service = build("customsearch", "v1", developerKey=api_key)
                 result = service.cse().list(q=revised_question, cx=cse_id).execute()
@@ -1608,7 +1609,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         "assessed_score": assessed_score,
                         #"result_id": result_id
                     }
-                    selected_relevant_docs.append(doc_info)
+                    relevant_docs.append(doc_info)
+
+                    if len(relevant_docs)>=1:
+                        selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+                        print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
