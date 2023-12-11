@@ -37,6 +37,26 @@ curl \
   --compressed
 ```
 
+### WebResearchRetriever
+
+[WebResearchRetriever](https://python.langchain.com/docs/modules/data_connection/retrievers/web_research)의 예제입니다.
+
+```python
+# Initialize
+from langchain.retrievers.web_research import WebResearchRetriever
+from langchain.utilities.google_search import GoogleSearchAPIWrapper
+
+search = GoogleSearchAPIWrapper()
+web_research_retriever = WebResearchRetriever.from_llm(
+    vectorstore=vectorstore,
+    llm=llm,
+    search=search,
+)
+
+docs = web_research_retriever.get_relevant_documents(user_input)
+```
+
+
 ## Reference
 
 [Public APIs Developers Can Use in Their Projects](https://ijaycent.hashnode.dev/public-apis-developers-can-use-in-their-projects)
