@@ -10,3 +10,20 @@ LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest
 
 - Programmable Search Element API는 광고 없는 검색 요소 쿼리 1,000개당 $5를 청구
 - 
+
+endpoint: endpoint is https://customsearch.googleapis.com/customsearch/v1
+
+```python
+from googleapiclient.discovery import build
+
+api_key = 'YOUR_API_KEY'
+cse_id = 'YOUR_SEARCH_ENGINE_ID'
+
+service = build("customsearch", "v1", developerKey=api_key)
+
+print(res['searchInformation']['totalResults'])
+```
+
+## Reference
+
+[Public APIs Developers Can Use in Their Projects](https://ijaycent.hashnode.dev/public-apis-developers-can-use-in-their-projects)
