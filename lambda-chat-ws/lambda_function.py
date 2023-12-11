@@ -1581,6 +1581,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         if len(selected_relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)
         else:
+            print('No relevant document!')
             from langchain.retrievers.web_research import WebResearchRetriever
             from langchain.utilities import GoogleSearchAPIWrapper
             search = GoogleSearchAPIWrapper()
