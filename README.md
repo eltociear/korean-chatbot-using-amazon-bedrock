@@ -1,16 +1,7 @@
 # RAG와 Claude LLM으로 한국어 Chatbot 만들기 
 
-[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 [Knowledge Database](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)를 이용하여 구현합니다. 대량의 데이터로 사전학습(pretrained)한 대규모 언어 모델(LLM)은 학습되지 않은 질문에 대해서도 가장 가까운 답변을 맥락(context)에 맞게 찾아 답변할 수 있습니다. 또한, [RAG(Retrieval-Augmented Generation)](https://docs.aws.amazon.com/ko_kr/sagemaker/latest/dg/jumpstart-foundation-models-customize-rag.html)를 이용하면 LLM은 잘못된 답변(hallucination)의 영향을 줄일 수 있으며, [파인 튜닝(fine tuning)](https://docs.aws.amazon.com/sagemaker/latest/dg/jumpstart-foundation-models-fine-tuning.html)을 제공하는 것처럼 최신의 데이터를 활용할 수 있습니다. RAG는 [prompt engineering](https://docs.aws.amazon.com/sagemaker/latest/dg/jumpstart-foundation-models-customize-prompt-engineering.html) 기술 중의 하나로서 vector store를 지식 데이터베이스로 이용하고 있습니다. 
+[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 [Knowledge Database](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)를 이용하여 구현합니다. 
 
-Vector store는 이미지, 문서(text document), 오디오와 같은 구조화 되지 않은 컨텐츠(unstructured content)를 저장하고 검색할 수 있습니다. 특히 대규모 언어 모델(LLM)의 경우에 embedding을 이용하여 텍스트들의 연관성(sementic meaning)을 벡터(vector)로 표현할 수 있으므로, 연관성 검색(sementic search)을 통해 질문에 가장 가까운 답변을 찾을 수 있습니다. 여기서는 대표적인 In-memory vector store인 [Faiss](https://github.com/facebookresearch/faiss/wiki/Getting-started)와 persistent store이면서 대용량 병렬처리가 가능한 [Amazon OpenSearch](https://medium.com/@pandey.vikesh/rag-ing-success-guide-to-choose-the-right-components-for-your-rag-solution-on-aws-223b9d4c7280)와 완전관리형 검색서비스인 Kendra를 이용하여 RAG를 구현합니다.
-
-Multiple RAG에서는 각 RAG가 관련 문서(Relevant Documents)를 생성하게 되므로, 전체 관련 문서들에서 실제 LLM에 전달할 문서의 숫자를 제한하여야 합니다. 이것은 Cluade2.1에서 200k token을 제공함에도 여전히 LLM의 context window에는 제한이 있기 때문입니다. 2023년 re:Invent에서는 다양한 Aurora, OpenSearch, Kendra뿐 아니라 Document DB, Mongo DB, Neptune등 거의 모든 데이터베이스의 RAG 지원이 발표되었습니다. 따라서, 향후 다양한 Database가 RAG의 소스로서 제공될 수 있습니다. 
-
-Multiple LLM을 사용하게 되는 케이스에는 1) 다른 종류의 LLM을 사용하는 케이스 2) 같은 LLM을 다른 리전에서 사용하는 케이스가 있을 수 있습니다. LLM마다 잘하는 범위가 다를수 있으므로 다른 LLM의 결과를 통합해야할 수 있습니다. 또한, Bedrock On Demend의 경우에 단위시간당 보낼수 있는 Reuqest의 숫자 및 Token의 숫자가 제한되므로, 다른 리전의 동일 모델을 사용할 수 있다면, Provisioned로 사용하기 어려운 경우에 유용하게 이용될 수 있습니다. 1)의 경우에는 동시에 같은 요청을 보내서 다른 응답을 통합하는 과정이 필요하며, 2의 경우에는 Load를 분배하고 관리하는 방법이 필요합니다.
-
-실행시간을 단축하기 위하여 Multi Thread를 사용합니다. [Lambda의 Multi thread](https://aws.amazon.com/ko/blogs/compute/parallel-processing-in-python-with-aws-lambda/)을 사용하므로써 연속적인 작업(sequencial job)을 병렬처리 할 수 있습니다.
-
-[Lambda-Parallel Processing](https://aws.amazon.com/ko/blogs/compute/parallel-processing-in-python-with-aws-lambda/)와 같이 Lambda에서는 Pipe()을 이용합니다. 
 
 ## 아키텍처 개요
 
