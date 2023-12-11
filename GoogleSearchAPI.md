@@ -28,6 +28,22 @@ service = build("customsearch", "v1", developerKey=api_key)
 print(res['searchInformation']['totalResults'])
 ```
 
+## 활용
+
+### 직업 호출하기
+
+```python
+import googleapiclient.discovery
+
+api_key = 'your_api_key' 
+
+service = googleapiclient.discovery.build(
+  'customsearch', 'v1', developerKey=api_key)
+
+res = service.cse().list(
+  q='query string', cx='search engine id').execute()
+```
+
 ### 동작확인
 
 [Custom Search JSON API](https://developers.google.com/custom-search/v1/introduction?hl=ko)
