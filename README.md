@@ -62,14 +62,7 @@ llm = Bedrock(
 
 ```python
 def get_parameter(modelId):
-    if modelId == 'amazon.titan-tg1-large' or modelId == 'amazon.titan-tg1-xlarge': 
-        return {
-            "maxTokenCount":1024,
-            "stopSequences":[],
-            "temperature":0,
-            "topP":0.9
-        }
-    elif modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2':
+    if modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2':
         return {
             "max_tokens_to_sample":8191, # 8k
             "temperature":0.1,
@@ -106,9 +99,6 @@ bedrock_embeddings = BedrockEmbeddings(
 ## Knowledge Store 
 
 여기서는 Knowledge Store로 OpenSearch, Faiss, Kendra을 이용합니다.
-
-
-
 
 ## 메모리에 대화 저장
 
@@ -187,6 +177,48 @@ def sendMessage(id, body):
         )
     except: 
         raise Exception ("Not able to send a message")
+```
+
+### Google API를 이용한 검색기능
+
+Multi-RAG로 검색하여 Relevant Document가 없는 경우에 Google API를 이용해 검색한 결과를 RAG에서 사용합니다.
+
+```python
+from googleapiclient.discovery import build
+
+google_api_key = os.environ.get('google_api_key')
+google_cse_id = os.environ.get('google_cse_id')
+
+api_key = google_api_key
+cse_id = google_cse_id
+
+relevant_docs = []
+try:
+    service = build("customsearch", "v1", developerKey = api_key)
+    result = service.cse().list(q = revised_question, cx = cse_id).execute()
+    print('google search result: ', result)
+
+    if "items" in result:
+        for item in result['items']:
+            api_type = "google api"
+            excerpt = item['snippet']
+            uri = item['link']
+            title = item['title']
+            confidence = ""
+            assessed_score = ""
+
+            doc_info = {
+                "rag_type": 'search',
+                "api_type": api_type,
+                "confidence": confidence,
+                "metadata": {
+                    "source": uri,
+                    "title": title,
+                    "excerpt": excerpt,                                
+                },
+                "assessed_score": assessed_score,
+            }
+        relevant_docs.append(doc_info)
 ```
 
 ### AWS CDK로 인프라 구현하기
