@@ -1622,26 +1622,25 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             print('selected_relevant_docs (google): ', selected_relevant_docs)
 
-        if len(selected_relevant_docs)>=1:
-            relevant_context = ""
-            for document in selected_relevant_docs:
-                relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
-            print('relevant_context: ', relevant_context)
+        relevant_context = ""
+        for document in selected_relevant_docs:
+            relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+        print('relevant_context: ', relevant_context)
 
-            try: 
-                start_time_for_inference = time.time()
-                isTyping(connectionId, requestId)
-                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-                msg = readStreamMsg(connectionId, requestId, stream)
-                print('processing time for inference: ', str(time.time() - start_time_for_inference))
-            except Exception:
-                err_msg = traceback.format_exc()
-                print('error message: ', err_msg)       
-                sendErrorMessage(connectionId, requestId, err_msg)    
-                raise Exception ("Not able to request to LLM")    
+        try: 
+            start_time_for_inference = time.time()
+            isTyping(connectionId, requestId)
+            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+            msg = readStreamMsg(connectionId, requestId, stream)
+            print('processing time for inference: ', str(time.time() - start_time_for_inference))
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)       
+            sendErrorMessage(connectionId, requestId, err_msg)    
+            raise Exception ("Not able to request to LLM")    
 
-            if enableReference=='true':
-                msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)        
+        if len(selected_relevant_docs)>=1 and enableReference=='true':
+            msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)        
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
