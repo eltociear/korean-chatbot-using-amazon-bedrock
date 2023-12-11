@@ -28,6 +28,7 @@ from langchain.chains import LLMChain
 from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
 from multiprocessing import Process, Pipe
+from googleapiclient.discovery import build
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -55,6 +56,9 @@ top_k = int(os.environ.get('numberOfRelevantDocs', '8'))
 selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
+
+google_api_key = os.environ.get('google_api_key')
+google_cse_id = os.environ.get('google_cse_id')
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -1581,20 +1585,20 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         if len(selected_relevant_docs)>=1 and enableReference=='true':
             msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)
         else:
-            print('No relevant document!')
-            from langchain.retrievers.web_research import WebResearchRetriever
-            from langchain.utilities import GoogleSearchAPIWrapper
-            search = GoogleSearchAPIWrapper()
-            web_research_retriever = WebResearchRetriever.from_llm(
-                vectorstore=vectorstore_opensearch,
-                llm=llm,
-                search=search,
-            )
-            from langchain.chains import RetrievalQAWithSourcesChain
-            qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
-                llm, retriever=web_research_retriever
-            )
-            msg = qa_chain({"question": revised_question})
+            print('No relevant document! So use google api')            
+            api_key = google_api_key
+            cse_id = google_cse_id
+
+            try: 
+                service = build("customsearch", "v1", developerKey=api_key)
+                res = service.cse().list(q=revised_question, cx=cse_id).execute()
+                print('google search result: ', res)
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)       
+
+                sendErrorMessage(connectionId, requestId, err_msg)    
+                raise Exception ("Not able to search using google api")    
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
