@@ -2,13 +2,15 @@
 
 LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest/utilities/langchain.utilities.google_search.GoogleSearchAPIWrapper.html#)를 활용하는 방법에 대해 설명합니다.
 
-## API 발급
+## API 준비
+### API Key 발급
 
 [api_key](https://developers.google.com/custom-search/docs/paid_element?hl=ko#api_key)에서 키 가져오기를 선택합니다.
 
-### 검색엔진 만들기
+### 검색엔진 ID 만들기
 
 [새 검색엔진 만들기](https://programmablesearchengine.google.com/controlpanel/create?hl=ko)에서 검색엔진을 설정합니다.
+
 
 ### 가격
 - Programmable Search Element API는 광고 없는 검색 요소 쿼리 1,000개당 $5를 청구
