@@ -32,6 +32,14 @@ print(res['searchInformation']['totalResults'])
 
 ### 직업 호출하기
 
+google-api-python-client을 설치합니다.
+
+```text
+pip install google-api-python-client
+```
+
+라이브러리를 import하고 요청합니다.
+
 ```python
 import googleapiclient.discovery
 
