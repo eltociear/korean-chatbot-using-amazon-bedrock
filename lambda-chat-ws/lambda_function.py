@@ -151,7 +151,7 @@ def get_prompt_template(query, conv_type, rag_type):
         elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
             #prompt_template = """\n\nHuman: 다음의 참고자료(<context>)를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
-            prompt_template = """\n\nHuman: 다음은 참고자료에서 가져온 텍스트로 <context></context> XML tags안에 있습니다. 참고자료로 부터 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다. 결과에 "네"를 비롯한 불필요한 부가정보를 절대 포함하지 마세요.
+            prompt_template = """\n\nHuman: 참고자료로 부터 구체적인 세부 정보를 충분히 제공합니다. 참고자료는 <context></context> XML tags안에 있습니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
             <context>
             {context}
