@@ -1611,9 +1611,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     }
                     relevant_docs.append(doc_info)
 
-                    if len(relevant_docs)>=1:
-                        selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
-                        print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
+                if len(relevant_docs)>=1:
+                    selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+                    print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
