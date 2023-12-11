@@ -150,7 +150,7 @@ def get_prompt_template(query, conv_type, rag_type):
 
         elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  
             # for RAG, context and question
-            prompt_template = """\n\nHuman: 다음의 <context>를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 참고자료(<context>)를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
         
             <context>
             {context}
