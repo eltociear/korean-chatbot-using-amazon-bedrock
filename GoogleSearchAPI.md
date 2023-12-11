@@ -56,6 +56,17 @@ web_research_retriever = WebResearchRetriever.from_llm(
 docs = web_research_retriever.get_relevant_documents(user_input)
 ```
 
+## 결과 구하기
+
+검색한 결과를 이용하여 Q&A 결과 얻는 방법입니다.
+
+```python
+from langchain.chains import RetrievalQAWithSourcesChain
+qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
+    llm, retriever=web_research_retriever
+)
+msg = qa_chain({"question": revised_question})
+```
 
 ## Reference
 
