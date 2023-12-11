@@ -32,6 +32,10 @@ service = build("customsearch", "v1", developerKey=api_key)
 print(res['searchInformation']['totalResults'])
 ```
 
+[새 검색엔진 만들기](https://programmablesearchengine.google.com/controlpanel/create?hl=ko)에서 검색엔진을 설정합니다.
+
+
+
 ## Reference
 
 [Public APIs Developers Can Use in Their Projects](https://ijaycent.hashnode.dev/public-apis-developers-can-use-in-their-projects)
