@@ -1371,7 +1371,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             query = query,
             k = top_k,
         )
-        print('(opensearch score) relevant_documents: ', relevant_documents)
+        #print('(opensearch score) relevant_documents: ', relevant_documents)
 
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
@@ -1383,7 +1383,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
             page = ""
             if "page" in document[0].metadata:
-                page = document[0].metadata['page']
+                page = document[0].metadata['page']            
             uri = ""
             if "uri" in document[0].metadata:
                 uri = document[0].metadata['uri']
@@ -1393,6 +1393,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             assessed_score = str(document[1])
 
             if page:
+                print('page: ', page)
                 doc_info = {
                     "rag_type": rag_type,
                     #"api_type": api_type,
