@@ -1559,46 +1559,77 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('processing time for RAG: ', str(time.time() - start_time_for_rag))
         #print('relevant_docs: ', relevant_docs)
         
-        selected_relevant_docs = []
-        if len(relevant_docs) >= 1:
-            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
-
-        print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
-
-        relevant_context = ""
-        for document in selected_relevant_docs:
-            relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
-        print('relevant_context: ', relevant_context)
-
-        try: 
-            start_time_for_inference = time.time()
-            isTyping(connectionId, requestId)
-            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-            msg = readStreamMsg(connectionId, requestId, stream)
-            print('processing time for inference: ', str(time.time() - start_time_for_inference))
-        except Exception:
-            err_msg = traceback.format_exc()
-            print('error message: ', err_msg)       
-            sendErrorMessage(connectionId, requestId, err_msg)    
-            raise Exception ("Not able to request to LLM")    
-
-        if len(selected_relevant_docs)>=1 and enableReference=='true':
-            msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)
-        else:
+        if len(relevant_docs)==0:
             print('No relevant document! So use google api')            
             api_key = google_api_key
-            cse_id = google_cse_id
-
+            cse_id = google_cse_id 
+            
             try: 
                 service = build("customsearch", "v1", developerKey=api_key)
-                res = service.cse().list(q=revised_question, cx=cse_id).execute()
-                print('google search result: ', res)
+                result = service.cse().list(q=revised_question, cx=cse_id).execute()
+                print('google search result: ', result)
+
+                for item in result['items']:
+                    excerpt = item['snippet']
+                    uri = item['link']
+                    title = item['title']
+                    confidence = ""
+                    assessed_score = ""
+                    api_type = "google api"
+
+                    doc_info = {
+                        "rag_type": rag_type,
+                        "api_type": api_type,
+                        "confidence": confidence,
+                        "metadata": {
+                            #"type": query_result_type,
+                            # "document_id": document_id,
+                            "source": uri,
+                            "title": title,
+                            "excerpt": excerpt,
+                            #"document_attributes": {
+                            #    "_excerpt_page_number": page
+                            #}
+                        },
+                        #"query_id": query_id,
+                        #"feedback_token": feedback_token
+                        "assessed_score": assessed_score,
+                        #"result_id": result_id
+                    }
+                    relevant_docs.append(doc_info)
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
 
                 sendErrorMessage(connectionId, requestId, err_msg)    
-                raise Exception ("Not able to search using google api")    
+                raise Exception ("Not able to search using google api")   
+            print('relevant_docs (google): ', relevant_docs)
+            
+        selected_relevant_docs = []
+        if len(relevant_docs)>=1:
+            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+            print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
+
+        if len(selected_relevant_docs)>=1:
+            relevant_context = ""
+            for document in selected_relevant_docs:
+                relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+            print('relevant_context: ', relevant_context)
+
+            try: 
+                start_time_for_inference = time.time()
+                isTyping(connectionId, requestId)
+                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+                msg = readStreamMsg(connectionId, requestId, stream)
+                print('processing time for inference: ', str(time.time() - start_time_for_inference))
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)       
+                sendErrorMessage(connectionId, requestId, err_msg)    
+                raise Exception ("Not able to request to LLM")    
+
+            if enableReference=='true':
+                msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)        
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
