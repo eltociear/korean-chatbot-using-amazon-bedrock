@@ -152,7 +152,7 @@ def get_prompt_template(query, conv_type, rag_type):
             # for RAG, context and question
             #prompt_template = """\n\nHuman: 다음의 참고자료(<context>)를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
             #prompt_template = """\n\nHuman: 참고자료로 부터 구체적인 세부 정보를 충분히 제공합니다. 참고자료는 <context></context> XML tags안에 있습니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
-            prompt_template = """\n\nHuman: 다음의 context> XML tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            prompt_template = """\n\nHuman: 다음의 <context> XML tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
             
             <context>
             {context}
