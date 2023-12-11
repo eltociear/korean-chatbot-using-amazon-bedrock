@@ -33,6 +33,7 @@ const debugMessageMode = 'true'; // if true, debug messages will be delivered to
 const useParallelUpload = 'true';
 const useParallelRAG = 'true';
 const numberOfRelevantDocs = '8';
+const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 
 const number_of_LLMs = "2"; // total number of LLMs to use
 const profile_of_LLMs = JSON.stringify([
@@ -562,6 +563,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useParallelUpload: useParallelUpload,
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
+        kendraMethod: kendraMethod,
         number_of_LLMs:number_of_LLMs,
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities

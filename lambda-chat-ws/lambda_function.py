@@ -49,10 +49,9 @@ path = os.environ.get('path')
 useParallelUpload = os.environ.get('useParallelUpload', 'true')
 useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
-kendra_method = "custom_retriever" # custom_retriever or kendra_retriever
+kendra_method = os.environ.get('kendraMethod')
 roleArn = os.environ.get('roleArn')
-numberOfRelevantDocs = os.environ.get('numberOfRelevantDocs', '8')
-top_k = int(numberOfRelevantDocs)
+top_k = int(os.environ.get('numberOfRelevantDocs', '8'))
 selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
