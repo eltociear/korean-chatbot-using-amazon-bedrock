@@ -1584,34 +1584,35 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 result = service.cse().list(q=revised_question, cx=cse_id).execute()
                 print('google search result: ', result)
 
-                for item in result['items']:
-                    api_type = "google api"
-                    excerpt = item['snippet']
-                    uri = item['link']
-                    title = item['title']
-                    confidence = ""
-                    assessed_score = ""
-                    
-                    doc_info = {
-                        "rag_type": 'search',
-                        "api_type": api_type,
-                        "confidence": confidence,
-                        "metadata": {
-                            #"type": query_result_type,
-                            # "document_id": document_id,
-                            "source": uri,
-                            "title": title,
-                            "excerpt": excerpt,
-                            #"document_attributes": {
-                            #    "_excerpt_page_number": page
-                            #}
-                        },
-                        #"query_id": query_id,
-                        #"feedback_token": feedback_token
-                        "assessed_score": assessed_score,
-                        #"result_id": result_id
-                    }
-                    relevant_docs.append(doc_info)                
+                if "items" in result:
+                    for item in result['items']:
+                        api_type = "google api"
+                        excerpt = item['snippet']
+                        uri = item['link']
+                        title = item['title']
+                        confidence = ""
+                        assessed_score = ""
+                        
+                        doc_info = {
+                            "rag_type": 'search',
+                            "api_type": api_type,
+                            "confidence": confidence,
+                            "metadata": {
+                                #"type": query_result_type,
+                                # "document_id": document_id,
+                                "source": uri,
+                                "title": title,
+                                "excerpt": excerpt,
+                                #"document_attributes": {
+                                #    "_excerpt_page_number": page
+                                #}
+                            },
+                            #"query_id": query_id,
+                            #"feedback_token": feedback_token
+                            "assessed_score": assessed_score,
+                            #"result_id": result_id
+                        }
+                        relevant_docs.append(doc_info)                
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
