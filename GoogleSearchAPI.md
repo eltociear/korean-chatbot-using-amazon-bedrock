@@ -4,20 +4,14 @@ LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest
 
 ## API 발급
 
-[Enable the Custom Search API](https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=red-grid-306501)
-
 [api_key](https://developers.google.com/custom-search/docs/paid_element?hl=ko#api_key)에서 키 가져오기를 선택합니다.
 
+### 검색엔진 만들기
+
+[새 검색엔진 만들기](https://programmablesearchengine.google.com/controlpanel/create?hl=ko)에서 검색엔진을 설정합니다.
+
+### 가격
 - Programmable Search Element API는 광고 없는 검색 요소 쿼리 1,000개당 $5를 청구
-
-[Custom Search JSON API](https://developers.google.com/custom-search/v1/introduction?hl=ko)
-
-```text
-curl \
-  'https://customsearch.googleapis.com/customsearch/v1?key=[YOUR_API_KEY]' \
-  --header 'Accept: application/json' \
-  --compressed
-```
 
 endpoint: endpoint is https://customsearch.googleapis.com/customsearch/v1
 
@@ -32,9 +26,16 @@ service = build("customsearch", "v1", developerKey=api_key)
 print(res['searchInformation']['totalResults'])
 ```
 
-[새 검색엔진 만들기](https://programmablesearchengine.google.com/controlpanel/create?hl=ko)에서 검색엔진을 설정합니다.
+### 동작확인
 
+[Custom Search JSON API](https://developers.google.com/custom-search/v1/introduction?hl=ko)
 
+```text
+curl \
+  'https://customsearch.googleapis.com/customsearch/v1?key=[YOUR_API_KEY]' \
+  --header 'Accept: application/json' \
+  --compressed
+```
 
 ## Reference
 
