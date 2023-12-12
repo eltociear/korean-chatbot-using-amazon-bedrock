@@ -38,7 +38,7 @@ cse_id = 'YOUR_SEARCH_ENGINE_ID'
 
 service = build("customsearch", "v1", developerKey=api_key)
 
-result = service.cse().list(q=question, cx=cse_id).execute()
+result = service.cse().list(q=question, cx=cse_id).execute()
 print('google search result: ', result)
 ```
 
