@@ -82,6 +82,14 @@ cdk deploy --all
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/130bae3d-3bde-43a8-8bcb-55cee1e06e42)
 
+10) Google API Key Update하기
+
+[api_key](https://developers.google.com/custom-search/docs/paid_element?hl=ko#api_key)에서 [키 가져오기] - [Select or create project]를 선택하여 Google API Key를 가져옵니다. 만약 기존 키가 없다면 새로 생성합니다.
+
+[새 검색엔진 만들기](https://programmablesearchengine.google.com/controlpanel/create?hl=ko)에서 검색엔진을 설정합니다. 
+
+
+[Secret Console](https://us-west-2.console.aws.amazon.com/secretsmanager/secret?name=googl_api_key&region=us-west-2)에 접속하여 google_api_key와 google_cse_id를 업데이트합니다.
 
 9) WebUrl를 선택하여 브라우저로 접속합니다.
 
