@@ -540,12 +540,17 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'secret for google api key',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       secretName: 'googl_api_key',
+      //secretObjectValue: {
+      //  google_pikey: 'hi'
+      //},  // cse_id: search engine ID 
       generateSecretString: {
         secretStringTemplate: JSON.stringify({ 
-          google_api_key: 'api_key', 
           google_cse_id: 'cse_id'
         }),
+        generateStringKey: 'google_api_key',
+        excludeCharacters: '/@"',
       },
+
     });
     googleApiSecret.grantRead(roleLambdaWebsocket)
 
