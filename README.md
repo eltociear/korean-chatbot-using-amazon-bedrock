@@ -181,7 +181,7 @@ def sendMessage(id, body):
 
 ### Google API를 이용한 검색기능
 
-Multi-RAG로 검색하여 Relevant Document가 없는 경우에 Google API를 이용해 검색한 결과를 RAG에서 사용합니다.
+Multi-RAG로 검색하여 Relevant Document가 없는 경우에 Google API를 이용해 검색한 결과를 RAG에서 사용합니다. 상세한 내용은 [Google Search API](./GoogleSearchAPI.md)에서 확인합니다.
 
 ```python
 from googleapiclient.discovery import build
