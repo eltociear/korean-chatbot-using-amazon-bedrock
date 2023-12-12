@@ -536,7 +536,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       });
     }
 
-    const googleApiSecret = new secretsmanager.Secret(this, `google-api-secret-for-${projectName}`, {
+    /* const googleApiSecret = new secretsmanager.Secret(this, `google-api-secret-for-${projectName}`, {
       description: 'secret for google api key',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       secretName: 'googl_api_key',
@@ -552,7 +552,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       },
 
     });
-    googleApiSecret.grantRead(roleLambdaWebsocket)
+    googleApiSecret.grantRead(roleLambdaWebsocket) */
 
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
@@ -586,7 +586,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         number_of_LLMs:number_of_LLMs,
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities,
-        googleApiSecret: googleApiSecret.secretName
+       // googleApiSecret: googleApiSecret.secretName
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
