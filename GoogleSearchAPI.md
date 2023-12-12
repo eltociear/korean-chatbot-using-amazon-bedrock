@@ -13,8 +13,8 @@ LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest
 
 
 ### 가격
-- Programmable Search Element API는 광고 없는 검색 요소 쿼리 1,000개당 $5를 청구
 
+Google Search Console API는 모두 [무료](https://developers.google.com/webmaster-tools/pricing?hl=ko)로 사용할 수 있습니다. 하지만 사용량 한도가 적용됩니다.
 
 ## 활용
 
