@@ -128,7 +128,6 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
 [ConversationBufferWindowMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer_window.ConversationBufferWindowMemory.html)을 이용하여 간단하게 k개로 conversation의 숫자를 제한할 수 있습니다.
 
 
-여기서는 Faiss를 이용할때 대화이력이 없는 경우에는 RAG를 쓸수 없으므로 위와 같이 적용합니다.
 
 ### RAG를 사용하는 경우
 
