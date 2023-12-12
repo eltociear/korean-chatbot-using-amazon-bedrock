@@ -104,7 +104,8 @@ bedrock_embeddings = BedrockEmbeddings(
 
 ### RAG를 사용하지 않는 경우
 
-lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chat에 기저장된 대화 이력(memory_chat)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)로 memory_chat을 설정합니다. 여기서, Anhropic Claude는 human과 ai의 이름으로 "Human"과 "Assistant"로 설정합니다. LLM에 응답을 요청할때에는 ConversationChain을 이용합니다.
+lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chat에 기저장된 대화 이력(memory_chat)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)로 memory_chat을 설정합니다. 여기서, Anhropic Claude는 human과 ai의 이름으로 "Human"과 "Assistant"로 설정합니다. LLM에 응답을 요청할때에는 ConversationChain을 이용합니다. [ConversationBufferWindowMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer_window.ConversationBufferWindowMemory.html)을 이용하여 간단하게 k개로 conversation의 숫자를 제한할 수 있습니다.
+
 
 ```python
 map_chat = dict()
@@ -112,7 +113,7 @@ map_chat = dict()
 if userId in map_chat:  
     memory_chat = map_chat[userId]
 else:
-    memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
+    memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
     map_chat[userId] = memory_chat
 conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
 
@@ -125,10 +126,6 @@ def get_answer_from_conversation(text, conversation, convType, connectionId, req
     return msg
 ```
 
-[ConversationBufferWindowMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer_window.ConversationBufferWindowMemory.html)을 이용하여 간단하게 k개로 conversation의 숫자를 제한할 수 있습니다.
-
-
-
 ### RAG를 사용하는 경우
 
 RAG를 이용할때는 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)을 이용해 아래와 같이 채팅 메모리를 지정합니다. 대화가 끝난후에는 add_user_message()와 add_ai_message()를 이용하여 새로운 chat diaglog를 업데이트 합니다.
@@ -139,7 +136,7 @@ map_chain = dict()
 if userId in map_chain:  
     memory_chain = map_chain[userId]
 else: 
-    memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
     map_chain[userId] = memory_chain
 
 memory_chain.chat_memory.add_user_message(text)  # append new diaglog
