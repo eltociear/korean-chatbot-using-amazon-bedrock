@@ -115,6 +115,14 @@ else:
     memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
     map_chat[userId] = memory_chat
 conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+
+msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
+def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
+    conversation.prompt = get_prompt_template(text, convType)
+    stream = conversation.predict(input=text)                        
+    msg = readStreamMsg(connectionId, requestId, stream)
+
+    return msg
 ```
 
 [ConversationBufferWindowMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer_window.ConversationBufferWindowMemory.html)을 이용하여 간단하게 k개로 conversation의 숫자를 제한할 수 있습니다.
@@ -135,18 +143,35 @@ else:
     memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     map_chain[userId] = memory_chain
 
-msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
-
 memory_chain.chat_memory.add_user_message(text)  # append new diaglog
 memory_chain.chat_memory.add_ai_message(msg)
 
-def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
-    conversation.prompt = get_prompt_template(text, convType)
-    stream = conversation.predict(input=text)                        
-    msg = readStreamMsg(connectionId, requestId, stream)
+msg = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)
 
-    return msg
+revised_question = get_revised_question(llm, connectionId, requestId, text)
+PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
+
+relevant_docs = []
+capabilities = ["kendra", "opensearch", "faiss"];
+for reg in capabilities:
+    if reg == 'kendra':
+        rel_docs = retrieve_from_kendra(query = revised_question, top_k = top_k)
+    else:
+        rel_docs = retrieve_from_vectorstore(query = revised_question, top_k = top_k, rag_type = reg)
+
+    for doc in rel_docs:
+        relevant_docs.append(doc)
+
+selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+
+for document in selected_relevant_docs:
+    relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+
+stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
+msg = readStreamMsg(connectionId, requestId, stream)
 ```
+
+### Stream 처리
 
 여기서 stream은 아래와 같은 방식으로 WebSocket을 사용하는 client에 메시지를 전달할 수 있습니다.
 
