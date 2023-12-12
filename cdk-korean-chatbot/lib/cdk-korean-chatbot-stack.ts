@@ -14,6 +14,7 @@ import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as kendra from 'aws-cdk-lib/aws-kendra';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -535,6 +536,24 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       });
     }
 
+    const googleApi = new secretsmanager.Secret(this, 'google_api', {
+      description: 'secret for google api key',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      secretName: 'googl_api_key',
+      //secretObjectValue: {
+      //  'google_api_key': 'hi'
+      //},  // cse_id: search engine ID 
+      generateSecretString: {
+        secretStringTemplate: JSON.stringify({ 
+          google_api_key: 'api_key', 
+          google_cse_id: 'cse_id'
+        }),
+        generateStringKey: 'password',
+        excludeCharacters: '/@"',
+      },
+    });
+    googleApi.grantRead(roleLambdaWebsocket)
+
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
       description: 'lambda for chat using websocket',
@@ -566,7 +585,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         kendraMethod: kendraMethod,
         number_of_LLMs:number_of_LLMs,
         profile_of_LLMs:profile_of_LLMs,
-        capabilities: capabilities
+        capabilities: capabilities,
+        google_api: google_api.secretName
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
