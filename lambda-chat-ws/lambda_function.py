@@ -57,6 +57,16 @@ selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 
+googleApiSecret = os.environ.get('googleApiSecret')
+secretsmanager = boto3.client('secretsmanager')
+try:
+    get_secret_value_response = secretsmanager.get_secret_value(
+        SecretId=googleApiSecret
+    )
+    print('get_secret_value_response: ', get_secret_value_response)
+except Exception as e:
+    raise e
+
 google_api_key = os.environ.get('google_api_key')
 google_cse_id = os.environ.get('google_cse_id')
 
