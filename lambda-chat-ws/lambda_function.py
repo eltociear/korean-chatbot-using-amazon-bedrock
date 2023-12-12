@@ -70,11 +70,6 @@ try:
     google_cse_id = str(secret['SecretString']['google_cse_id'])
     print('google_cse_id: ', google_cse_id)
 
-    jsonSecret = json.loads(get_secret_value_response['SecretString']
-    print('json: ', jsonSecret))
-    print('google_api_key: ', jsonSecret['google_api_key'])
-
-    
 except Exception as e:
     raise e
 
