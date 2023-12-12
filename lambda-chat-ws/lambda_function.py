@@ -64,7 +64,7 @@ try:
         SecretId=googleApiSecret
     )
     print('get_secret_value_response: ', get_secret_value_response)
-    secret = get_secret_value_response['SecretString']
+    secret = json.loads(get_secret_value_response['SecretString'])
     print('secret: ', secret)
     google_api_key = secret['google_api_key']
     google_cse_id = secret['google_cse_id']
