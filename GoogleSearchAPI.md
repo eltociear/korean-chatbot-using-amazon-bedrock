@@ -42,9 +42,8 @@ result = service.cse().list(q=question, cx=cse_id).execute()
 print('google search result: ', result)
 ```
 
-### ETC
 
-#### CLI로 동작확인
+### CLI로 동작확인
 
 [Custom Search JSON API](https://developers.google.com/custom-search/v1/introduction?hl=ko)
 
