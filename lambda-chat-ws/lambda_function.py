@@ -66,13 +66,9 @@ try:
     print('get_secret_value_response: ', get_secret_value_response)
     secret = get_secret_value_response['SecretString']
     print('secret: ', secret)
-    google_api_key = str(get_secret_value_response['SecretString']['google_api_key'])
-    google_cse_id = str(secret['google_cse_id'])
-    print('google_cse_id: ', google_cse_id)
-
-    google_api_key = get_secret_value_response['SecretString']['google_api_key']
-    print('google_api_key: ', google_api_key)
-
+    google_api_key = secret['google_api_key']
+    google_cse_id = secret['google_cse_id']
+    print('google_cse_id: ', google_cse_id)    
 
 except Exception as e:
     raise e
