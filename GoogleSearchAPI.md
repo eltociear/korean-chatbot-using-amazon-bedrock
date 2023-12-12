@@ -15,7 +15,20 @@ LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest
 ### 가격
 - Programmable Search Element API는 광고 없는 검색 요소 쿼리 1,000개당 $5를 청구
 
-endpoint: endpoint is https://customsearch.googleapis.com/customsearch/v1
+
+## 활용
+
+### 라이브러리 설치
+
+google-api-python-client을 설치합니다.
+
+```text
+pip install google-api-python-client
+```
+
+### 요청
+
+아래와 같이 googleapiclient을 이용하여 google search api로 요청할 수 있습니다.
 
 ```python
 from googleapiclient.discovery import build
@@ -25,34 +38,13 @@ cse_id = 'YOUR_SEARCH_ENGINE_ID'
 
 service = build("customsearch", "v1", developerKey=api_key)
 
-print(res['searchInformation']['totalResults'])
+result = service.cse().list(q=question, cx=cse_id).execute()
+print('google search result: ', result)
 ```
 
-## 활용
+### ETC
 
-### 직업 호출하기
-
-google-api-python-client을 설치합니다.
-
-```text
-pip install google-api-python-client
-```
-
-라이브러리를 import하고 요청합니다.
-
-```python
-import googleapiclient.discovery
-
-api_key = 'your_api_key' 
-
-service = googleapiclient.discovery.build(
-  'customsearch', 'v1', developerKey=api_key)
-
-res = service.cse().list(
-  q='query string', cx='search engine id').execute()
-```
-
-### 동작확인
+#### CLI로 동작확인
 
 [Custom Search JSON API](https://developers.google.com/custom-search/v1/introduction?hl=ko)
 
@@ -81,8 +73,6 @@ web_research_retriever = WebResearchRetriever.from_llm(
 
 docs = web_research_retriever.get_relevant_documents(user_input)
 ```
-
-## 결과 구하기
 
 검색한 결과를 이용하여 Q&A 결과 얻는 방법입니다.
 
