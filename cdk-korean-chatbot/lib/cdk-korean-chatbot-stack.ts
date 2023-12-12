@@ -536,20 +536,15 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       });
     }
 
-    const googleApiSecret = new secretsmanager.Secret(this, 'google_api', {
+    const googleApiSecret = new secretsmanager.Secret(this, `google-api-secret-for-${projectName}`, {
       description: 'secret for google api key',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       secretName: 'googl_api_key',
-      //secretObjectValue: {
-      //  'google_api_key': 'hi'
-      //},  // cse_id: search engine ID 
       generateSecretString: {
         secretStringTemplate: JSON.stringify({ 
           google_api_key: 'api_key', 
           google_cse_id: 'cse_id'
         }),
-        generateStringKey: 'password',
-        excludeCharacters: '/@"',
       },
     });
     googleApiSecret.grantRead(roleLambdaWebsocket)
