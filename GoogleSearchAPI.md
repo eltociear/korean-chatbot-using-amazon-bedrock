@@ -1,6 +1,5 @@
 # Google Search API
 
-LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest/utilities/langchain.utilities.google_search.GoogleSearchAPIWrapper.html#)를 활용하는 방법에 대해 설명합니다.
 
 ## API 준비
 ### API Key 발급
@@ -56,7 +55,9 @@ curl \
 
 ### WebResearchRetriever
 
-[WebResearchRetriever](https://python.langchain.com/docs/modules/data_connection/retrievers/web_research)의 예제입니다.
+LangChain의 [GoogleSearchAPIWrapper](https://api.python.langchain.com/en/latest/utilities/langchain.utilities.google_search.GoogleSearchAPIWrapper.html#)를 활용하는 방법에 대해 설명합니다.
+
+아래는 [WebResearchRetriever](https://python.langchain.com/docs/modules/data_connection/retrievers/web_research)의 예제입니다.
 
 ```python
 # Initialize
