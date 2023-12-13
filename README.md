@@ -370,6 +370,14 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/cbbece5c-5476-4f3b-89f7-c7fcf90ca796)
 
 
+#### 잘못된 응답 유도해보기
+
+"엔씨의 Lex 서비스는 무엇인지 설명해줘."와 같이 잘못된 단어를 조합하여 질문하였습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/78f2f2c0-cecf-43a2-98c7-843276755248)
+
+
+
 ## 리소스 정리하기 
 
 더이상 인프라를 사용하지 않는 경우에 아래처럼 모든 리소스를 삭제할 수 있습니다. 
