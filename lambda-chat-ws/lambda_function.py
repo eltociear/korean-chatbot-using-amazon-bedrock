@@ -1844,7 +1844,7 @@ def create_metadata(bucket, key, prefix, uri, category):
         client.put_object(
             Body=json.dumps(metadata), 
             Bucket=bucket, 
-            Key=prefix+'/'+key+'.metadata.json'
+            Key=prefix+'/'+key+'.metadata.json' 
         )
     except Exception:
         err_msg = traceback.format_exc()
