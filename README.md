@@ -262,6 +262,48 @@ Log에 대한 퍼미션이 필요합니다.
 }
 ```
 
+개발 및 테스트를 위해 Kendra에서 추가로 S3를 등록할 수 있도록 모든 S3에 대한 읽기 퍼미션을 부여합니다. 
+
+```java
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Action": [
+				"s3:Describe*",
+				"s3:Get*",
+				"s3:List*"
+			],
+			"Resource": "*",
+			"Effect": "Allow"
+		}
+	]
+}
+```
+
+이를 CDK로 구현하면 아래와 같습니다.
+
+```typescript
+const kendraLogPolicy = new iam.PolicyStatement({
+    resources: ['*'],
+    actions: ["logs:*", "cloudwatch:GenerateQuery"],
+});
+roleKendra.attachInlinePolicy( // add kendra policy
+    new iam.Policy(this, `kendra-log-policy-for-${projectName}`, {
+        statements: [kendraLogPolicy],
+    }),
+);
+const kendraS3ReadPolicy = new iam.PolicyStatement({
+    resources: ['*'],
+    actions: ["s3:Get*", "s3:List*", "s3:Describe*"],
+});
+roleKendra.attachInlinePolicy( // add kendra policy
+    new iam.Policy(this, `kendra-s3-read-policy-for-${projectName}`, {
+        statements: [kendraS3ReadPolicy],
+    }),
+);    
+```
+
 ### AWS CDK로 인프라 구현하기
 
 [CDK 구현 코드](./cdk-qa-with-rag/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
@@ -401,6 +443,31 @@ cdk destroy --all
 ```
 
 
+### 데이터 소스 추가
+
+S3를 데이터 소스르 추가할때 아래와 같이 수행하면 되나, languageCode가 미지원되어서 CLI로 대체합니다.
+
+```typescript
+const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
+    description: 'S3 source',
+    indexId: kendraIndex,
+    name: 'data-source-for-upload-file',
+    type: 'S3',
+    // languageCode: 'ko',
+    roleArn: roleKendra.roleArn,
+    // schedule: 'schedule',
+
+    dataSourceConfiguration: {
+        s3Configuration: {
+            bucketName: s3Bucket.bucketName,
+            documentsMetadataConfiguration: {
+                s3Prefix: 'metadata',
+            },
+            inclusionPrefixes: ['documents'],
+        },
+    },
+});
+```
 
 
 ## Reference 
