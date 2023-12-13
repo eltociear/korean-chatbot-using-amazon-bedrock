@@ -1825,7 +1825,7 @@ def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
 
 def create_metadata(bucket, key, prefix, uri, category):
     documentId = category + "-" + key
-    title = object
+    title = key
     timestamp = int(time.time())
 
     metadata = {
