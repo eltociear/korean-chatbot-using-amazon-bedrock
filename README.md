@@ -1,6 +1,6 @@
 # Multi-RAG와 Claude LLM으로 한국어 Chatbot 만들기 
 
-[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 [Knowledge Database](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)를 이용하여 구현합니다. 
+[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 [Knowledge Database](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)를 이용하여 구현합니다. RAG에 질문에 대한 관련된 문서(Relevant Document)가 없는 경우에는 Google Search API를 통해 검색하여 얻은 결과를 RAG의 지식저장소처럼 사용하여 사용자 경험을 개선합니다.
 
 
 ## 아키텍처 개요
