@@ -27,7 +27,7 @@
 
 이때의 Sequence diagram은 아래와 같습니다.
 
-<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/03673db3-e4a5-4038-ab24-f1a31aeaf741" width="800">
+<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/283b858c-f94d-426e-8a06-aa7fe411c05f" width="800">
 
 ## 주요 구성
 
