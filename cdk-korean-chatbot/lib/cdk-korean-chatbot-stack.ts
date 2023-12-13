@@ -196,6 +196,15 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         new iam.Policy(this, `kendra-log-policy-for-${projectName}`, {
           statements: [kendraLogPolicy],
         }),
+      );
+      const kendraS3ReadPolicy = new iam.PolicyStatement({
+        resources: ['*'],
+        actions: ["s3:Get*","s3:List*","s3:Describe*"],
+      });
+      roleKendra.attachInlinePolicy( // add kendra policy
+        new iam.Policy(this, `kendra-s3-read-policy-for-${projectName}`, {
+          statements: [kendraS3ReadPolicy],
+        }),
       );    
       new cdk.CfnOutput(this, `index-of-kendra-for-${projectName}`, {
         value: cfnIndex.attrId,
