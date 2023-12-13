@@ -248,7 +248,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         type: 'S3',        
         // languageCode: 'ko',
         roleArn: roleKendra.roleArn,
-        schedule: 'schedule',
+        // schedule: 'schedule',
         dataSourceConfiguration: {
           s3Configuration: {
             bucketName: s3Bucket.bucketName,
