@@ -292,8 +292,19 @@ try:
 
 ![image](https://github.com/kyopark2014/rag-chatbot-using-bedrock-claude-and-kendra/assets/52392004/2e2b2ae1-7c50-4c14-968a-6c58332d99af)
 
+#### 잘못된 응답 유도해보기
+
+"엔씨의 Lex 서비스는 무엇인지 설명해줘."와 같이 잘못된 단어를 조합하여 질문하였습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/78f2f2c0-cecf-43a2-98c7-843276755248)
+
+"Amazon Varco 서비스를 Manufactoring에 적용하는 방법 알려줘."로 질문하고 응답을 확인합니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/8c484742-a294-4876-afe9-df0e0f2d96c5)
 
 
+
+### Prompt Engineering 결과 예제
 
 #### Translation
 
@@ -368,13 +379,6 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 [9. Child Conversation (few shot)]으로 전환합니다. 동일한 질문을 합니다. 상대에 맞추어서 적절한 답변을 할 수 있었습니다. 
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/cbbece5c-5476-4f3b-89f7-c7fcf90ca796)
-
-
-#### 잘못된 응답 유도해보기
-
-"엔씨의 Lex 서비스는 무엇인지 설명해줘."와 같이 잘못된 단어를 조합하여 질문하였습니다.
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/78f2f2c0-cecf-43a2-98c7-843276755248)
 
 
 
