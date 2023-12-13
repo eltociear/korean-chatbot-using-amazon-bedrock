@@ -27,7 +27,7 @@
 
 이때의 Sequence diagram은 아래와 같습니다. 만약 RAG에서 관련된 문서를 찾지못할 경우에는 Google Search API를 통해 Query를 수행하여 RAG처럼 활용합니다.
 
-<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/2c322cea-b192-4c99-acdc-42f00369f154" width="900">
+<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/c7c88412-d76c-4129-978f-efe940d42d04" width="900">
 
 
 ## 주요 구성
