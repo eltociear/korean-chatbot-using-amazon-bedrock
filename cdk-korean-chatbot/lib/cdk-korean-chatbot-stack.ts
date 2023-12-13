@@ -239,6 +239,34 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           statements: [passRolePolicy],
         }), 
       );  
+
+      // data source
+      const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
+        description: 'S3 source',
+        indexId: kendraIndex,
+        name: 'data-source-for-upload-file',
+        type: 'S3',        
+        // languageCode: 'ko',
+        roleArn: roleKendra.roleArn,
+        schedule: 'schedule',
+        dataSourceConfiguration: {
+          s3Configuration: {
+            bucketName: s3Bucket.bucketName,
+        
+            // the properties below are optional
+            //accessControlListConfiguration: {
+            //  keyPath: 'keyPath',
+            //},
+            documentsMetadataConfiguration: {
+              s3Prefix: 'documents',
+            },
+          },
+        },        
+      });
+
+      const documentsMetadataConfigurationProperty: kendra.CfnDataSource.DocumentsMetadataConfigurationProperty = {
+        s3Prefix: 'metadata',
+      };
     }
 
     // opensearch
