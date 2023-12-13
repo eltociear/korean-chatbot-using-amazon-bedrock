@@ -242,6 +242,26 @@ try:
         relevant_docs.append(doc_info)
 ```
 
+### S3를 데이터 소스로 하기 위한 퍼미션
+
+Log에 대한 퍼미션이 필요합니다.
+
+```java
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "cloudwatch:GenerateQuery",
+                "logs:*"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        }
+    ]
+}
+```
+
 ### AWS CDK로 인프라 구현하기
 
 [CDK 구현 코드](./cdk-qa-with-rag/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
