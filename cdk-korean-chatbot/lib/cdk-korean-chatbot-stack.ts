@@ -249,6 +249,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         // languageCode: 'ko',
         roleArn: roleKendra.roleArn,
         // schedule: 'schedule',
+        
         dataSourceConfiguration: {
           s3Configuration: {
             bucketName: s3Bucket.bucketName,
@@ -258,15 +259,12 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
             //  keyPath: 'keyPath',
             //},
             documentsMetadataConfiguration: {
-              s3Prefix: 'documents',
+              s3Prefix: 'metadata',
             },
+            inclusionPrefixes: ['documents'],
           },
         },        
       });
-
-      const documentsMetadataConfigurationProperty: kendra.CfnDataSource.DocumentsMetadataConfigurationProperty = {
-        s3Prefix: 'metadata',
-      };
     }
 
     // opensearch
