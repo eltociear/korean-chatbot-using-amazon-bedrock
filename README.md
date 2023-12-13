@@ -25,7 +25,7 @@
 
 단계7: Amazon Bedrock의 사용자의 질문과 채팅이력이 전달되면, Anthropic의 Claude LLM을 이용하여 적절한 답변(answer)을 사용자에게 전달합니다. 이때, stream을 사용하여 답변이 완성되기 전에 답변(answer)를 사용자에게 보여줄 수 있습니다.
 
-이때의 Sequence diagram은 아래와 같습니다. 만약 RAG에서 관련된 문서를 찾지못할 경우에는 Google Search API를 통해 Query를 수행하여 RAG처럼 활용합니다. 대화이력을 가져오기 위한 DynamoDB는 첫번째 질문에만 해당됩니다.
+이때의 Sequence diagram은 아래와 같습니다. 만약 RAG에서 관련된 문서를 찾지못할 경우에는 Google Search API를 통해 Query를 수행하여 RAG처럼 활용합니다. 대화이력을 가져오기 위한 DynamoDB는 첫번째 질문에만 해당됩니다. 여기서는 "us-east-1"과 "us-west-2"의 Bedrock을 사용하므로, 아래와 같이 질문마다 다른 Region의 Bedrock Claude LLM을 사용합니다.
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/c7c88412-d76c-4129-978f-efe940d42d04" width="900">
 
