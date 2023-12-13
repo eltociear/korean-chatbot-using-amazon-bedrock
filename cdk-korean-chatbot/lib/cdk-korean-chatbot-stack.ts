@@ -626,7 +626,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
-    s3Bucket.grantRead(lambdaChatWebsocket); // permission for s3
+    s3Bucket.grantWrite(lambdaChatWebsocket); // permission for s3
     callLogDataTable.grantReadWriteData(lambdaChatWebsocket); // permission for dynamo 
     
     if(debug) {
