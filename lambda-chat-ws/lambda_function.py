@@ -33,6 +33,7 @@ from googleapiclient.discovery import build
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
+meta_prefix = "metadata"
 callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 number_of_LLMs = int(os.environ.get('number_of_LLMs'))
@@ -1843,7 +1844,7 @@ def create_metadata(bucket, key, prefix, uri, category):
         client.put_object(
             Body=json.dumps(metadata), 
             Bucket=bucket, 
-            Key=prefix+key
+            Key=prefix+'/'+key
         )
     except Exception:
         err_msg = traceback.format_exc()
@@ -2134,7 +2135,7 @@ def getResponse(connectionId, jsonBody):
                             #p3.start(); p3.join()
                             vectorstore_faiss.add_documents(docs)       
 
-                create_metadata(bucket=s3_bucket, key=object, prefix=s3_prefix, uri=path+parse.quote(object), category="upload")
+                create_metadata(bucket=s3_bucket, key=object, prefix=meta_prefix, uri=path+parse.quote(object), category="upload")
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start

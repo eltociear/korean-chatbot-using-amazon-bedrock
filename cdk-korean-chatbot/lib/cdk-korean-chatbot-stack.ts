@@ -610,7 +610,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd,
         opensearch_url: opensearch_url,
-        path: 'https://'+distribution.domainName+'/docs/',   
+        path: 'https://'+distribution.domainName+'/'+s3_prefix+'/',   
         kendraIndex: kendraIndex,
         roleArn: roleLambdaWebsocket.roleArn,
         debugMessageMode: debugMessageMode,
