@@ -1822,6 +1822,34 @@ def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
     
     return msg
 
+def create_metadata(bucket, key, prefix, uri, category):
+    documentId = category + "-" + key
+    title = object
+    timestamp = int(time.time())
+
+    metadata = {
+        "Attributes": {
+            "_category": category,
+            "_source_uri": uri,
+            "_version": str(timestamp),
+        },
+        "Title": title,
+        "DocumentId": documentId,        
+    }
+    print('metadata: ', metadata)
+
+    client = boto3.client('s3')
+    try: 
+        client.put_object(
+            Body=json.dumps(metadata), 
+            Bucket=bucket, 
+            Key=prefix+key
+        )
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to request to LLM")
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2105,7 +2133,8 @@ def getResponse(connectionId, jsonBody):
                             #p3 = Process(target=store_document_for_faiss, args=(docs, vectorstore_faiss))
                             #p3.start(); p3.join()
                             vectorstore_faiss.add_documents(docs)       
-                        
+
+                create_metadata(bucket=s3_bucket, key=object, prefix=s3_prefix, uri=path+parse.quote(object), category="upload")
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start

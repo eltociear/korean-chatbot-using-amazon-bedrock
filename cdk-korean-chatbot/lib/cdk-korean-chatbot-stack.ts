@@ -250,7 +250,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       );  
 
       // data source
-      const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
+    /*  const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
         description: 'S3 source',
         indexId: kendraIndex,
         name: 'data-source-for-upload-file',
@@ -261,19 +261,14 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         
         dataSourceConfiguration: {
           s3Configuration: {
-            bucketName: s3Bucket.bucketName,
-        
-            // the properties below are optional
-            //accessControlListConfiguration: {
-            //  keyPath: 'keyPath',
-            //},
+            bucketName: s3Bucket.bucketName,        
             documentsMetadataConfiguration: {
               s3Prefix: 'metadata',
             },
             inclusionPrefixes: ['documents'],
           },
         },        
-      });
+      });  */
     }
 
     // opensearch
