@@ -1828,7 +1828,7 @@ def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
     
     return msg
 
-def create_metadata(bucket, key, prefix, uri, category, documentId):    
+def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId):    
     title = key
     timestamp = int(time.time())
 
@@ -1848,7 +1848,7 @@ def create_metadata(bucket, key, prefix, uri, category, documentId):
         client.put_object(
             Body=json.dumps(metadata), 
             Bucket=bucket, 
-            Key=prefix+'/'+key+'.metadata.json' 
+            Key=meta_prefix+'/'+s3_prefix+'/'+key+'.metadata.json' 
         )
     except Exception:
         err_msg = traceback.format_exc()
@@ -2142,7 +2142,7 @@ def getResponse(connectionId, jsonBody):
                             #p3.start(); p3.join()
                             vectorstore_faiss.add_documents(docs)       
 
-                create_metadata(bucket=s3_bucket, key=key, prefix=meta_prefix, uri=path+parse.quote(object), category=category, documentId=documentId)
+                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(object), category=category, documentId=documentId)
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start
