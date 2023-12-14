@@ -1254,11 +1254,11 @@ def get_reference(docs, rag_method, rag_type):
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
                     uri = doc['metadata']['source']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>,{doc['rag_type']} ({doc['assessed_score']})\n"
                 elif doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                     uri = doc['metadata']['source']
                     name = doc['metadata']['title']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>,{doc['rag_type']} ({doc['assessed_score']})\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
