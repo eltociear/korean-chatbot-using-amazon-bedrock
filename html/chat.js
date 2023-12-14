@@ -481,7 +481,8 @@ attachFile.addEventListener('click', function(){
             var input = this;
             var url_file = $(this).val();
             var ext = url_file.substring(url_file.lastIndexOf('.') + 1).toLowerCase();
-            var filename = url_file.substring(url_file.lastIndexOf('\\') + 1).toLowerCase();
+            //var filename = url_file.substring(url_file.lastIndexOf('\\') + 1).toLowerCase();
+            var filename = url_file.substring(url_file.lastIndexOf('\\') + 1);
 
             console.log('url: ' + url_file);
             console.log('filename: ' + filename);
