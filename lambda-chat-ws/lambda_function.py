@@ -1291,7 +1291,10 @@ def get_reference(docs, rag_method, rag_type):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
-                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                if page:                
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                else:
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
         
             elif doc['rag_type'] == 'faiss':
                 print(f'## Document {i+1}: {doc}')
