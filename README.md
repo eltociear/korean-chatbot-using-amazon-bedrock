@@ -461,9 +461,9 @@ const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectNa
         s3Configuration: {
             bucketName: s3Bucket.bucketName,
             documentsMetadataConfiguration: {
-                s3Prefix: 'metadata',
+                s3Prefix: 'metadata/',
             },
-            inclusionPrefixes: ['documents'],
+            inclusionPrefixes: ['documents/'],
         },
     },
 });
@@ -477,7 +477,7 @@ aws kendra create-data-source
 --name data-source-for-upload-file
 --type S3
 --role-arn arn:aws:iam::123456789012:role/role-lambda-chat-ws-for-korean-chatbot-us-west-2
---configuration '{"S3Configuration":{"BucketName":"storage-for-korean-chatbot-us-west-2", "DocumentsMetadataConfiguration": {"S3Prefix":"metadata"},"InclusionPrefixes": ["docs"]}}'
+--configuration '{"S3Configuration":{"BucketName":"storage-for-korean-chatbot-us-west-2", "DocumentsMetadataConfiguration": {"S3Prefix":"metadata/"},"InclusionPrefixes": ["documents/"]}}'
 --language-code ko
 --region us-west-2
 ```
