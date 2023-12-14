@@ -469,6 +469,19 @@ const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectNa
 });
 ```
 
+CLI 명령어 예제입니다.
+
+```text
+aws kendra create-data-source
+--index-id azfbd936-4929-45c5-83eb-bb9d458e8348
+--name data-source-for-upload-file
+--type S3
+--role-arn arn:aws:iam::123456789012:role/role-lambda-chat-ws-for-korean-chatbot-us-west-2
+--configuration '{"S3Configuration":{"BucketName":"storage-for-korean-chatbot-us-west-2", "DocumentsMetadataConfiguration": {"S3Prefix":"metadata"},"InclusionPrefixes": ["docs"]}}'
+--language-code ko
+--region us-west-2
+```
+
 
 ## Reference 
 
