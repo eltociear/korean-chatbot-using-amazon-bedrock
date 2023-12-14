@@ -1254,11 +1254,11 @@ def get_reference(docs, rag_method, rag_type):
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
                     uri = doc['metadata']['source']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>,{doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 elif doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                     uri = doc['metadata']['source']
                     name = doc['metadata']['title']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>,{doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
@@ -1291,10 +1291,12 @@ def get_reference(docs, rag_method, rag_type):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
+                print('opensearch page: ', page)
+
                 if page:                
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 else:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
         
             elif doc['rag_type'] == 'faiss':
                 print(f'## Document {i+1}: {doc}')
@@ -1307,16 +1309,16 @@ def get_reference(docs, rag_method, rag_type):
                 name = doc['metadata']['title']
 
                 if page: 
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 elif uri:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
             
             elif doc['rag_type'] == 'search': # google search
                 print(f'## Document {i+1}: {doc}')
                 
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
-                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} </a>, {doc['rag_type']}\n"
+                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']}\n"
         
     return reference
 
