@@ -867,7 +867,7 @@ def retrieve_from_kendra(query, top_k):
     return relevant_docs
 
 def retrieve_from_kendra_using_kendra_retriever(query, top_k):
-    print('query: ', query)
+    print(f"query: {query} (kendra)")
 
     relevant_docs = []
     relevant_documents = kendraRetriever.get_relevant_documents(
@@ -946,7 +946,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
     return relevant_docs    
     
 def retrieve_from_kendra_using_custom_retriever(query, top_k):
-    print('query: ', query)
+    print(f"query: {query} (kendra)")
 
     index_id = kendraIndex    
     
@@ -1322,7 +1322,7 @@ def get_reference(docs, rag_method, rag_type):
     return reference
 
 def retrieve_from_vectorstore(query, top_k, rag_type):
-    print('query: ', query)
+    print(f"query: {query} ({rag_type})")
 
     relevant_docs = []
     if rag_type == 'faiss' and isReady:
@@ -1784,10 +1784,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         chat_history_all = extract_chat_history_from_memory()
         # print('chat_history_all: ', chat_history_all)
 
-        length = []
+        history_length = []
         for history in chat_history_all:
-            length.append = len(history)
-        print('chat_history length: ', length)
+            history_length.append = len(history)
+        print('chat_history length: ', history_length)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -1813,10 +1813,10 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
         chat_history_all = chats['history']
         # print('chat_history_all: ', chat_history_all)
         # print('chat_history length: ', len(chat_history_all))
-        length = []
+        history_length = []
         for history in chat_history_all:
-            length.append = len(history)
-        print('chat_history length: ', length)
+            history_length.append = len(history)
+        print('chat_history length: ', history_length)
 
     return msg
 
