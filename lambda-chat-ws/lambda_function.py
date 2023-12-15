@@ -1791,8 +1791,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('history: ', history[:500])
         print('chat_history length: ', history_length)
 
-        
-
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
     
