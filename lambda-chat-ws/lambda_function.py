@@ -39,7 +39,6 @@ kendra_region = os.environ.get('kendra_region', 'us-west-2')
 number_of_LLMs = int(os.environ.get('number_of_LLMs'))
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 isReady = False   
-isDebugging = False
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -697,7 +696,7 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
         type = item['type']['S']
 
         if type == 'text':
-            if isDebugging==True:
+            if debugMessageMode=='true':
                 print('Human: ', text)
                 print('Assistant: ', msg)        
 
@@ -1781,16 +1780,17 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             if len(relevant_docs)>=1 and enableReference=='true':
                 msg = msg+get_reference(relevant_docs, rag_method, rag_type)
 
-    if isDebugging==True:   # extract chat history for debug
+    if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
-        print('chat_history_all: ', chat_history_all)
+        # print('chat_history_all: ', chat_history_all)
+        print('chat_history length: ', len(chat_history_all))
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
     
     return msg
 
-def get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type):
+def get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type):
     conversation.prompt = get_prompt_template(text, conv_type, rag_type)
     try: 
         isTyping(connectionId, requestId)    
@@ -1804,10 +1804,11 @@ def get_answer_from_conversation(text, conversation, conv_type, connectionId, re
         sendErrorMessage(connectionId, requestId, err_msg)    
         raise Exception ("Not able to request to LLM")
 
-    if isDebugging==True:   # extract chat history for debug
+    if debugMessageMode == 'true':   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
         chat_history_all = chats['history']
-        print('chat_history_all: ', chat_history_all)
+        # print('chat_history_all: ', chat_history_all)
+        print('chat_history length: ', len(chat_history_all))
 
     return msg
 
@@ -2030,11 +2031,11 @@ def getResponse(connectionId, jsonBody):
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:          
-                if conv_type == 'qa':   # question & answering
+                if conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
                     if rag_type == 'faiss' and isReady==False:                               
-                        msg = get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type)      
+                        msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)      
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
@@ -2042,7 +2043,7 @@ def getResponse(connectionId, jsonBody):
                         msg = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
                 
                 elif conv_type == 'normal' or conv_type == 'funny':      # normal
-                    msg = get_answer_from_conversation(text, conversation, conv_type, connectionId, requestId, rag_type)
+                    msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
                 
                 elif conv_type == 'none':   # no prompt
                     try: 
