@@ -1783,7 +1783,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
         # print('chat_history_all: ', chat_history_all)
-        print('chat_history length: ', len(chat_history_all))
+
+        length = []
+        for history in chat_history_all:
+            length.append = len(history)
+        print('chat_history length: ', length)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -1808,7 +1812,11 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
         chats = memory_chat.load_memory_variables({})
         chat_history_all = chats['history']
         # print('chat_history_all: ', chat_history_all)
-        print('chat_history length: ', len(chat_history_all))
+        # print('chat_history length: ', len(chat_history_all))
+        length = []
+        for history in chat_history_all:
+            length.append = len(history)
+        print('chat_history length: ', length)
 
     return msg
 
@@ -1854,7 +1862,7 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
-        raise Exception ("Not able to request to LLM")
+        raise Exception ("Not able to create meta file")
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
