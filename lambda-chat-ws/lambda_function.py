@@ -1786,7 +1786,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         history_length = []
         for history in chat_history_all:
-            history_length.append(len(history))
+            history_length.append(len(history[:500]))
             if len(history)>1000:
                 print('history: ', history)
         print('chat_history length: ', history_length)
@@ -1819,7 +1819,7 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
         # print('chat_history length: ', len(chat_history_all))
         history_length = []
         for history in chat_history_all:
-            history_length.append(len(history))
+            history_length.append(len(history[:500]))
         print('chat_history length: ', history_length)
 
     return msg
