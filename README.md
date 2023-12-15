@@ -304,6 +304,10 @@ roleKendra.attachInlinePolicy( // add kendra policy
 );    
 ```
 
+### Kendra 파일 크기 Quota
+
+[Quota Console - File size](https://ap-northeast-1.console.aws.amazon.com/servicequotas/home/services/kendra/quotas/L-C108EA1B)와 같이 Kendra에 올릴수 있는 파일크기는 50MB로 제한됩니다. 이는 Quota 조정 요청을 위해 적절한 값으로 조정할 수 있습니다. 다만 이 경우에도 파일 한개에서 얻어낼수 있는 Text의 크기는 5MB로 제한됩니다.
+
 ### AWS CDK로 인프라 구현하기
 
 [CDK 구현 코드](./cdk-qa-with-rag/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
