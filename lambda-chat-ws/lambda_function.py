@@ -696,9 +696,9 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
         type = item['type']['S']
 
         if type == 'text':
-            if debugMessageMode=='true':
-                print('Human: ', text)
-                print('Assistant: ', msg)        
+            #if debugMessageMode=='true':
+            #    print('Human: ', text)
+            #    print('Assistant: ', msg)        
 
             #if (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and #rag_type=='faiss' and isReady):
             #    memory_chain.chat_memory.add_user_message(text)
@@ -713,12 +713,18 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
 
             if conv_type=='qa':
                 memory_chain.chat_memory.add_user_message(text)
-                memory_chain.chat_memory.add_ai_message(msg)        
+                if len(msg) > 200:
+                    memory_chain.chat_memory.add_ai_message(msg)        
+                else:
+                    memory_chain.chat_memory.add_ai_message(msg[:200])   
                 
                 if rag_type=='faiss' and isReady==False:
                     memory_chat.save_context({"input": text}, {"output": msg})
             else:
-                memory_chat.save_context({"input": text}, {"output": msg})
+                if len(msg) > 200:
+                    memory_chat.save_context({"input": text}, {"output": msg[:200]})
+                else:
+                    memory_chat.save_context({"input": text}, {"output": msg})
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
@@ -762,8 +768,8 @@ def extract_chat_history_from_memory():
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
         history = f"{role_prefix[2:]}{dialogue_turn.content}"
-        if len(history)>300:
-            chat_history.append(history[:300])
+        if len(history)>200:
+            chat_history.append(history[:200])
         else:
             chat_history.append(history)
 
