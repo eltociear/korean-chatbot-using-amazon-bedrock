@@ -1786,7 +1786,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
-        print('chat_history_all: ', chat_history_all)
+        #print('chat_history_all: ', chat_history_all)
 
         history_length = []
         for history in chat_history_all:
@@ -1933,7 +1933,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chain exist. reuse it!')
         else: 
             # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
+            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=20)
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
