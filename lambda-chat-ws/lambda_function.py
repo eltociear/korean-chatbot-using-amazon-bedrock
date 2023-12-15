@@ -761,7 +761,11 @@ def extract_chat_history_from_memory():
 
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-        chat_history.append(f"{role_prefix[2:]}{dialogue_turn.content}")
+        history = f"{role_prefix[2:]}{dialogue_turn.content}"
+        if len(history)>300:
+            chat_history.append(history[:300])
+        else:
+            chat_history.append(history)
 
     return chat_history
 
@@ -1782,13 +1786,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
-        # print('chat_history_all: ', chat_history_all)
+        print('chat_history_all: ', chat_history_all)
 
         history_length = []
         for history in chat_history_all:
             history_length.append(len(history))
-            if len(history)>1000:
-                print('history: ', history[:500])
         print('chat_history length: ', history_length)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
@@ -1817,7 +1819,7 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
         # print('chat_history length: ', len(chat_history_all))
         history_length = []
         for history in chat_history_all:
-            history_length.append(len(history[:500]))
+            history_length.append(len(history))
         print('chat_history length: ', history_length)
 
     return msg
