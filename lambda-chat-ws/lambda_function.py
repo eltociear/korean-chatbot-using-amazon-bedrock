@@ -1946,7 +1946,7 @@ def getResponse(connectionId, jsonBody):
                 print('memory_chat exist. reuse it!')    
             else: 
                 # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                memory_chat = ConversationBufferWindowMemory(human_prefix='User', ai_prefix='AI', k=20)
+                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
                 #from langchain.memory import ConversationSummaryBufferMemory
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
@@ -1961,7 +1961,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chat exist. reuse it!')
         else:
             # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            memory_chat = ConversationBufferWindowMemory(human_prefix='User', ai_prefix='AI', k=20)
+            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
             map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
