@@ -2117,28 +2117,51 @@ def getResponse(connectionId, jsonBody):
                 category = "upload"
                 key = object
                 documentId = category + "-" + key
-                if useParallelUpload == 'false':                    
-                    print('rag_type: ', rag_type)                
-                    if rag_type=='kendra':      
-                        print('upload to kendra: ', object)           
-                        store_document_for_kendra(path, object, documentId)  # store the object into kendra
-                                        
+                if useParallelUpload == 'false':
+                    if rag_type == 'all':      
+                        for type in capabilities:             
+                            print('rag_type: ', type)        
+                            if type=='kendra':      
+                                print('upload to kendra: ', object)           
+                                store_document_for_kendra(path, object, documentId)  # store the object into kendra
+                                                
+                            else:
+                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                                    if type == 'faiss':
+                                        if isReady == False:   
+                                            embeddings = bedrock_embeddings
+                                            vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
+                                                    docs,  # documents
+                                                    embeddings  # embeddings
+                                            )
+                                            isReady = True
+                                        else:
+                                            store_document_for_faiss(docs, vectorstore_faiss)
+                                                                        
+                                    elif type == 'opensearch':    
+                                        store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
                     else:
-                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
-                            if rag_type == 'faiss' or rag_type == 'all':
-                                if isReady == False:   
-                                    embeddings = bedrock_embeddings
-                                    vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                                            docs,  # documents
-                                            embeddings  # embeddings
-                                    )
-                                    isReady = True
-                                else:
-                                    store_document_for_faiss(doc, vectorstore_faiss)
-                                                                
-                            elif rag_type == 'opensearch' or rag_type == 'all':    
-                                store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
-                    
+                        print('rag_type: ', rag_type)                
+                        if rag_type=='kendra':      
+                            print('upload to kendra: ', object)           
+                            store_document_for_kendra(path, object, documentId)  # store the object into kendra
+                                                
+                        else:
+                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                                if rag_type == 'faiss':
+                                    if isReady == False:   
+                                        embeddings = bedrock_embeddings
+                                        vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
+                                                docs,  # documents
+                                                embeddings  # embeddings
+                                        )
+                                        isReady = True
+                                    else:
+                                        store_document_for_faiss(docs, vectorstore_faiss)
+                                                                        
+                                elif rag_type == 'opensearch':    
+                                    store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
+                            
                 else:                    
                     p1 = Process(target=store_document_for_kendra, args=(path, object, documentId))
                     p1.start(); p1.join()
