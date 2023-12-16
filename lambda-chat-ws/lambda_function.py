@@ -1931,6 +1931,10 @@ def getResponse(connectionId, jsonBody):
         region_name = bedrock_region,
         model_id = 'amazon.titan-embed-text-v1' 
     )    
+
+    str = "안녕하세요"
+    token_count = llm.get_num_tokens(str)
+    print(f"token_count: {token_count} <- {str}")
         
     # create memory
     if conv_type=='qa':
