@@ -56,6 +56,8 @@ top_k = int(os.environ.get('numberOfRelevantDocs', '8'))
 selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
+MSG_LENGTH = 100
+MSG_HISTORY_LENGTH = 20
 
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
@@ -713,16 +715,16 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
 
             if conv_type=='qa':
                 memory_chain.chat_memory.add_user_message(text)
-                if len(msg) > 200:
+                if len(msg) > MSG_LENGTH:
                     memory_chain.chat_memory.add_ai_message(msg)        
                 else:
-                    memory_chain.chat_memory.add_ai_message(msg[:200])   
+                    memory_chain.chat_memory.add_ai_message(msg[:MSG_LENGTH])   
                 
                 if rag_type=='faiss' and isReady==False:
                     memory_chat.save_context({"input": text}, {"output": msg})
             else:
-                if len(msg) > 200:
-                    memory_chat.save_context({"input": text}, {"output": msg[:200]})
+                if len(msg) > MSG_LENGTH:
+                    memory_chat.save_context({"input": text}, {"output": msg[:MSG_LENGTH]})
                 else:
                     memory_chat.save_context({"input": text}, {"output": msg})
                 
@@ -768,8 +770,8 @@ def extract_chat_history_from_memory():
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
         history = f"{role_prefix[2:]}{dialogue_turn.content}"
-        if len(history)>200:
-            chat_history.append(history[:200])
+        if len(history)>MSG_LENGTH:
+            chat_history.append(history[:MSG_LENGTH])
         else:
             chat_history.append(history)
 
@@ -1936,7 +1938,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chain exist. reuse it!')
         else: 
             # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=20)
+            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=10)
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
@@ -1946,7 +1948,7 @@ def getResponse(connectionId, jsonBody):
                 print('memory_chat exist. reuse it!')    
             else: 
                 # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
+                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
                 #from langchain.memory import ConversationSummaryBufferMemory
                 #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
                 #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
@@ -1961,7 +1963,7 @@ def getResponse(connectionId, jsonBody):
             print('memory_chat exist. reuse it!')
         else:
             # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
+            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
             map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
