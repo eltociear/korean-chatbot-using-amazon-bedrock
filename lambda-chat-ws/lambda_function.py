@@ -1792,7 +1792,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
-        #print('chat_history_all: ', chat_history_all)
+        # print('chat_history_all: ', chat_history_all)
 
         history_length = []
         for history in chat_history_all:
@@ -1821,8 +1821,8 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
     if debugMessageMode == 'true':   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
         chat_history_all = chats['history']
-        # print('chat_history_all: ', chat_history_all)
-        # print('chat_history length: ', len(chat_history_all))
+        print('chat_history_all: ', chat_history_all)
+        
         history_length = []
         for history in chat_history_all:
             history_length.append(len(history))
@@ -1932,10 +1932,6 @@ def getResponse(connectionId, jsonBody):
         model_id = 'amazon.titan-embed-text-v1' 
     )    
 
-    str = "안녕하세요"
-    token_count = llm.get_num_tokens(str)
-    print(f"token_count: {token_count} <- {str}")
-        
     # create memory
     if conv_type=='qa':
         if userId in map_chain:  
@@ -2078,6 +2074,12 @@ def getResponse(connectionId, jsonBody):
                         raise Exception ("Not able to request to LLM")
                 else: 
                     msg = get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId)
+
+                # token counter
+                if debugMessageMode=='true':
+                    token_counter_input = llm.get_num_tokens(text)
+                    token_counter_output = llm.get_num_tokens(msg)
+                    print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
                 
         elif type == 'document':
             object = body
