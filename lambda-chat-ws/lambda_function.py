@@ -1821,12 +1821,9 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
     if debugMessageMode == 'true':   # extract chat history for debug
         chats = memory_chat.load_memory_variables({})
         chat_history_all = chats['history']
-        print('chat_history_all: ', chat_history_all)
+        # print('chat_history_all: ', chat_history_all)
         
-        history_length = []
-        for history in chat_history_all:
-            history_length.append(len(history))
-        print('chat_history length: ', history_length)
+        print('chat_history length: ', len(chat_history_all))
 
     return msg
 
