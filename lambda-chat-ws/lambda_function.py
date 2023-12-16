@@ -1424,7 +1424,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             print(f'## Document {i+1}: {document}')
 
             name = document[0].metadata['name']
-            print('mdtadata: ', document[0].metadata)
+            print('metadata: ', document[0].metadata)
 
             page = ""
             if "page" in document[0].metadata:
@@ -1855,6 +1855,7 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
             "_category": category,
             "_source_uri": uri,
             "_version": str(timestamp),
+            "_language_code": "ko"
         },
         "Title": title,
         "DocumentId": documentId,        
