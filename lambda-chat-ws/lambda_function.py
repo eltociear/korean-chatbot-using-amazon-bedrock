@@ -856,7 +856,7 @@ def get_revised_question(llm, connectionId, requestId, query):
     
     if debugMessageMode=='true':
         # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        debug_msg_for_resived_question(llm, revised_question, chat_history, connectionId, requestId)
+        debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId)
     
     return revised_question
 
@@ -1549,14 +1549,14 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     conn.send(relevant_docs)
     conn.close()
 
-def debug_msg_for_resived_question(llm, revised_question, chat_history, connectionId, requestId):
+def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
     history_context = ""
     for history in chat_history:
         history_context = history_context + history
         token_size = llm.get_num_tokens(history_context)
     print('token_size of history: ', token_size)
 
-    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(token_size)} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     if rag_type == 'all': # kendra, opensearch, faiss
