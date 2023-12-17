@@ -1889,7 +1889,7 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         print('error message: ', err_msg)        
         raise Exception ("Not able to create meta file")
 
-def get_text_speech(path, msg, bucket):
+def get_text_speech(path, bucket, msg):
     polly = boto3.client('polly')
 
     speech_prefix = 'speech/'
@@ -2239,14 +2239,14 @@ def getResponse(connectionId, jsonBody):
         
         speech_uri = ""
         if speech_generation: # generate mp3 file
-            speech_uri = get_text_speech(msg=msg, bucket=s3_bucket)
+            speech_uri = get_text_speech(path=path, bucket=s3_bucket, msg=msg)
             print('speech_uri: ', speech_uri)
 
         if reference:
             msg = msg + reference
         
         if speech_uri:
-            msg = msg + '\n speech: ' + reference    
+            msg = msg + '\n speech: ' + '<a href={reference} target=_blank>{"Speech"}</a>\n'    
 
         print('msg: ', msg)
 
