@@ -1881,6 +1881,26 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         print('error message: ', err_msg)        
         raise Exception ("Not able to create meta file")
 
+def get_text_speech(msg, bucket):
+    polly = boto3.client('polly')
+
+    try:
+        response = polly.start_speech_synthesis_task(
+            Engine='neural',
+            LanguageCode='ko-KR',
+            OutputFormat='mp3',
+            OutputS3BucketName=bucket,
+            OutputS3KeyPrefix='speech/',
+            Text=msg,
+            TextType='text',
+            VoiceId='Seoyeon'        
+        )
+        print('response: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create voice")
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2226,6 +2246,8 @@ def getResponse(connectionId, jsonBody):
         selected_LLM = 0
     else:
         selected_LLM = selected_LLM + 1
+
+    get_text_speech(msg=msg, bucket=s3_bucket)
 
     return msg
 

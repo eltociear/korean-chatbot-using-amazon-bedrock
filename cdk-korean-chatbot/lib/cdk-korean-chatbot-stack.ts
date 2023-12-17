@@ -249,6 +249,17 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         }), 
       );  
 
+      // Poly Role
+      const PollyPolicy = new iam.PolicyStatement({  
+        actions: ['polly:*'],
+        resources: ['*'],
+      });
+      roleLambdaWebsocket.attachInlinePolicy(
+        new iam.Policy(this, 'polly-policy', {
+          statements: [PollyPolicy],
+        }),
+      );
+
       // data source
     /*  const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
         description: 'S3 source',
