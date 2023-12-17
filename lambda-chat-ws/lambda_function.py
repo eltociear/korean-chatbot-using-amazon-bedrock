@@ -1556,7 +1556,7 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
         token_size = llm.get_num_tokens(history_context)
     print('token_size of history: ', token_size)
 
-    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)을 고려한 새로운 질문: {revised_question}")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     if rag_type == 'all': # kendra, opensearch, faiss
