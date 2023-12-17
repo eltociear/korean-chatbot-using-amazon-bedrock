@@ -2248,7 +2248,7 @@ def getResponse(connectionId, jsonBody):
             msg = msg + reference
         
         if speech_uri:
-            msg = msg + f'<a href={speech_uri} target=_blank>{"결과 읽어주기"}</a>'
+            msg = msg + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
 
         print('msg: ', msg)
 
