@@ -135,7 +135,8 @@ function connect(endpoint, type) {
                 else if(response.status == 'debug') {
                     feedback.style.display = 'none';
                     console.log('debug: ', response.msg);
-                    addNotifyMessage(response.msg);
+                    // addNotifyMessage(response.msg);
+                    addReceivedMessage(response.request_id, response.msg);  
                 }          
                 else if(response.status == 'error') {
                     feedback.style.display = 'none';

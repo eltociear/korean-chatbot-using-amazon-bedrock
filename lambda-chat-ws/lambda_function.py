@@ -854,7 +854,7 @@ def get_revised_question(llm, connectionId, requestId, query):
         sendErrorMessage(connectionId, requestId, err_msg)        
         raise Exception ("Not able to request to LLM")
     
-    return revised_question
+    return revised_question, chat_history
 
 kendraRetriever = AmazonKendraRetriever(
     index_id=kendraIndex, 
@@ -1549,10 +1549,14 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
 
-        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
+        revised_question, chat_history = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
-            sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+            # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+
+            token_history = llm.get_num_tokens(chat_history)
+            sendDebugMessage(connectionId, requestId, f"이전 대화이력({token_history} Token)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+            
         PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
         print('processing time for revise question: ', str(time.time() - start_time_for_revise))
