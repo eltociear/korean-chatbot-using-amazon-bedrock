@@ -843,7 +843,7 @@ def get_revised_question(llm, connectionId, requestId, query):
         </history>
         Answer only with the new question.
 
-        Human: using <history>, rephrase the follow up <question> to be a standalone question.
+        Human: using <history>, rephrase the follow up <question> to be a standalone question. The standalone question must have main words of the original question.
          
         <quesion>
         {question}
