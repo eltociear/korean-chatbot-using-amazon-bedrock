@@ -845,7 +845,7 @@ def get_revised_question(llm, connectionId, requestId, query):
     chat_history = extract_chat_history_from_memory()
     try:         
         revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
-        # print('revised_question: '+revised_question)
+        print('revised_question: '+revised_question)
 
     except Exception:
         err_msg = traceback.format_exc()
@@ -854,7 +854,11 @@ def get_revised_question(llm, connectionId, requestId, query):
         sendErrorMessage(connectionId, requestId, err_msg)        
         raise Exception ("Not able to request to LLM")
     
-    return revised_question, chat_history
+    if debugMessageMode=='true':
+        # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+        debug_msg_for_resived_question(llm, revised_question, chat_history, connectionId, requestId)
+    
+    return revised_question
 
 kendraRetriever = AmazonKendraRetriever(
     index_id=kendraIndex, 
@@ -1545,21 +1549,20 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     conn.send(relevant_docs)
     conn.close()
 
+def debug_msg_for_resived_question(llm, revised_question, chat_history, connectionId, requestId):
+    history_context = ""
+    for history in chat_history:
+        history_context = history_context + history
+        token_size = llm.get_num_tokens(history_context)
+    print('token_size of history: ', len(token_size))
+
+    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(token_size)} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
 
-        revised_question, chat_history = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-        print('revised_question: ', revised_question)
-        if debugMessageMode=='true':
-            # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-            history_context = ""
-            for history in chat_history:
-                history_context = history_context + history
-            token_size = llm.get_num_tokens(history_context)
-            print('token_size of history: ', len(token_size))
-
-            sendDebugMessage(connectionId, requestId, f"이전 대화이력({token_size} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history        
             
         PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
@@ -1688,9 +1691,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-            print('revised_question: ', revised_question)
-            if debugMessageMode=='true':
-                sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+
             PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
@@ -1767,9 +1768,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-            print('revised_question: ', revised_question)
-            if debugMessageMode=='true':
-                sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+            
             PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
