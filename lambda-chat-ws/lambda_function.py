@@ -2079,7 +2079,9 @@ def getResponse(connectionId, jsonBody):
             msg += f"{model['modelId']}\n"
         
         msg += f"current model: {modelId}"
-        print('model lists: ', msg)            
+        print('model lists: ', msg)          
+
+        sendResultMessage(connectionId, requestId, msg)  
     else:             
         if type == 'text':
             text = body
