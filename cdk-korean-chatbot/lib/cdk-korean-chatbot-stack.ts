@@ -39,16 +39,28 @@ const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const number_of_LLMs = "2"; // total number of LLMs to use
 const profile_of_LLMs = JSON.stringify([
   {
-    "bedrock_region": "us-west-2",
+    "bedrock_region": "us-west-2", // Oregon
     "model_type": "claude",
     // "model_id": "anthropic.claude-v2:1",   
     "model_id": "anthropic.claude-instant-v1",
     "maxOutputTokens": "8196"
   },
   {
-    "bedrock_region": "us-east-1",
+    "bedrock_region": "us-east-1", // N.Virginia
     "model_type": "claude",
     // "model_id": "anthropic.claude-v2:1",
+    "model_id": "anthropic.claude-instant-v1",
+    "maxOutputTokens": "8196"
+  },
+  {
+    "bedrock_region": "ap-northeast-1", // Tokyo
+    "model_type": "claude",
+    "model_id": "anthropic.claude-instant-v1",
+    "maxOutputTokens": "8196"
+  },    
+  {
+    "bedrock_region": "eu-central-1", // Europe (Frankfurt)
+    "model_type": "claude",
     "model_id": "anthropic.claude-instant-v1",
     "maxOutputTokens": "8196"
   },
