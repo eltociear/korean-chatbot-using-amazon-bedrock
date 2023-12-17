@@ -2276,12 +2276,16 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
 
-        if speech_generation: # generate mp3 file
-            speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
-            print('speech_uri: ', speech_uri)      
-        
-        if isKorean(msg)==False:
-            msg = msg+'\n\n'+translate(llm, msg)
+        if isKorean(msg):
+            if speech_generation: # generate mp3 file
+                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
+                print('speech_uri: ', speech_uri)      
+        else:
+            translated_msg = translate(llm, msg)
+            if speech_generation: # generate mp3 file
+                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
+                print('speech_uri: ', speech_uri)  
+            msg = msg+'\n[한국어]\n'+translated_msg
 
         item = {    # save dialog
             'user_id': {'S':userId},
