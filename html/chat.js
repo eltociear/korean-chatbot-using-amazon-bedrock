@@ -261,7 +261,6 @@ function onSend(e) {
 
         let requestId = uuidv4();
         addSentMessage(requestId, timestr, message.value);
-
         
         if(conversationType=='qa-all') {
             conv_type = 'qa',

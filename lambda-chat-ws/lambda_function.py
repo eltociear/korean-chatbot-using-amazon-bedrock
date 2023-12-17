@@ -118,7 +118,16 @@ def sendMessage(id, body):
         err_msg = traceback.format_exc()
         print('err_msg: ', err_msg)
         raise Exception ("Not able to send a message")
-    
+
+def sendResultMessage(connectionId, requestId, msg):    
+    result = {
+        'request_id': requestId,
+        'msg': msg,
+        'status': 'completed'
+    }
+    #print('debug: ', json.dumps(debugMsg))
+    sendMessage(connectionId, result)
+
 def sendDebugMessage(connectionId, requestId, msg):
     debugMsg = {
         'request_id': requestId,
@@ -1917,6 +1926,29 @@ def get_text_speech(path, speech_prefix, bucket, msg):
 
     return path+speech_prefix+parse.quote(object)
 
+def translate(llm, msg):
+    PROMPT = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
+            
+    <article>
+    {input}
+    </article>
+                        
+    Assistant:"""
+
+    try: 
+        translated_msg = llm(PROMPT.format(input=msg))
+        print('translated_msg: ', translated_msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to translate the message")
+    
+    pure_msg = translated_msg[translated_msg.find('<result>'):translated_msg.rfind('</result>')]
+    print('translated_msg: ', translated_msg)
+    print('pure_msg: ', pure_msg)
+        
+    return pure_msg
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2035,6 +2067,7 @@ def getResponse(connectionId, jsonBody):
 
     msg = ""
     reference = ""
+    speech_uri = ""
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
             service_name='bedrock',
@@ -2237,29 +2270,26 @@ def getResponse(connectionId, jsonBody):
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+doc_prefix+parse.quote(object), category=category, documentId=documentId)
                 print('processing time: ', str(time.time() - start_time))
                         
+        sendResultMessage(connectionId, requestId, msg+reference)
+        print('msg+reference: ', msg+reference)
+
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
-        
-        speech_uri = ""
+
         if speech_generation: # generate mp3 file
             speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
-            print('speech_uri: ', speech_uri)
-
-        if reference:
-            msg = msg + reference        
+            print('speech_uri: ', speech_uri)      
         
-        if speech_uri:
-            msg = msg + '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
+        if isKorean(msg)==False:
+            msg = msg+'\n\n'+translate(llm, msg)
 
-        print('msg: ', msg)
-
-        item = {
+        item = {    # save dialog
             'user_id': {'S':userId},
             'request_id': {'S':requestId},
             'request_time': {'S':requestTime},
             'type': {'S':type},
             'body': {'S':body},
-            'msg': {'S':msg}
+            'msg': {'S':msg+reference}
         }
         client = boto3.client('dynamodb')
         try:
@@ -2275,7 +2305,7 @@ def getResponse(connectionId, jsonBody):
     else:
         selected_LLM = selected_LLM + 1
 
-    return msg
+    return msg, reference, speech_uri
 
 def lambda_handler(event, context):
     # print('event: ', event)
@@ -2304,21 +2334,18 @@ def lambda_handler(event, context):
 
                 requestId  = jsonBody['request_id']
                 try:
-                    msg = getResponse(connectionId, jsonBody)
+                    msg, reference, speech_uri = getResponse(connectionId, jsonBody)
+                    
+                    if speech_uri:
+                        speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                
+                        sendResultMessage(connectionId, requestId, msg+reference+speech)
+
                 except Exception:
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
 
                     sendErrorMessage(connectionId, requestId, err_msg)    
                     raise Exception ("Not able to send a message")
-                                    
-                result = {
-                    'request_id': requestId,
-                    'msg': msg,
-                    'status': 'completed'
-                }
-                #print('result: ', json.dumps(result))
-                sendMessage(connectionId, result)
 
     return {
         'statusCode': 200
