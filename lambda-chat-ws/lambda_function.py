@@ -2245,10 +2245,12 @@ def getResponse(connectionId, jsonBody):
             print('speech_uri: ', speech_uri)
 
         if reference:
-            msg = msg + reference
-        
-        if speech_uri:
-            msg = msg + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
+            msg = msg + reference        
+            if speech_uri:
+                msg = msg + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
+        else:
+            if speech_uri:
+                msg = msg + '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
 
         print('msg: ', msg)
 
