@@ -1570,10 +1570,13 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
 
 def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
     history_context = ""
+    token_size = 0
     for history in chat_history:
         history_context = history_context + history
+
+    if history_context:
         token_size = llm.get_num_tokens(history_context)
-    print('token_size of history: ', token_size)
+        print('token_size of history: ', token_size)
 
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)을 활용하였습니다.")
 
