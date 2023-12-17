@@ -1554,7 +1554,7 @@ def debug_msg_for_resived_question(llm, revised_question, chat_history, connecti
     for history in chat_history:
         history_context = history_context + history
         token_size = llm.get_num_tokens(history_context)
-    print('token_size of history: ', len(token_size))
+    print('token_size of history: ', token_size)
 
     sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(token_size)} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
 
