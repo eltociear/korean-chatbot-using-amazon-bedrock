@@ -1926,7 +1926,7 @@ def get_text_speech(path, speech_prefix, bucket, msg):
 
     return path+speech_prefix+parse.quote(object)
 
-def translate(llm, msg):
+def traslation_to_korean(llm, msg):
     PROMPT = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
             
     <article>
@@ -1943,7 +1943,7 @@ def translate(llm, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
-    pure_msg = translated_msg[translated_msg.find('<result>'):translated_msg.rfind('</result>')]
+    pure_msg = translated_msg[translated_msg.find('<result>')+9:translated_msg.rfind('</result>')-10]
     print('translated_msg: ', translated_msg)
     print('pure_msg: ', pure_msg)
         
@@ -2281,7 +2281,7 @@ def getResponse(connectionId, jsonBody):
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
                 print('speech_uri: ', speech_uri)      
         else:
-            translated_msg = translate(llm, msg)
+            translated_msg = traslation_to_korean(llm, msg)
             if speech_generation: # generate mp3 file
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
                 print('speech_uri: ', speech_uri)  
