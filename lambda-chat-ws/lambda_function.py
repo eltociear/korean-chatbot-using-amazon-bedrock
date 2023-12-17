@@ -1943,11 +1943,7 @@ def traslation_to_korean(llm, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
-    pure_msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
-    print('translated_msg: ', translated_msg)
-    print('pure_msg: ', pure_msg)
-        
-    return pure_msg
+    return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -2282,6 +2278,8 @@ def getResponse(connectionId, jsonBody):
                 print('speech_uri: ', speech_uri)      
         else:
             translated_msg = traslation_to_korean(llm, msg)
+            print('translated_msg: ', translated_msg)
+            
             if speech_generation: # generate mp3 file
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
                 print('speech_uri: ', speech_uri)  
