@@ -1910,10 +1910,10 @@ def get_text_speech(path, bucket, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to create voice")
     
-    object = '.'+response['SynthesisTask']['TaskId']
+    object = speech_prefix+'.'+response['SynthesisTask']['TaskId']
     print('object: ', object)
 
-    return path+speech_prefix+parse.quote(object)
+    return path+parse.quote(object)
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -2246,7 +2246,7 @@ def getResponse(connectionId, jsonBody):
             msg = msg + reference
         
         if speech_uri:
-            msg = msg + '\n speech: ' + '<a href={reference} target=_blank>{"Speech"}</a>\n'    
+            msg = msg + f'<a href={speech_uri} target=_blank>{"결과 읽어주기"}</a>'
 
         print('msg: ', msg)
 
