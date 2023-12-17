@@ -58,6 +58,7 @@ capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 MSG_LENGTH = 100
 MSG_HISTORY_LENGTH = 20
+speech_generation = True
 
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
@@ -133,13 +134,19 @@ def sendErrorMessage(connectionId, requestId, msg):
     print('error: ', json.dumps(errorMsg))
     sendMessage(connectionId, errorMsg)
 
-def get_prompt_template(query, conv_type, rag_type):
+def isKorean(text):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
-    word_kor = pattern_hangul.search(str(query))
+    word_kor = pattern_hangul.search(str(text))
     print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
+        return True
+    else:
+        return False
+
+def get_prompt_template(query, conv_type, rag_type):    
+    if isKorean(query):
         if conv_type == "normal": # for General Conversation
             prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
@@ -1556,9 +1563,10 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
         token_size = llm.get_num_tokens(history_context)
     print('token_size of history: ', token_size)
 
-    sendDebugMessage(connectionId, requestId, f"이전 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)을 고려한 새로운 질문: {revised_question}")
+    sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)을 활용하였습니다.")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
+    reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
 
@@ -1686,7 +1694,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             raise Exception ("Not able to request to LLM")    
 
         if len(selected_relevant_docs)>=1 and enableReference=='true':
-            msg = msg+get_reference(selected_relevant_docs, rag_method, rag_type)        
+            reference = get_reference(selected_relevant_docs, rag_method, rag_type)        
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
@@ -1732,7 +1740,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('source_documents: ', source_documents)
 
             if len(source_documents)>=1 and enableReference=='true':
-                msg = msg+get_reference(source_documents, rag_method, rag_type)    
+                reference = get_reference(source_documents, rag_method, rag_type)    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
             PROMPT = get_prompt_template(text, conv_type, rag_type)
@@ -1764,7 +1772,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('source_documents: ', result['source_documents']) 
 
             if len(result['source_documents'])>=1 and enableReference=='true':
-                msg = msg+get_reference(result['source_documents'], rag_method, rag_type)
+                reference = get_reference(result['source_documents'], rag_method, rag_type)
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
@@ -1797,7 +1805,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 raise Exception ("Not able to request to LLM")    
 
             if len(relevant_docs)>=1 and enableReference=='true':
-                msg = msg+get_reference(relevant_docs, rag_method, rag_type)
+                reference = get_reference(relevant_docs, rag_method, rag_type)
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -1810,8 +1818,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
-    
-    return msg
+
+    return msg, reference
 
 def get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type):
     conversation.prompt = get_prompt_template(text, conv_type, rag_type)
@@ -1881,16 +1889,17 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         print('error message: ', err_msg)        
         raise Exception ("Not able to create meta file")
 
-def get_text_speech(msg, bucket):
+def get_text_speech(path, msg, bucket):
     polly = boto3.client('polly')
 
+    speech_prefix = 'speech/'
     try:
         response = polly.start_speech_synthesis_task(
             Engine='neural',
             LanguageCode='ko-KR',
             OutputFormat='mp3',
             OutputS3BucketName=bucket,
-            OutputS3KeyPrefix='speech/',
+            OutputS3KeyPrefix=speech_prefix,
             Text=msg,
             TextType='text',
             VoiceId='Seoyeon'        
@@ -1900,6 +1909,11 @@ def get_text_speech(msg, bucket):
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
         raise Exception ("Not able to create voice")
+    
+    object = '.'+response['SynthesisTask']['TaskId']
+    print('object: ', object)
+
+    return path+speech_prefix+parse.quote(object)
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -2085,7 +2099,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
                     else: 
-                        msg = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
+                        msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
                 
                 elif conv_type == 'normal' or conv_type == 'funny':      # normal
                     msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
@@ -2223,6 +2237,17 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = int(time.time()) - start
         print("total run time(sec): ", elapsed_time)
         
+        speech_uri = ""
+        if speech_generation: # generate mp3 file
+            speech_uri = get_text_speech(msg=msg, bucket=s3_bucket)
+            print('speech_uri: ', speech_uri)
+
+        if reference:
+            msg = msg + reference
+        
+        if speech_uri:
+            msg = msg + '\n speech: ' + reference    
+
         print('msg: ', msg)
 
         item = {
@@ -2246,8 +2271,6 @@ def getResponse(connectionId, jsonBody):
         selected_LLM = 0
     else:
         selected_LLM = selected_LLM + 1
-
-    get_text_speech(msg=msg, bucket=s3_bucket)
 
     return msg
 
