@@ -47,6 +47,8 @@ enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
+path_doc = path+s3_bucket+'/'
+path_speech = path+'speech/'
 useParallelUpload = os.environ.get('useParallelUpload', 'true')
 useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
@@ -501,10 +503,10 @@ def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
     print('uploaded into opensearch')
 
 # store document into Kendra
-def store_document_for_kendra(path, s3_file_name, documentId):
+def store_document_for_kendra(path_doc, s3_file_name, documentId):
     print('store document into kendra')
     encoded_name = parse.quote(s3_file_name)
-    source_uri = path + encoded_name    
+    source_uri = path_doc + encoded_name    
     #print('source_uri: ', source_uri)
     ext = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
     print('ext: ', ext)
@@ -603,7 +605,7 @@ def load_document(file_type, s3_file_name):
     return texts
 
 # load csv documents from s3
-def load_csv_document(s3_file_name):
+def load_csv_document(path_doc, s3_file_name):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
 
@@ -627,7 +629,7 @@ def load_csv_document(s3_file_name):
             metadata={
                 'name': s3_file_name,
                 'page': n+1,
-                'uri': path+parse.quote(s3_file_name)
+                'uri': path_doc+parse.quote(s3_file_name)
             }
             #metadata=to_metadata
         )
@@ -1242,7 +1244,7 @@ def extract_relevant_doc_for_kendra(query_id, api_type, query_result):
             }
     return doc_info
 
-def get_reference(docs, rag_method, rag_type):
+def get_reference(docs, rag_method, rag_type, path_doc):
     if rag_method == 'RetrievalQA' or rag_method == 'ConversationalRetrievalChain':
         if rag_type == 'kendra':
             reference = "\n\nFrom\n"
@@ -1292,7 +1294,7 @@ def get_reference(docs, rag_method, rag_type):
                             #print('metadata: ', json.dumps(doc['metadata']))
                             name = doc['metadata']['title']
                             if name: 
-                                uri = path+parse.quote(name)
+                                uri = path_doc+parse.quote(name)
 
                         page = ""
                         if "document_attributes" in doc['metadata']:
@@ -1694,7 +1696,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             raise Exception ("Not able to request to LLM")    
 
         if len(selected_relevant_docs)>=1 and enableReference=='true':
-            reference = get_reference(selected_relevant_docs, rag_method, rag_type)        
+            reference = get_reference(selected_relevant_docs, rag_method, rag_type, path_doc)        
         
     else:
         if rag_method == 'RetrievalQA': # RetrievalQA
@@ -1740,7 +1742,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('source_documents: ', source_documents)
 
             if len(source_documents)>=1 and enableReference=='true':
-                reference = get_reference(source_documents, rag_method, rag_type)    
+                reference = get_reference(source_documents, rag_method, rag_type, path_doc)    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
             PROMPT = get_prompt_template(text, conv_type, rag_type)
@@ -1772,7 +1774,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('source_documents: ', result['source_documents']) 
 
             if len(result['source_documents'])>=1 and enableReference=='true':
-                reference = get_reference(result['source_documents'], rag_method, rag_type)
+                reference = get_reference(result['source_documents'], rag_method, rag_type, path_doc)
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
@@ -1805,7 +1807,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 raise Exception ("Not able to request to LLM")    
 
             if len(relevant_docs)>=1 and enableReference=='true':
-                reference = get_reference(relevant_docs, rag_method, rag_type)
+                reference = get_reference(relevant_docs, rag_method, rag_type, path_doc)
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -1889,10 +1891,9 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         print('error message: ', err_msg)        
         raise Exception ("Not able to create meta file")
 
-def get_text_speech(path, bucket, msg):
+def get_text_speech(path_speech, bucket, msg):
     polly = boto3.client('polly')
-
-    speech_prefix = 'speech/'
+    
     try:
         response = polly.start_speech_synthesis_task(
             Engine='neural',
@@ -1910,10 +1911,10 @@ def get_text_speech(path, bucket, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to create voice")
     
-    object = speech_prefix+'.'+response['SynthesisTask']['TaskId']
+    object = '.'+response['SynthesisTask']['TaskId']
     print('object: ', object)
 
-    return path+parse.quote(object)
+    return path_speech+parse.quote(object)
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -2129,7 +2130,7 @@ def getResponse(connectionId, jsonBody):
             print('file_type: ', file_type)
 
             if file_type == 'csv':
-                docs = load_csv_document(object)
+                docs = load_csv_document(path_doc, object)
                 texts = []
                 for doc in docs:
                     texts.append(doc.page_content)
@@ -2148,7 +2149,7 @@ def getResponse(connectionId, jsonBody):
                             metadata={
                                 'name': object,
                                 #'page':i+1,
-                                'uri': path+parse.quote(object)
+                                'uri': path_doc+parse.quote(object)
                             }
                         )
                     )        
@@ -2170,7 +2171,7 @@ def getResponse(connectionId, jsonBody):
                             print('rag_type: ', type)        
                             if type=='kendra':      
                                 print('upload to kendra: ', object)           
-                                store_document_for_kendra(path, object, documentId)  # store the object into kendra
+                                store_document_for_kendra(path_doc, object, documentId)  # store the object into kendra
                                                 
                             else:
                                 if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
@@ -2191,7 +2192,7 @@ def getResponse(connectionId, jsonBody):
                         print('rag_type: ', rag_type)                
                         if rag_type=='kendra':      
                             print('upload to kendra: ', object)           
-                            store_document_for_kendra(path, object, documentId)  # store the object into kendra
+                            store_document_for_kendra(path_doc, object, documentId)  # store the object into kendra
                                                 
                         else:
                             if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
@@ -2210,7 +2211,7 @@ def getResponse(connectionId, jsonBody):
                                     store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
                             
                 else:                    
-                    p1 = Process(target=store_document_for_kendra, args=(path, object, documentId))
+                    p1 = Process(target=store_document_for_kendra, args=(path_doc, object, documentId))
                     p1.start(); p1.join()
                     
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
@@ -2231,7 +2232,7 @@ def getResponse(connectionId, jsonBody):
                             #p3.start(); p3.join()
                             vectorstore_faiss.add_documents(docs)       
 
-                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(object), category=category, documentId=documentId)
+                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path_doc+parse.quote(object), category=category, documentId=documentId)
                 print('processing time: ', str(time.time() - start_time))
                         
         elapsed_time = int(time.time()) - start
@@ -2239,7 +2240,7 @@ def getResponse(connectionId, jsonBody):
         
         speech_uri = ""
         if speech_generation: # generate mp3 file
-            speech_uri = get_text_speech(path=path, bucket=s3_bucket, msg=msg)
+            speech_uri = get_text_speech(path_speech=path_speech, bucket=s3_bucket, msg=msg)
             print('speech_uri: ', speech_uri)
 
         if reference:
