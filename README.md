@@ -306,7 +306,38 @@ roleKendra.attachInlinePolicy( // add kendra policy
 
 ### Kendra 파일 크기 Quota
 
-[Quota Console - File size](https://ap-northeast-1.console.aws.amazon.com/servicequotas/home/services/kendra/quotas/L-C108EA1B)와 같이 Kendra에 올릴수 있는 파일크기는 50MB로 제한됩니다. 이는 Quota 조정 요청을 위해 적절한 값으로 조정할 수 있습니다. 다만 이 경우에도 파일 한개에서 얻어낼수 있는 Text의 크기는 5MB로 제한됩니다.
+[Quota Console - File size](https://ap-northeast-1.console.aws.amazon.com/servicequotas/home/services/kendra/quotas/L-C108EA1B)와 같이 Kendra에 올릴수 있는 파일크기는 50MB로 제한됩니다. 이는 Quota 조정 요청을 위해 적절한 값으로 조정할 수 있습니다. 다만 이 경우에도 파일 한개에서 얻어낼수 있는 Text의 크기는 5MB로 제한됩니다. msg를 한국어 Speech로 변환한 후에 CloudFront URL을 이용하여 S3에 저장된 Speech를 URI로 공유할 수 있습니다.
+
+### 결과 읽어주기
+
+Amazon Polly를 이용하여 결과를 한국어로 읽어줍니다. [start_speech_synthesis_task](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/start_speech_synthesis_task.html#)을 활용합니다.
+
+```python
+def get_text_speech(path, speech_prefix, bucket, msg):
+    ext = "mp3"
+    polly = boto3.client('polly')
+    try:
+        response = polly.start_speech_synthesis_task(
+            Engine='neural',
+            LanguageCode='ko-KR',
+            OutputFormat=ext,
+            OutputS3BucketName=bucket,
+            OutputS3KeyPrefix=speech_prefix,
+            Text=msg,
+            TextType='text',
+            VoiceId='Seoyeon'        
+        )
+        print('response: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create voice")
+    
+    object = '.'+response['SynthesisTask']['TaskId']+'.'+ext
+    print('object: ', object)
+
+    return path+speech_prefix+parse.quote(object)
+```
 
 ### AWS CDK로 인프라 구현하기
 
