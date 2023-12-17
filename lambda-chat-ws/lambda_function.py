@@ -1943,7 +1943,7 @@ def traslation_to_korean(llm, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
-    pure_msg = translated_msg[translated_msg.find('<result>')+9:translated_msg.rfind('</result>')-10]
+    pure_msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-19]
     print('translated_msg: ', translated_msg)
     print('pure_msg: ', pure_msg)
         
