@@ -1553,9 +1553,13 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('revised_question: ', revised_question)
         if debugMessageMode=='true':
             # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
+            history_context = ""
+            for history in chat_history:
+                history_context = history_context + history
+            token_size = llm.get_num_tokens(history_context)
+            print('token_size of history: ', len(token_size))
 
-            token_history = llm.get_num_tokens(chat_history)
-            sendDebugMessage(connectionId, requestId, f"이전 대화이력({token_history} Token)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
+            sendDebugMessage(connectionId, requestId, f"이전 대화이력({token_size} Tokens)으로 새로운 질문을 만들었습니다. \n새로운 질문: {revised_question}")
             
         PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
