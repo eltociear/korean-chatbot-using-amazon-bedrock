@@ -2034,6 +2034,7 @@ def getResponse(connectionId, jsonBody):
     start = int(time.time())    
 
     msg = ""
+    reference = ""
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
             service_name='bedrock',
@@ -2246,11 +2247,9 @@ def getResponse(connectionId, jsonBody):
 
         if reference:
             msg = msg + reference        
-            if speech_uri:
-                msg = msg + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
-        else:
-            if speech_uri:
-                msg = msg + '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
+        
+        if speech_uri:
+            msg = msg + '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'
 
         print('msg: ', msg)
 
