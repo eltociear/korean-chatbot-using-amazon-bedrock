@@ -1569,6 +1569,8 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     conn.close()
 
 def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
+    global history_length, token_counter_history # debugMessageMode 
+
     history_context = ""
     token_counter_history = 0
     for history in chat_history:
@@ -1972,7 +1974,6 @@ def getResponse(connectionId, jsonBody):
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
-    global history_length, token_counter_history # debugMessageMode 
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2319,7 +2320,7 @@ def getResponse(connectionId, jsonBody):
         speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                
         sendResultMessage(connectionId, requestId, msg+reference+speech)
 
-        if debugMessageMode=='true':
+        if conv_type=='qa' and debugMessageMode=='true':
             statusMsg = f"\nquestion: {str(len(text))}자({token_counter_input}), answer: {str(len(msg))}자({token_counter_output})\n"
             statusMsg = statusMsg + f"history: {str(history_length)}자({token_counter_history})"
 
