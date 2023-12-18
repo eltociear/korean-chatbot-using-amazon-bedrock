@@ -62,6 +62,8 @@ print('capabilities: ', capabilities)
 MSG_LENGTH = 100
 MSG_HISTORY_LENGTH = 20
 speech_generation = True
+history_length = 0
+token_counter_history = 0
 
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
@@ -78,8 +80,6 @@ try:
 
 except Exception as e:
     raise e
-
-
 
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -1570,15 +1570,17 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
 
 def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
     history_context = ""
-    token_size = 0
+    token_counter_history = 0
     for history in chat_history:
         history_context = history_context + history
 
     if history_context:
-        token_size = llm.get_num_tokens(history_context)
-        print('token_size of history: ', token_size)
+        token_counter_history = llm.get_num_tokens(history_context)
+        print('token_size of history: ', token_counter_history)
 
-    sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(len(history_context))}자, {str(token_size)} Tokens)을 활용하였습니다.")
+    history_length = len(history_context)
+
+    sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     reference = ""
@@ -1970,6 +1972,7 @@ def getResponse(connectionId, jsonBody):
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
+    global history_length, token_counter_history # debugMessageMode 
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2312,7 +2315,18 @@ def getResponse(connectionId, jsonBody):
     else:
         selected_LLM = selected_LLM + 1
 
-    return msg, reference, speech_uri
+    if speech_uri:
+        speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                
+        sendResultMessage(connectionId, requestId, msg+reference+speech)
+
+        if debugMessageMode=='true':
+            statusMsg = f"\nquestion: {str(len(text))}자({token_counter_input}), answer: {str(len(msg))}자({token_counter_output})\n"
+            statusMsg = statusMsg + f"history: {str(history_length)}자({token_counter_history})"
+
+            sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
+
+
+    return msg, reference
 
 def lambda_handler(event, context):
     # print('event: ', event)
@@ -2341,12 +2355,10 @@ def lambda_handler(event, context):
 
                 requestId  = jsonBody['request_id']
                 try:
-                    msg, reference, speech_uri = getResponse(connectionId, jsonBody)
-                    
-                    if speech_uri:
-                        speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                
-                        sendResultMessage(connectionId, requestId, msg+reference+speech)
+                    msg, reference = getResponse(connectionId, jsonBody)
 
+                    print('msg+reference: ', msg+reference)
+                                        
                 except Exception:
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
