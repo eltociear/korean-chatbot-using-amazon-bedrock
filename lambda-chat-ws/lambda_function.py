@@ -2041,7 +2041,7 @@ def getResponse(connectionId, jsonBody):
     )    
 
     # create memory
-    if userId in memory_chat:  
+    if userId in map_chat or userId in map_chain:  
         print('memory exist. reuse it!')        
         memory_chain = map_chain[userId]
         memory_chat = map_chat[userId]
