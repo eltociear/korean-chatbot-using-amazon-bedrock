@@ -1638,10 +1638,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             for process in processes:
                 process.join()
             
-        time_for_rag = time.time() - start_time_for_rag
-        print('processing time for RAG: ', time_for_rag)
-        #print('relevant_docs: ', relevant_docs)
-        
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
@@ -1698,6 +1694,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             print('selected_relevant_docs (google): ', selected_relevant_docs)
+
+        time_for_rag = time.time() - start_time_for_rag
+        print('processing time for RAG: ', time_for_rag)
+        #print('relevant_docs: ', relevant_docs)
 
         relevant_context = ""
         for document in selected_relevant_docs:
