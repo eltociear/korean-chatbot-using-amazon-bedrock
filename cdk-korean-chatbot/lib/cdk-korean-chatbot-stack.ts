@@ -78,7 +78,7 @@ const claude_basic = JSON.stringify([
   }
 ]);
 
-const profile_of_LLMs = claude_basic;
+const profile_of_LLMs = claude_instance;
 
 const capabilities = JSON.stringify(["kendra", "opensearch", "faiss"]);
 
