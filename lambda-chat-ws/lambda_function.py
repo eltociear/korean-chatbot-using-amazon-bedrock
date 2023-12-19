@@ -1585,7 +1585,7 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
-    global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search  # for debug
+    global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
 
     reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1701,6 +1701,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         time_for_priority_search = time.time() - time_for_rag
         print('processing time for priority search: ', time_for_priority_search)
+        number_of_relevant_docs = len(selected_relevant_docs)
 
         relevant_context = ""
         for document in selected_relevant_docs:
@@ -2339,8 +2340,8 @@ def getResponse(connectionId, jsonBody):
         if conv_type=='qa' and debugMessageMode=='true':
             statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
-            statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰\n"
-            statusMsg = statusMsg + f"Time: {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_priority_search:.2f}(Priority) {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
+            statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰 ({number_of_relevant_docs})\n"
+            statusMsg = statusMsg + f"Time(초)): {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_priority_search:.2f}(Priority) {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
 
