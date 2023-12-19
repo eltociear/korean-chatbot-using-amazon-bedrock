@@ -1710,7 +1710,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
 
-            time_for_inference = time.time() - start_time_for_inference)
+            time_for_inference = time.time() - start_time_for_inference
             print('processing time for inference: ', time_for_inference)
         except Exception:
             err_msg = traceback.format_exc()
@@ -2333,7 +2333,7 @@ def getResponse(connectionId, jsonBody):
         if conv_type=='qa' and debugMessageMode=='true':
             statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
-            statusMsg = statusMsg + f"RAG: {str(relevant_length)}자({token_counter_relevant_docs}토큰)\n"
+            statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰\n"
             statusMsg = statusMsg + f"Time: {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
