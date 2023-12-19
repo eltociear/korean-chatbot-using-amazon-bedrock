@@ -36,7 +36,6 @@ s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
 callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
-number_of_LLMs = int(os.environ.get('number_of_LLMs'))
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 isReady = False   
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
@@ -2326,7 +2325,7 @@ def getResponse(connectionId, jsonBody):
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
 
-    if selected_LLM >= number_of_LLMs-1:
+    if selected_LLM >= len(profile_of_LLMs)-1:
         selected_LLM = 0
     else:
         selected_LLM = selected_LLM + 1

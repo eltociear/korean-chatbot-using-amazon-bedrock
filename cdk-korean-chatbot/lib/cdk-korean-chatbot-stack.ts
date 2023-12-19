@@ -36,8 +36,6 @@ const useParallelRAG = 'true';
 const numberOfRelevantDocs = '6';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 
-const number_of_LLMs = "2"; // total number of LLMs to use
-
 const claude_instance = JSON.stringify([
   {
     "bedrock_region": "us-west-2", // Oregon
@@ -665,7 +663,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
         kendraMethod: kendraMethod,
-        number_of_LLMs:number_of_LLMs,
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName
