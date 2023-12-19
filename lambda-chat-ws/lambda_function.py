@@ -717,35 +717,16 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
         type = item['type']['S']
 
         if type == 'text':
-            #if debugMessageMode=='true':
-            #    print('Human: ', text)
-            #    print('Assistant: ', msg)        
-
-            #if (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and #rag_type=='faiss' and isReady):
-            #    memory_chain.chat_memory.add_user_message(text)
-            #    memory_chain.chat_memory.add_ai_message(msg)           
-            #elif conv_type=='qa' and rag_type=='faiss' and isReady==False:
-            #    memory_chain.chat_memory.add_user_message(text)
-            #    memory_chain.chat_memory.add_ai_message(msg)  
-
-            #    memory_chat.save_context({"input": text}, {"output": msg})
-            #else:
-            #    memory_chat.save_context({"input": text}, {"output": msg})       
-
-            if conv_type=='qa':
-                memory_chain.chat_memory.add_user_message(text)
-                if len(msg) > MSG_LENGTH:
-                    memory_chain.chat_memory.add_ai_message(msg)        
-                else:
-                    memory_chain.chat_memory.add_ai_message(msg[:MSG_LENGTH])   
-                
-                if rag_type=='faiss' and isReady==False:
-                    memory_chat.save_context({"input": text}, {"output": msg})
+            memory_chain.chat_memory.add_user_message(text)
+            if len(msg) > MSG_LENGTH:
+                memory_chain.chat_memory.add_ai_message(msg[:MSG_LENGTH])                          
             else:
-                if len(msg) > MSG_LENGTH:
-                    memory_chat.save_context({"input": text}, {"output": msg[:MSG_LENGTH]})
-                else:
-                    memory_chat.save_context({"input": text}, {"output": msg})
+                memory_chain.chat_memory.add_ai_message(msg) 
+                
+            if len(msg) > MSG_LENGTH:
+                memory_chat.save_context({"input": text}, {"output": msg[:MSG_LENGTH]})
+            else:
+                memory_chat.save_context({"input": text}, {"output": msg})
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
@@ -2060,47 +2041,26 @@ def getResponse(connectionId, jsonBody):
     )    
 
     # create memory
-    if conv_type=='qa':
-        if userId in map_chain:  
-            memory_chain = map_chain[userId]
-            print('memory_chain exist. reuse it!')
-        else: 
-            # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-            memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=10)
-            map_chain[userId] = memory_chain
-            print('memory_chain does not exist. create new one!')
+    if userId in memory_chat:  
+        print('memory exist. reuse it!')        
+        memory_chain = map_chain[userId]
+        memory_chat = map_chat[userId]
+        
+    else: 
+        print('memory does not exist. create new one!')
+        memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=10)
+        map_chain[userId] = memory_chain
+        
+        memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
+        map_chat[userId] = memory_chat
 
-            allowTime = getAllowTime()
-            load_chat_history(userId, allowTime, conv_type, rag_type)
+        # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        #from langchain.memory import ConversationSummaryBufferMemory
+        #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
+        #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
 
-        if rag_type=='faiss' and isReady==False:
-            if userId in map_chat:  
-                memory_chat = map_chat[userId]
-                print('memory_chat exist. reuse it!')    
-            else: 
-                # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-                memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
-                #from langchain.memory import ConversationSummaryBufferMemory
-                #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
-                #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
-   
-            map_chat[userId] = memory_chat
-            print('memory_chat does not exist. create new one!')                        
-            conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
-
-    else:    # normal 
-        if userId in map_chat:  
-            memory_chat = map_chat[userId]
-            print('memory_chat exist. reuse it!')
-        else:
-            # memory_chat = ConversationBufferMemory(human_prefix='Human', ai_prefix='Assistant')
-            memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
-            map_chat[userId] = memory_chat
-            print('memory_chat does not exist. create new one!')        
-
-            allowTime = getAllowTime()
-            load_chat_history(userId, allowTime, conv_type, rag_type)
-
+        allowTime = getAllowTime()
+        load_chat_history(userId, allowTime, conv_type, rag_type)
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
 
     # rag sources
