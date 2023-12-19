@@ -2341,7 +2341,7 @@ def getResponse(connectionId, jsonBody):
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰 ({number_of_relevant_docs})\n"
 
-            statusMsg = statusMsg + f"Time(초)): "            
+            statusMsg = statusMsg + f"Time(초): "            
             if time_for_revise != 0:
                 statusMsg = statusMsg + f"{time_for_revise:.2f}(Revise), "
             if time_for_rag != 0:
