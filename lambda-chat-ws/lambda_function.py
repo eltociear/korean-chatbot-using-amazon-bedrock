@@ -1585,7 +1585,7 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
-    global time_for_revise, time_for_rag, time_for_inference # for debug
+    global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search  # for debug
 
     reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1637,7 +1637,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             for process in processes:
                 process.join()
-            
+        #print('relevant_docs: ', relevant_docs)
+
+        time_for_rag = time.time() - start_time_for_rag
+        print('processing time for RAG: ', time_for_rag)
+
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
@@ -1695,9 +1699,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             print('selected_relevant_docs (google): ', selected_relevant_docs)
 
-        time_for_rag = time.time() - start_time_for_rag
-        print('processing time for RAG: ', time_for_rag)
-        #print('relevant_docs: ', relevant_docs)
+        time_for_priority_search = time.time() - time_for_rag
+        print('processing time for priority search: ', time_for_priority_search)
 
         relevant_context = ""
         for document in selected_relevant_docs:
@@ -1705,12 +1708,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('relevant_context: ', relevant_context)
 
         try: 
-            start_time_for_inference = time.time()
             isTyping(connectionId, requestId)
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
 
-            time_for_inference = time.time() - start_time_for_inference
+            time_for_inference = time.time() - time_for_priority_search
             print('processing time for inference: ', time_for_inference)
         except Exception:
             err_msg = traceback.format_exc()
@@ -2338,7 +2340,7 @@ def getResponse(connectionId, jsonBody):
             statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰\n"
-            statusMsg = statusMsg + f"Time: {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
+            statusMsg = statusMsg + f"Time: {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_priority_search:.2f}(Priority) {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
 
