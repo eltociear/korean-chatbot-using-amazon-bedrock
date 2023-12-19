@@ -1765,6 +1765,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
+            number_of_relevant_docs = len(source_documents)
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
             start_time_for_rag = time.time()
@@ -1803,6 +1804,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - start_time_for_rag
             print('processing time for RAG: ', time_for_rag)
+            number_of_relevant_docs = len(result['source_documents'])
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             start_time_for_revise = time.time()
@@ -1827,6 +1829,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
+            number_of_relevant_docs = len(relevant_docs)
 
             relevant_context = ""
             for document in relevant_docs:
