@@ -1595,7 +1595,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             
         PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
-        time_for_revise = str(time.time() - start_time_for_revise)
+        time_for_revise = time.time() - start_time_for_revise
         print('processing time for revise question: ', time_for_revise)
 
         relevant_docs = []
@@ -1638,7 +1638,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             for process in processes:
                 process.join()
             
-        time_for_rag = str(time.time() - start_time_for_rag)
+        time_for_rag = time.time() - start_time_for_rag
         print('processing time for RAG: ', time_for_rag)
         #print('relevant_docs: ', relevant_docs)
         
@@ -1710,7 +1710,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)
 
-            time_for_inference = str(time.time() - start_time_for_inference)
+            time_for_inference = time.time() - start_time_for_inference)
             print('processing time for inference: ', time_for_inference)
         except Exception:
             err_msg = traceback.format_exc()
@@ -1831,6 +1831,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             if len(relevant_docs)>=1 and enableReference=='true':
                 reference = get_reference(relevant_docs, rag_method, rag_type, path, doc_prefix)
+
+    global relevant_length, token_counter_relevant_docs
+    relevant_length = len(relevant_context)
+    token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
 
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -2284,7 +2288,7 @@ def getResponse(connectionId, jsonBody):
         sendResultMessage(connectionId, requestId, msg+reference)
         print('msg+reference: ', msg+reference)
 
-        elapsed_time = str(int(time.time()) - start)
+        elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
         if isKorean(msg):
@@ -2327,12 +2331,12 @@ def getResponse(connectionId, jsonBody):
         sendResultMessage(connectionId, requestId, msg+reference+speech)
 
         if conv_type=='qa' and debugMessageMode=='true':
-            statusMsg = f"\nquestion: {str(len(text))}자 / {token_counter_input}Tokens, answer: {str(len(msg))}자 / ({token_counter_output}Tokens)\n"
-            statusMsg = statusMsg + f"history: {str(history_length)}자({token_counter_history})"
-            statusMsg = statusMsg + f"time: {time_for_revise}(revise), {time_for_rag}(RAG), {time_for_inference}(inference), {elapsed_time}(totoal)"
+            statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
+            statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
+            statusMsg = statusMsg + f"RAG: {str(relevant_length)}자({token_counter_relevant_docs}토큰)\n"
+            statusMsg = statusMsg + f"Time: {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
-
 
     return msg, reference
 
