@@ -2031,6 +2031,9 @@ def getResponse(connectionId, jsonBody):
             map_chain[userId] = memory_chain
             print('memory_chain does not exist. create new one!')
 
+            allowTime = getAllowTime()
+            load_chat_history(userId, allowTime, conv_type, rag_type)
+
         if rag_type=='faiss' and isReady==False:
             if userId in map_chat:  
                 memory_chat = map_chat[userId]
@@ -2055,10 +2058,11 @@ def getResponse(connectionId, jsonBody):
             memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
             map_chat[userId] = memory_chat
             print('memory_chat does not exist. create new one!')        
+
+            allowTime = getAllowTime()
+            load_chat_history(userId, allowTime, conv_type, rag_type)
+
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
-        
-    allowTime = getAllowTime()
-    load_chat_history(userId, allowTime, conv_type, rag_type)
 
     # rag sources
     if conv_type == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
