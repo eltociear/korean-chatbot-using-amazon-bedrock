@@ -2373,7 +2373,7 @@ def getResponse(connectionId, jsonBody):
         speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                
         sendResultMessage(connectionId, requestId, msg+reference+speech)
 
-        if conv_type=='qa' and debugMessageMode=='true' and not(rag_type=='faiss' and isReady==False): 
+        if conv_type=='qa' and debugMessageMode=='true' and reference: 
             statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰 ({number_of_relevant_docs})\n"
