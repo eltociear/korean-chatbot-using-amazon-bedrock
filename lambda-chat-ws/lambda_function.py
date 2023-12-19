@@ -2137,13 +2137,11 @@ def getResponse(connectionId, jsonBody):
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'clearMemory':
-                if conv_type == "qa": 
-                    memory_chain.clear()
-                    map_chain[userId] = memory_chain
-                else:
-                    memory_chat.clear()                
-                    map_chat[userId] = memory_chat
-                    conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+                memory_chain.clear()
+                map_chain[userId] = memory_chain
+                memory_chat.clear()                
+                map_chat[userId] = memory_chat
+                conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
                     
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
