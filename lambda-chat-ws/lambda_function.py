@@ -2048,6 +2048,7 @@ def getResponse(connectionId, jsonBody):
         print('memory exist. reuse it!')        
         memory_chain = map_chain[userId]
         memory_chat = map_chat[userId]
+        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     else: 
         print('memory does not exist. create new one!')
