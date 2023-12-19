@@ -1586,20 +1586,21 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
-
+    time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
+    
     reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
 
-        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history        
-            
+        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history                    
         PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
         # print('PROMPT: ', PROMPT)        
-        time_for_revise = time.time() - start_time_for_revise
-        print('processing time for revise question: ', time_for_revise)
 
-        relevant_docs = []
-        start_time_for_rag = time.time()
+        end_time_for_revise = time.time()
+        time_for_revise = end_time_for_revise - start_time_for_revise
+        print('processing time for revised question: ', time_for_revise)
+
+        relevant_docs = []        
         if useParallelRAG == 'false':
             print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
@@ -1639,7 +1640,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 process.join()
         #print('relevant_docs: ', relevant_docs)
 
-        time_for_rag = time.time() - start_time_for_rag
+        end_time_for_rag = time.time()
+        time_for_rag = end_time_for_rag - end_time_for_revise
         print('processing time for RAG: ', time_for_rag)
 
         selected_relevant_docs = []
@@ -1699,7 +1701,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             print('selected_relevant_docs (google): ', selected_relevant_docs)
 
-        time_for_priority_search = time.time() - time_for_rag
+        end_time_for_priority_search = time.time() 
+        time_for_priority_search = end_time_for_priority_search - end_time_for_revise
         print('processing time for priority search: ', time_for_priority_search)
         number_of_relevant_docs = len(selected_relevant_docs)
 
@@ -1711,10 +1714,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         try: 
             isTyping(connectionId, requestId)
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-            msg = readStreamMsg(connectionId, requestId, stream)
-
-            time_for_inference = time.time() - time_for_priority_search
-            print('processing time for inference: ', time_for_inference)
+            msg = readStreamMsg(connectionId, requestId, stream)            
         except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
@@ -1722,12 +1722,23 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             raise Exception ("Not able to request to LLM")    
 
         if len(selected_relevant_docs)>=1 and enableReference=='true':
-            reference = get_reference(selected_relevant_docs, rag_method, rag_type, path, doc_prefix)        
+            reference = get_reference(selected_relevant_docs, rag_method, rag_type, path, doc_prefix)  
+
+        end_time_for_inference = time.time()
+        time_for_inference = end_time_for_inference - end_time_for_priority_search
+        print('processing time for inference: ', time_for_inference)
         
-    else:
+    else:        
         if rag_method == 'RetrievalQA': # RetrievalQA
+            start_time_for_revise = time.time()
+
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
 
+            end_time_for_revise = time.time()
+            time_for_revise = end_time_for_revise - start_time_for_revise
+            print('processing time for revised question: ', time_for_revise)
+
+            start_time_for_rag = time.time()
             PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
@@ -1769,8 +1780,14 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             if len(source_documents)>=1 and enableReference=='true':
                 reference = get_reference(source_documents, rag_method, rag_type, path, doc_prefix)    
+            
+            end_time_for_rag = time.time()
+            time_for_rag = end_time_for_rag - end_time_for_revise
+            print('processing time for RAG: ', time_for_rag)
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
+            start_time_for_rag = time.time()
+
             PROMPT = get_prompt_template(text, conv_type, rag_type)
             if rag_type == 'kendra':
                 qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
@@ -1801,10 +1818,20 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             if len(result['source_documents'])>=1 and enableReference=='true':
                 reference = get_reference(result['source_documents'], rag_method, rag_type, path, doc_prefix)
+            
+            end_time_for_rag = time.time()
+            time_for_rag = end_time_for_rag - start_time_for_rag
+            print('processing time for RAG: ', time_for_rag)
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
+            start_time_for_revise = time.time()
+
             revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
             
+            end_time_for_revise = time.time()
+            time_for_revise = end_time_for_revise - start_time_for_revise
+            print('processing time for revised question: ', time_for_revise)
+
             PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
             #print('PROMPT: ', PROMPT)
 
@@ -1815,6 +1842,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             else:
                 relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
+
+            end_time_for_rag = time.time()
+            time_for_rag = end_time_for_rag - end_time_for_revise
+            print('processing time for RAG: ', time_for_rag)
 
             relevant_context = ""
             for document in relevant_docs:
@@ -1834,11 +1865,13 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             if len(relevant_docs)>=1 and enableReference=='true':
                 reference = get_reference(relevant_docs, rag_method, rag_type, path, doc_prefix)
+            
+            end_time_for_inference = time.time()
+            time_for_inference = end_time_for_inference - end_time_for_rag
+            print('processing time for inference: ', time_for_inference)
 
     global relevant_length, token_counter_relevant_docs
-    relevant_length = len(relevant_context)
-    token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
-
+    
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
         # print('chat_history_all: ', chat_history_all)
@@ -1847,6 +1880,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         for history in chat_history_all:
             history_length.append(len(history))
         print('chat_history length: ', history_length)
+
+        relevant_length = len(relevant_context)
+        token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -2341,7 +2377,17 @@ def getResponse(connectionId, jsonBody):
             statusMsg = f"\n[통계]\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰 ({number_of_relevant_docs})\n"
-            statusMsg = statusMsg + f"Time(초)): {time_for_revise:.2f}(Revise), {time_for_rag:.2f}(RAG), {time_for_priority_search:.2f}(Priority) {time_for_inference:.2f}(Inference), {elapsed_time:.2f}(전체)"
+
+            statusMsg = statusMsg + f"Time(초)): "            
+            if time_for_revise != 0:
+                statusMsg = statusMsg + f"{time_for_revise:.2f}(Revise), "
+            if time_for_rag != 0:
+                statusMsg = statusMsg + f"{time_for_rag:.2f}(RAG), "
+            if time_for_priority_search != 0:
+                statusMsg = statusMsg + f"{time_for_priority_search:.2f}(Priority) "
+            if time_for_inference != 0:
+                statusMsg = statusMsg + f"{time_for_inference:.2f}(Inference), "
+            statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
 
