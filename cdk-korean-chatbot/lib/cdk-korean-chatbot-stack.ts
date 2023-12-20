@@ -22,7 +22,8 @@ const stage = 'dev';
 const s3_prefix = 'docs';
 const projectName = `korean-chatbot`; 
 const bucketName = `storage-for-${projectName}-${region}`; 
-const kendra_region = "us-west-2"; 
+// const kendra_region = "us-west-2"; 
+const kendra_region = process.env.CDK_DEFAULT_REGION;   
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
