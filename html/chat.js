@@ -110,6 +110,7 @@ function connect(endpoint, type) {
 
         if(undelivered.size() && retry_count>0) {
             let keys = undelivered.getKeys();
+            console.log('retry undelived messags!');            
             console.log('keys: ', keys);
             console.log('retry_count: ', retry_count);
 
