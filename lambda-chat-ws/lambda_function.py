@@ -503,19 +503,26 @@ def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
     index_name = "rag-index-"+parse.quote(documentId)
     print('index_name: ', index_name)
 
-    response = vectorstore_opensearch.delete([index_name]) # to prevent duplication of document
-    print('response of deletion of index: ', response)
+    #response = vectorstore_opensearch.delete([index_name]) # to prevent duplication of document
+    #print('response of deletion of index: ', response)
 
     print('store document into opensearch')
-    new_vectorstore = OpenSearchVectorSearch(
-        index_name=index_name,  
-        is_aoss = False,
-        #engine="faiss",  # default: nmslib
-        embedding_function = bedrock_embeddings,
-        opensearch_url = opensearch_url,
-        http_auth=(opensearch_account, opensearch_passwd),
-    )
-    new_vectorstore.add_documents(docs)    
+    try:
+        new_vectorstore = OpenSearchVectorSearch(
+            index_name=index_name,  
+            is_aoss = False,
+            #engine="faiss",  # default: nmslib
+            embedding_function = bedrock_embeddings,
+            opensearch_url = opensearch_url,
+            http_auth=(opensearch_account, opensearch_passwd),
+        )
+        response = new_vectorstore.add_documents(docs)
+        print('response of adding documents: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        raise Exception ("Not able to request to LLM")
+
     print('uploaded into opensearch')
     
 # store document into Kendra
