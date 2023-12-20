@@ -51,14 +51,13 @@ let isResponsed = new HashMap();
 let indexList = new HashMap();
 let retryNum = new HashMap();
 
-let undelivered = new HashMap();
-
 // message log list
 let msglist = [];
 let maxMsgItems = 200;
 // let msgHistory = new HashMap();
 let sentTime = new HashMap();
 
+let undelivered = new HashMap();
 let retry_count = 0;
 function sendMessage(message) {
     if(!isConnected) {

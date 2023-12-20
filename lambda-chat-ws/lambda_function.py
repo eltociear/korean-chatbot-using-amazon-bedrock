@@ -2213,8 +2213,9 @@ def getResponse(connectionId, jsonBody):
                     print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
                 
         elif type == 'document':
-            object = body
-
+            isTyping(connectionId, requestId)
+            
+            object = body            
             file_type = object[object.rfind('.')+1:len(object)]            
             print('file_type: ', file_type)
 
