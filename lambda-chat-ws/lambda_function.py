@@ -589,17 +589,13 @@ def load_document(file_type, s3_file_name):
         texts = []
         for page in reader.pages:
             texts.append(page.extract_text())
-
-        if len(texts)>0:
-            print('texts[0]: ', texts[0])
-        else:
-            print('No texts')
+        contents = '\n'.join(texts)
         
     elif file_type == 'pptx':
-        contents = doc.get()['Body'].read()
+        Byte_contents = doc.get()['Body'].read()
             
         from pptx import Presentation
-        prs = Presentation(BytesIO(contents))
+        prs = Presentation(BytesIO(Byte_contents))
 
         texts = []
         for i, slide in enumerate(prs.slides):
@@ -608,6 +604,7 @@ def load_document(file_type, s3_file_name):
                 if shape.has_text_frame:
                     text = text + shape.text
             texts.append(text)
+        contents = '\n'.join(texts)
         
     elif file_type == 'txt':        
         contents = doc.get()['Body'].read().decode('utf-8')
@@ -622,9 +619,8 @@ def load_document(file_type, s3_file_name):
         for i, para in enumerate(doc_contents.paragraphs):
             if(para.text):
                 texts.append(para.text)
-                # print(f"{i}: {para.text}")
-        
-    contents = '\n'.join(texts)
+                # print(f"{i}: {para.text}")        
+        contents = '\n'.join(texts)
             
     # print('contents: ', contents)
     new_contents = str(contents).replace("\n"," ") 
