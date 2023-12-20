@@ -77,6 +77,9 @@ function sendMessage(message) {
         undelivered.put(message.request_id, message);
         console.log('undelivered message: ', message);
 
+        let msg = undelivered.get(message.request_id)
+        console.log('msg: ', msg);
+
         let map = undelivered.getAll()
         console.log('map: ', map);
 
