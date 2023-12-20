@@ -593,6 +593,17 @@ def load_document(file_type, s3_file_name):
         
     elif file_type == 'txt':        
         contents = doc.get()['Body'].read().decode('utf-8')
+
+    elif file_type == 'pptx':
+        contents = doc.get()['Body'].read()
+        
+        from pptx import Presentation
+        prs = Presentation(BytesIO(contents))
+
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    print(shape.text)
         
     # print('contents: ', contents)
     new_contents = str(contents).replace("\n"," ") 
@@ -2192,7 +2203,7 @@ def getResponse(connectionId, jsonBody):
 
                 msg = get_summary(llm, texts)
 
-            elif file_type == 'pdf' or file_type == 'txt':
+            elif file_type == 'pdf' or file_type == 'txt' or 'pptx':
                 texts = load_document(file_type, object)
 
                 docs = []
