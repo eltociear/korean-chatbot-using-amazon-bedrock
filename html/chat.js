@@ -29,6 +29,7 @@ HashMap.prototype = {
         return this.map[key];
     },
     getAll: function() {
+
         return this.map;
     },
     clear: function() {
@@ -82,6 +83,9 @@ function sendMessage(message) {
 
         let keys = undelivered.getKeys()
         console.log('keys: ', keys);
+
+        let key_length = keys.length
+        console.log('key_length: ', key_length);
 
 
 
