@@ -2249,7 +2249,7 @@ def getResponse(connectionId, jsonBody):
                                 store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
                                                 
                             else:
-                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
                                     if type == 'faiss':
                                         if isReady == False:   
                                             embeddings = bedrock_embeddings
@@ -2270,7 +2270,7 @@ def getResponse(connectionId, jsonBody):
                             store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
                                                 
                         else:
-                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
                                 if rag_type == 'faiss':
                                     if isReady == False:   
                                         embeddings = bedrock_embeddings
@@ -2289,7 +2289,7 @@ def getResponse(connectionId, jsonBody):
                     p1 = Process(target=store_document_for_kendra, args=(path, doc_prefix, object, documentId))
                     p1.start(); p1.join()
                     
-                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv':
+                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
                         # opensearch
                         p2 = Process(target=store_document_for_opensearch, args=(bedrock_embeddings, docs, userId, documentId,))
                         p2.start(); p2.join()
