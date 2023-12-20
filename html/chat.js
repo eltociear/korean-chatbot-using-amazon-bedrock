@@ -116,14 +116,14 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        let size = undelivered.size()
-        console.log('size: ', size);
-
         if(undelivered.size()) {
             let keys = undelivered.getKeys();
             console.log('keys: ', keys);
 
             for(i in keys) {
+                console.log('i: ', i);
+                console.log('key: ', keys[i]);
+
                 message = undelivered.get(keys[i])
                 print('message', message)
                 if(sendMessage(message)) break;
