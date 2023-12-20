@@ -35,6 +35,8 @@ HashMap.prototype = {
         return this.map;
     },
     isEmpty: function() {
+        console.log('size: ', this.map.size());
+        
         return (this.map.size()==0);
     },
     remove: function(key) {
