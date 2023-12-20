@@ -61,7 +61,6 @@ let sentTime = new HashMap();
 
 let retry_count = 0;
 function sendMessage(message) {
-    isConnected = false;
     if(!isConnected) {
         console.log('reconnect...'); 
         webSocket = connect(endpoint, 'reconnect');
