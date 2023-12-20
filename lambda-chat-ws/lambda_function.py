@@ -589,9 +589,9 @@ def load_document(file_type, s3_file_name):
         raw_text = []
         for page in reader.pages:
             raw_text.append(page.extract_text())
-        contents = '\n'.join(raw_text)    
+        texts = '\n'.join(raw_text)    
 
-        if len(contents)>0:
+        if len(texts)>0:
             print('texts[0]: ', texts[0])
         else:
             print('No texts')
