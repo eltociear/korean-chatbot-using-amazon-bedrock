@@ -596,7 +596,7 @@ def load_document(file_type, s3_file_name):
         else:
             print('No texts')
 
-        return contents
+        return texts
     else:    
         if file_type == 'txt':        
             contents = doc.get()['Body'].read().decode('utf-8')
