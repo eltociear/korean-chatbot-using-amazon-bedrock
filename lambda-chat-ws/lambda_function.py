@@ -499,13 +499,10 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     print('uploaded into faiss')
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    index_name = "rag-index-"+userId+'-'+documentId
+    #index_name = "rag-index-"+userId+'-'+documentId
+    index_name = "rag-index-"+userId
     print('index_name: ', index_name)
 
-    #response = vectorstore_opensearch.delete([index_name]) # to prevent duplication of document
-    #print('response of deletion of index: ', response)
-
-    print('store document into opensearch')
     try:
         new_vectorstore = OpenSearchVectorSearch(
             index_name=index_name,  

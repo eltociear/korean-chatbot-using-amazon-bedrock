@@ -53,6 +53,8 @@ let isResponsed = new HashMap();
 let indexList = new HashMap();
 let retryNum = new HashMap();
 
+let undelivered = new HashMap();
+
 // message log list
 let msglist = [];
 let maxMsgItems = 200;
@@ -65,15 +67,21 @@ function sendMessage(message) {
         webSocket = connect(endpoint, 'reconnect');
         
         if(langstate=='korean') {
-            addNotifyMessage("재연결중입니다. 잠시후 다시시도하세요.");
+            addNotifyMessage("재연결중입니다. 연결후 자동 재전송합니다.");
         }
         else {
-            addNotifyMessage("We are connecting again. Please wait a few seconds.");                        
+            addNotifyMessage("We are connecting again. Your message will be retried after connection.");                        
         }
+
+        undelivered.put(message.request_id, message);
+
+        return false
     }
     else {
         webSocket.send(JSON.stringify(message));     
         console.log('message: ', message);   
+
+        return true;
     }     
 }
 
@@ -98,6 +106,18 @@ function connect(endpoint, type) {
     ws.onopen = function () {
         console.log('connected...');
         isConnected = true;
+
+        if(!undelivered.isEmpty()) {
+            let messages = undelivered.getAll();
+            console.log('undelivered: ', messages);
+
+            for(i in messages) {
+                if(!sendMessage(messages[i])) break;
+                else {
+                    undelivered.remove(messages[i].request_id)
+                }
+            }
+        }
 
         if(type == 'initial')
             setInterval(ping, 40000);  // ping interval: 40 seconds
