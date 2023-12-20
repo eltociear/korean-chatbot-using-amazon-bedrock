@@ -77,6 +77,9 @@ function sendMessage(message) {
         undelivered.put(message.request_id, message);
         console.log('undelivered message: ', message);
 
+        let map = undelivered.getAll()
+        console.log('map: ', map);
+
         return false
     }
     else {
@@ -110,6 +113,7 @@ function connect(endpoint, type) {
         isConnected = true;
 
         let map = undelivered.getAll()
+        console.log('map: ', map);
         console.log('undelivered messages: ', map.length);
 
         if(!undelivered.isEmpty()) {
