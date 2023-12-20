@@ -73,12 +73,8 @@ function sendMessage(message) {
             addNotifyMessage("We are connecting again. Your message will be retried after connection.");                        
         }
 
-        if(retry_count>0) {
-            undelivered.put(message.request_id, message);
-            console.log('undelivered message: ', message);
-
-            retry_count--;
-        }        
+        undelivered.put(message.request_id, message);
+        console.log('undelivered message: ', message);
         
         return false
     }
@@ -125,6 +121,7 @@ function connect(endpoint, type) {
                     undelivered.remove(message.request_id)
                 }
             }
+            retry_count--;
         }
         else {
             retry_count = 3
