@@ -586,10 +586,9 @@ def load_document(file_type, s3_file_name):
         Byte_contents = doc.get()['Body'].read()
         reader = PyPDF2.PdfReader(BytesIO(Byte_contents))
         
-        raw_text = []
+        texts = []
         for page in reader.pages:
-            raw_text.append(page.extract_text())
-        texts = '\n'.join(raw_text)    
+            texts.append(page.extract_text())
 
         if len(texts)>0:
             print('texts[0]: ', texts[0])
