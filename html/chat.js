@@ -116,9 +116,8 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        let map = undelivered.getAll()
-        console.log('map: ', map);
-        console.log('undelivered messages: ', map.length);
+        let size = undelivered.size()
+        console.log('size: ', size);
 
         if(undelivered.size()) {
             let keys = undelivered.getKeys();
