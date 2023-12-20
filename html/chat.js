@@ -75,15 +75,6 @@ function sendMessage(message) {
         undelivered.put(message.request_id, message);
         console.log('undelivered message: ', message);
 
-        let msg = undelivered.get(message.request_id)
-        console.log('msg: ', msg);
-
-        let keys = undelivered.getKeys()
-        console.log('keys: ', keys);
-
-        let size = undelivered.size()
-        console.log('size: ', size);
-
         return false
     }
     else {
@@ -121,12 +112,9 @@ function connect(endpoint, type) {
             console.log('keys: ', keys);
 
             for(i in keys) {
-                console.log('i: ', i);
-                console.log('key: ', keys[i]);
-
                 let message = undelivered.get(keys[i])
                 console.log('message', message)
-                if(sendMessage(message)) break;
+                if(!sendMessage(message)) break;
                 else {
                     undelivered.remove(message.request_id)
                 }
