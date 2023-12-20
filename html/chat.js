@@ -59,6 +59,7 @@ let maxMsgItems = 200;
 // let msgHistory = new HashMap();
 let sentTime = new HashMap();
 
+let retry_count = 0;
 function sendMessage(message) {
     isConnected = false;
     if(!isConnected) {
@@ -72,9 +73,12 @@ function sendMessage(message) {
             addNotifyMessage("We are connecting again. Your message will be retried after connection.");                        
         }
 
-        undelivered.put(message.request_id, message);
-        console.log('undelivered message: ', message);
+        if(retry_count>0) {
+            undelivered.put(message.request_id, message);
+            console.log('undelivered message: ', message);
 
+            retry_count--;
+        }
         return false
     }
     else {
@@ -119,6 +123,9 @@ function connect(endpoint, type) {
                     undelivered.remove(message.request_id)
                 }
             }
+        }
+        else {
+            retry_count = 3
         }
 
         if(type == 'initial')
