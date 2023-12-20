@@ -78,7 +78,8 @@ function sendMessage(message) {
             console.log('undelivered message: ', message);
 
             retry_count--;
-        }
+        }        
+        
         return false
     }
     else {
@@ -111,7 +112,7 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        if(undelivered.size()) {
+        if(undelivered.size() && retry_count>0) {
             let keys = undelivered.getKeys();
             console.log('keys: ', keys);
 
