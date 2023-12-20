@@ -125,7 +125,7 @@ function connect(endpoint, type) {
                 console.log('key: ', keys[i]);
 
                 let message = undelivered.get(keys[i])
-                print('message', message)
+                console.log('message', message)
                 if(sendMessage(message)) break;
                 else {
                     undelivered.remove(message.request_id)
