@@ -511,6 +511,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
     )
     new_vectorstore.add_documents(docs)    
     print('uploaded into opensearch')
+    print('index_name: ', f"rag-index-{documentId}")
 
 # store document into Kendra
 def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
