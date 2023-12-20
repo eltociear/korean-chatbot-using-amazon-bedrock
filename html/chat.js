@@ -75,6 +75,7 @@ function sendMessage(message) {
         }
 
         undelivered.put(message.request_id, message);
+        console.log('undelivered message: ', message);
 
         return false
     }
