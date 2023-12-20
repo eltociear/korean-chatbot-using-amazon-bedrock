@@ -80,10 +80,10 @@ function sendMessage(message) {
         let msg = undelivered.get(message.request_id)
         console.log('msg: ', msg);
 
-        let all = undelivered.getAll()
-        console.log('map: ', all.map);
+        let map = undelivered.getAll()
+        console.log('map[0]: ', map[0]);
 
-        console.log('map size: ', all.map.length);
+        console.log('map size: ', map.length);
 
         return false
     }
