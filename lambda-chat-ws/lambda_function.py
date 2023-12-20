@@ -614,6 +614,17 @@ def load_document(file_type, s3_file_name):
                         raw_text.append(shape.text)
             contents = '\n'.join(raw_text)
             print('pptx contents: ', contents)
+        
+        elif file_type == 'docs':
+            contents = doc.get()['Body'].read()
+            
+            import docx as Document
+            doc = Document(BytesIO(contents))
+
+            fullText = []
+            for para in doc.paragraphs:
+                fullText.append(para.text)
+            contents = '\n'.join(fullText)
             
         # print('contents: ', contents)
         new_contents = str(contents).replace("\n"," ") 
@@ -2214,7 +2225,7 @@ def getResponse(connectionId, jsonBody):
 
                 msg = get_summary(llm, texts)
 
-            elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx':
+            elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
 
                 docs = []
@@ -2250,7 +2261,7 @@ def getResponse(connectionId, jsonBody):
                                 store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
                                                 
                             else:
-                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
+                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                                     if type == 'faiss':
                                         if isReady == False:   
                                             embeddings = bedrock_embeddings
@@ -2271,7 +2282,7 @@ def getResponse(connectionId, jsonBody):
                             store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
                                                 
                         else:
-                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
+                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                                 if rag_type == 'faiss':
                                     if isReady == False:   
                                         embeddings = bedrock_embeddings
@@ -2290,7 +2301,7 @@ def getResponse(connectionId, jsonBody):
                     p1 = Process(target=store_document_for_kendra, args=(path, doc_prefix, object, documentId))
                     p1.start(); p1.join()
                     
-                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx':
+                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                         # opensearch
                         p2 = Process(target=store_document_for_opensearch, args=(bedrock_embeddings, docs, userId, documentId,))
                         p2.start(); p2.join()
