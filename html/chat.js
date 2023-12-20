@@ -62,6 +62,7 @@ let maxMsgItems = 200;
 let sentTime = new HashMap();
 
 function sendMessage(message) {
+    isConnected = false;
     if(!isConnected) {
         console.log('reconnect...'); 
         webSocket = connect(endpoint, 'reconnect');
