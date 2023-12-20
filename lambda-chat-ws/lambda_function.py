@@ -578,7 +578,7 @@ def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
     print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
-def load_document(file_type, s3_file_name, path, doc_prefix):
+def load_document(file_type, s3_file_name):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
     
@@ -594,20 +594,7 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
             print('texts[0]: ', texts[0])
         else:
             print('No texts')
-
-        docs = []
-        for i in range(len(texts)):
-            docs.append(
-                Document(
-                    page_content=texts[i],
-                    metadata={
-                        'name': s3_file_name,
-                        'page':i+1,
-                        'uri': path+doc_prefix+parse.quote(s3_file_name)
-                    }
-                )
-            )  
-        return docs
+        
     elif file_type == 'pptx':
         contents = doc.get()['Body'].read()
             
@@ -619,72 +606,40 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
             text = ""
             for shape in slide.shapes:
                 if shape.has_text_frame:
-                    #raw_text.append(shape.text)
-                    #text = '\n'.join(shape.text)
                     text = text + shape.text
             texts.append(text)
-            print(f"{i}: {text}")
         
-        docs = []
-        for i in range(len(texts)):
-            docs.append(
-                Document(
-                    page_content=texts[i],
-                    metadata={
-                        'name': s3_file_name,
-                        'page':i+1,
-                        'uri': path+doc_prefix+parse.quote(s3_file_name)
-                    }
-                )
-            )  
-        return docs
-    else:    
-        if file_type == 'txt':        
-            contents = doc.get()['Body'].read().decode('utf-8')
+    elif file_type == 'txt':        
+        contents = doc.get()['Body'].read().decode('utf-8')
 
-        elif file_type == 'docx':
-            Byte_contents = doc.get()['Body'].read()
+    elif file_type == 'docx':
+        Byte_contents = doc.get()['Body'].read()
             
-            import docx
-            doc_contents =docx.Document(BytesIO(Byte_contents))
+        import docx
+        doc_contents =docx.Document(BytesIO(Byte_contents))
 
-            texts = []
-            for i, para in enumerate(doc_contents.paragraphs):
-                if(para.text):
-                    texts.append(para.text)
-                    print(f"{i}: {para.text}")
-            contents = '\n'.join(texts)
+        texts = []
+        for i, para in enumerate(doc_contents.paragraphs):
+            if(para.text):
+                texts.append(para.text)
+                # print(f"{i}: {para.text}")
+        
+    contents = '\n'.join(texts)
             
-        # print('contents: ', contents)
-        new_contents = str(contents).replace("\n"," ") 
-        print('length: ', len(new_contents))
+    # print('contents: ', contents)
+    new_contents = str(contents).replace("\n"," ") 
+    print('length: ', len(new_contents))
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=100,
-            separators=["\n\n", "\n", ".", " ", ""],
-            length_function = len,
-        ) 
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=100,
+        separators=["\n\n", "\n", ".", " ", ""],
+        length_function = len,
+    ) 
 
-        texts = text_splitter.split_text(new_contents) 
-        if len(new_contents)>0:
-            print('texts[0]: ', texts[0])
-        else:
-            print('No texts')
+    texts = text_splitter.split_text(new_contents) 
                 
-        docs = []
-        for i in range(len(texts)):
-            docs.append(
-                Document(
-                    page_content=texts[i],
-                    metadata={
-                        'name': s3_file_name,
-                        #'page':i+1,
-                        'uri': path+doc_prefix+parse.quote(s3_file_name)
-                    }
-                )
-            )  
-        return docs
+    return texts
 
 # load csv documents from s3
 def load_csv_document(path, doc_prefix, s3_file_name):
@@ -2259,25 +2214,37 @@ def getResponse(connectionId, jsonBody):
 
             if file_type == 'csv':
                 docs = load_csv_document(path, doc_prefix, object)
-                texts = []
+                contexts = []
                 for doc in docs:
-                    texts.append(doc.page_content)
-                print('texts: ', texts)
+                    contexts.append(doc.page_content)
+                print('contexts: ', contexts)
 
-                msg = get_summary(llm, texts)
+                msg = get_summary(llm, contexts)
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
-                docs = load_document(file_type, object, path, doc_prefix)
-                      
+                texts = load_document(file_type, object)
+
+                docs = []
+                for i in range(len(texts)):
+                    docs.append(
+                        Document(
+                            page_content=texts[i],
+                            metadata={
+                                'name': object,
+                                # 'page':i+1,
+                                'uri': path+parse.quote(object)
+                            }
+                        )
+                    )        
                 print('docs[0]: ', docs[0])    
                 print('docs size: ', len(docs))
 
-                texts = []
+                contexts = []
                 for doc in docs:
-                    texts.append(doc.page_content)
-                print('texts: ', texts)
+                    contexts.append(doc.page_content)
+                print('contexts: ', contexts)
 
-                msg = get_summary(llm, texts)
+                msg = get_summary(llm, contexts)
             else:
                 msg = "uploaded file: "+object
                                 
