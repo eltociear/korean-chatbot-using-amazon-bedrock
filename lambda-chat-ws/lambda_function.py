@@ -619,10 +619,10 @@ def load_document(file_type, s3_file_name):
             contents = doc.get()['Body'].read()
             
             import docx as Document
-            doc = Document(BytesIO(contents))
+            docx = Document(BytesIO(contents))
 
             fullText = []
-            for para in doc.paragraphs:
+            for para in docx.paragraphs:
                 fullText.append(para.text)
             contents = '\n'.join(fullText)
             
