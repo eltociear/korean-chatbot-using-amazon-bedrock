@@ -607,26 +607,39 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
                     }
                 )
             )  
+        return docs
+    elif file_type == 'pptx':
+        contents = doc.get()['Body'].read()
+            
+        from pptx import Presentation
+        prs = Presentation(BytesIO(contents))
 
+        texts = []
+        for i, slide in enumerate(prs.slides):
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    #raw_text.append(shape.text)
+                    text = '\n'.join(shape.text)
+            texts.append(text)
+            print(f"{i}: {text}")
+        
+        docs = []
+        for i in range(len(texts)):
+            docs.append(
+                Document(
+                    page_content=texts[i],
+                    metadata={
+                        'name': s3_file_name,
+                        'page':i+1,
+                        'uri': path+doc_prefix+parse.quote(s3_file_name)
+                    }
+                )
+            )  
         return docs
     else:    
         if file_type == 'txt':        
             contents = doc.get()['Body'].read().decode('utf-8')
 
-        elif file_type == 'pptx':
-            contents = doc.get()['Body'].read()
-            
-            from pptx import Presentation
-            prs = Presentation(BytesIO(contents))
-
-            raw_text = []
-            for slide in prs.slides:
-                for shape in slide.shapes:
-                    if shape.has_text_frame:
-                        raw_text.append(shape.text)
-            contents = '\n'.join(raw_text)
-            print('pptx contents: ', contents)
-        
         elif file_type == 'docx':
             contents = doc.get()['Body'].read()
             
@@ -667,7 +680,6 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
                     }
                 )
             )  
-
         return docs
 
 # load csv documents from s3
