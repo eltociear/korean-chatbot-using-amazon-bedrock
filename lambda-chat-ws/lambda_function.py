@@ -643,8 +643,8 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
         elif file_type == 'docx':
             contents = doc.get()['Body'].read()
             
-            import docx as Document
-            docx = Document(BytesIO(contents))
+            import docx as MSDocument
+            docx = MSDocument(BytesIO(contents))
 
             fullText = []
             for para in docx.paragraphs:
