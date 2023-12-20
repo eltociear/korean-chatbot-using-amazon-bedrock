@@ -108,7 +108,7 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        if(undelivered.size() && retry_count>0) {
+        if(undelivered.size() && retry_count>=1) {
             let keys = undelivered.getKeys();
             console.log('keys: ', keys);
             console.log('retry_count: ', retry_count);
