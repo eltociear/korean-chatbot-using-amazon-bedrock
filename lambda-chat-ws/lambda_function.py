@@ -583,8 +583,8 @@ def load_document(file_type, s3_file_name):
     doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
     
     if file_type == 'pdf':
-        contents = doc.get()['Body'].read()
-        reader = PyPDF2.PdfReader(BytesIO(contents))
+        Byte_contents = doc.get()['Body'].read()
+        reader = PyPDF2.PdfReader(BytesIO(Byte_contents))
         
         raw_text = []
         for page in reader.pages:
@@ -600,10 +600,13 @@ def load_document(file_type, s3_file_name):
         from pptx import Presentation
         prs = Presentation(BytesIO(contents))
 
+        raw_text = []
         for slide in prs.slides:
             for shape in slide.shapes:
                 if shape.has_text_frame:
-                    print(shape.text)
+                    raw_text.append(shape.text)
+        contents = '\n'.join(raw_text)
+        print('pptx contents: ', contents)
         
     # print('contents: ', contents)
     new_contents = str(contents).replace("\n"," ") 
