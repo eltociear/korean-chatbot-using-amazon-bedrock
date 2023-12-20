@@ -108,7 +108,8 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        console.log('size: ', undelivered.map.size());
+        console.log('map: ', undelivered.map);
+        
 
         if(!undelivered.isEmpty()) {
             let messages = undelivered.getAll();
