@@ -616,10 +616,12 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
 
         texts = []
         for i, slide in enumerate(prs.slides):
+            text = ""
             for shape in slide.shapes:
                 if shape.has_text_frame:
                     #raw_text.append(shape.text)
-                    text = '\n'.join(shape.text)
+                    #text = '\n'.join(shape.text)
+                    text = text + shape.text
             texts.append(text)
             print(f"{i}: {text}")
         
