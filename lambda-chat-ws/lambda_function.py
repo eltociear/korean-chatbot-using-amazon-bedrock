@@ -643,15 +643,16 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
             contents = doc.get()['Body'].read().decode('utf-8')
 
         elif file_type == 'docx':
-            contents = doc.get()['Body'].read()
+            Byte_contents = doc.get()['Body'].read()
             
-            import docx as MSDocument
-            docx = MSDocument(BytesIO(contents))
+            import docx
+            doc_contents =docx.Document(BytesIO(Byte_contents))
 
-            fullText = []
-            for para in docx.paragraphs:
-                fullText.append(para.text)
-            contents = '\n'.join(fullText)
+            texts = []
+            for i, para in enumerate(doc_contents.paragraphs):
+                texts.append(para.text)
+                print(f"{i}: {para.text}")
+            contents = '\n'.join(texts)
             
         # print('contents: ', contents)
         new_contents = str(contents).replace("\n"," ") 
