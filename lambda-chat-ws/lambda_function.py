@@ -2268,7 +2268,7 @@ def getResponse(connectionId, jsonBody):
                 print('docs[0]: ', docs[0])    
                 print('docs size: ', len(docs))
 
-                msg = get_summary(llm, texts)
+                msg = get_summary(llm, docs)
             else:
                 msg = "uploaded file: "+object
                                 
