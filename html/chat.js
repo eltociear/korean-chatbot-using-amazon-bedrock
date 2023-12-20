@@ -35,8 +35,6 @@ HashMap.prototype = {
         return this.map;
     },
     isEmpty: function() {
-        console.log('size: ', this.map.size());
-        
         return (this.map.size()==0);
     },
     remove: function(key) {
@@ -109,6 +107,8 @@ function connect(endpoint, type) {
     ws.onopen = function () {
         console.log('connected...');
         isConnected = true;
+
+        console.log('size: ', undelivered.map.size());
 
         if(!undelivered.isEmpty()) {
             let messages = undelivered.getAll();
