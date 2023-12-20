@@ -81,7 +81,7 @@ function sendMessage(message) {
         console.log('msg: ', msg);
 
         let map = undelivered.getAll()
-        console.log('map: ', map);
+        console.log('map length: ', map.length);
 
         return false
     }
