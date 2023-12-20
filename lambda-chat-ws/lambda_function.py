@@ -590,42 +590,49 @@ def load_document(file_type, s3_file_name):
         for page in reader.pages:
             raw_text.append(page.extract_text())
         contents = '\n'.join(raw_text)    
-        
-    elif file_type == 'txt':        
-        contents = doc.get()['Body'].read().decode('utf-8')
 
-    elif file_type == 'pptx':
-        contents = doc.get()['Body'].read()
-        
-        from pptx import Presentation
-        prs = Presentation(BytesIO(contents))
+        if len(contents)>0:
+            print('texts[0]: ', texts[0])
+        else:
+            print('No texts')
 
-        raw_text = []
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if shape.has_text_frame:
-                    raw_text.append(shape.text)
-        contents = '\n'.join(raw_text)
-        print('pptx contents: ', contents)
-        
-    # print('contents: ', contents)
-    new_contents = str(contents).replace("\n"," ") 
-    print('length: ', len(new_contents))
+        return contents
+    else:    
+        if file_type == 'txt':        
+            contents = doc.get()['Body'].read().decode('utf-8')
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100,
-        separators=["\n\n", "\n", ".", " ", ""],
-        length_function = len,
-    ) 
-
-    texts = text_splitter.split_text(new_contents) 
-    if len(new_contents)>0:
-        print('texts[0]: ', texts[0])
-    else:
-        print('No texts')
+        elif file_type == 'pptx':
+            contents = doc.get()['Body'].read()
             
-    return texts
+            from pptx import Presentation
+            prs = Presentation(BytesIO(contents))
+
+            raw_text = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        raw_text.append(shape.text)
+            contents = '\n'.join(raw_text)
+            print('pptx contents: ', contents)
+            
+        # print('contents: ', contents)
+        new_contents = str(contents).replace("\n"," ") 
+        print('length: ', len(new_contents))
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100,
+            separators=["\n\n", "\n", ".", " ", ""],
+            length_function = len,
+        ) 
+
+        texts = text_splitter.split_text(new_contents) 
+        if len(new_contents)>0:
+            print('texts[0]: ', texts[0])
+        else:
+            print('No texts')
+                
+        return texts
 
 # load csv documents from s3
 def load_csv_document(path, doc_prefix, s3_file_name):
