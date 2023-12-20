@@ -499,10 +499,16 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     print('uploaded into faiss')
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
+    # index_name=f"rag-index-{userId}-{documentId}",                
+    index_name = "rag-index-"+{documentId}
+    print('index_name: ', index_name)
+
+    response = OpenSearchVectorSearch.delete([index_name])
+    print('response of deletion of index: ', response)
+
     print('store document into opensearch')
     new_vectorstore = OpenSearchVectorSearch(
-        # index_name=f"rag-index-{userId}-{documentId}",        
-        index_name=f"rag-index-{documentId}",  
+        index_name=index_name,  
         is_aoss = False,
         #engine="faiss",  # default: nmslib
         embedding_function = bedrock_embeddings,
@@ -511,8 +517,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
     )
     new_vectorstore.add_documents(docs)    
     print('uploaded into opensearch')
-    print('index_name: ', f"rag-index-{documentId}")
-
+    
 # store document into Kendra
 def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
     print('store document into kendra')
