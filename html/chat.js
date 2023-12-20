@@ -108,6 +108,8 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
+        console.log('undelivered messages: ', undelivered.map.length);
+
         if(!undelivered.isEmpty()) {
             let messages = undelivered.getAll();
             console.log('undelivered: ', messages);
