@@ -650,14 +650,10 @@ def load_document(file_type, s3_file_name, path, doc_prefix):
 
             texts = []
             for i, para in enumerate(doc_contents.paragraphs):
-                texts.append(para.text)
-                print(f"{i}: {para.text}")
+                if(para.text):
+                    texts.append(para.text)
+                    print(f"{i}: {para.text}")
             contents = '\n'.join(texts)
-
-            if len(texts)>0:
-                print('texts[0]: ', texts[0])
-            else:
-                print('No texts')
             
         # print('contents: ', contents)
         new_contents = str(contents).replace("\n"," ") 
