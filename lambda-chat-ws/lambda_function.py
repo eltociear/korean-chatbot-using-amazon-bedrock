@@ -64,6 +64,7 @@ speech_generation = True
 history_length = 0
 token_counter_history = 0
 
+# google search api
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
 try:
@@ -1300,18 +1301,18 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
             if doc['rag_type'] == 'kendra':
+                excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
                     uri = doc['metadata']['source']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})-<a href=\"#\" onClick=\"alert(`{excerpt}`)\">Excerpt</a>\n"
                 elif doc['api_type'] == 'retrieve': # Retrieve. socre of confidence is only avaialbe for English
                     uri = doc['metadata']['source']
                     name = doc['metadata']['title']
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
+                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})-<a href=\"#\" onClick=\"alert(`{excerpt}`)\">Excerpt</a>\n"
                 else: # Query
                     confidence = doc['confidence']
                     if ("type" in doc['metadata']) and (doc['metadata']['type'] == "QUESTION_ANSWER"):
-                        excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
                         reference = reference + f"{i+1}. <a href=\"#\" onClick=\"alert(`{excerpt}`)\">FAQ ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                     else:
                         uri = ""
