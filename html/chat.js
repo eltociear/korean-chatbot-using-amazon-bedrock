@@ -28,15 +28,12 @@ HashMap.prototype = {
     get: function(key) {
         return this.map[key];
     },
-    getAll: function() {
-
-        return this.map;
-    },
-    clear: function() {
-        return this.map;
-    },
-    isEmpty: function() {
-        return (this.map.length==0);
+    size: function() {
+        var keys = new Array();
+        for(i in this.map) {
+            keys.push(i);
+        }
+        return keys.length;
     },
     remove: function(key) {
         delete this.map[key];
@@ -84,12 +81,8 @@ function sendMessage(message) {
         let keys = undelivered.getKeys()
         console.log('keys: ', keys);
 
-        let key_length = keys.length
-        console.log('key_length: ', key_length);
-
-
-
-
+        let size = undelivered.size()
+        console.log('size: ', size);
 
         return false
     }
@@ -127,14 +120,16 @@ function connect(endpoint, type) {
         console.log('map: ', map);
         console.log('undelivered messages: ', map.length);
 
-        if(!undelivered.isEmpty()) {
-            let messages = undelivered.getAll();
-            console.log('undelivered: ', messages);
+        if(undelivered.size()) {
+            let keys = undelivered.getKeys();
+            console.log('keys: ', keys);
 
-            for(i in messages) {
-                if(!sendMessage(messages[i])) break;
+            for(i in keys) {
+                message = undelivered.get(keys[i])
+                print('message', message)
+                if(sendMessage(message)) break;
                 else {
-                    undelivered.remove(messages[i].request_id)
+                    undelivered.remove(message.request_id)
                 }
             }
         }
