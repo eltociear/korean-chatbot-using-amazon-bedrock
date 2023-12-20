@@ -578,7 +578,7 @@ def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
     print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
-def load_document(file_type, s3_file_name):
+def load_document(file_type, s3_file_name, path, doc_prefix):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
     
@@ -595,7 +595,20 @@ def load_document(file_type, s3_file_name):
         else:
             print('No texts')
 
-        return texts
+        docs = []
+        for i in range(len(texts)):
+            docs.append(
+                Document(
+                    page_content=texts[i],
+                    metadata={
+                        'name': s3_file_name,
+                        'page':i+1,
+                        'uri': path+doc_prefix+parse.quote(s3_file_name)
+                    }
+                )
+            )  
+
+        return docs
     else:    
         if file_type == 'txt':        
             contents = doc.get()['Body'].read().decode('utf-8')
@@ -642,7 +655,20 @@ def load_document(file_type, s3_file_name):
         else:
             print('No texts')
                 
-        return texts
+        docs = []
+        for i in range(len(texts)):
+            docs.append(
+                Document(
+                    page_content=texts[i],
+                    metadata={
+                        'name': s3_file_name,
+                        #'page':i+1,
+                        'uri': path+doc_prefix+parse.quote(s3_file_name)
+                    }
+                )
+            )  
+
+        return docs
 
 # load csv documents from s3
 def load_csv_document(path, doc_prefix, s3_file_name):
@@ -2225,20 +2251,8 @@ def getResponse(connectionId, jsonBody):
                 msg = get_summary(llm, texts)
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
-                texts = load_document(file_type, object)
-
-                docs = []
-                for i in range(len(texts)):
-                    docs.append(
-                        Document(
-                            page_content=texts[i],
-                            metadata={
-                                'name': object,
-                                #'page':i+1,
-                                'uri': path+doc_prefix+parse.quote(object)
-                            }
-                        )
-                    )        
+                docs = load_document(file_type, object, path, doc_prefix)
+                      
                 print('docs[0]: ', docs[0])    
                 print('docs size: ', len(docs))
 
