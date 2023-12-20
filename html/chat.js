@@ -505,7 +505,7 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'pptx') {
                 contentType = 'application/vnd.ms-powerpoint'
             }
-            else if(ext == 'doc') {
+            else if(ext == 'docx') {
                 contentType = 'application/msword'
             }
             else if(ext == 'xls') {
