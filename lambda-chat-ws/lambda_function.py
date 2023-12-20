@@ -615,7 +615,7 @@ def load_document(file_type, s3_file_name):
             contents = '\n'.join(raw_text)
             print('pptx contents: ', contents)
         
-        elif file_type == 'docs':
+        elif file_type == 'docx':
             contents = doc.get()['Body'].read()
             
             import docx as Document
