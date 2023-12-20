@@ -2213,7 +2213,7 @@ def getResponse(connectionId, jsonBody):
 
                 msg = get_summary(llm, texts)
 
-            elif file_type == 'pdf' or file_type == 'txt' or 'pptx':
+            elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx':
                 texts = load_document(file_type, object)
 
                 docs = []
