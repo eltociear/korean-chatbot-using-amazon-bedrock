@@ -108,7 +108,7 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
-        console.log('map: ', undelivered.map.size);
+        console.log('map length: ', undelivered.map.length);
 
 
         if(!undelivered.isEmpty()) {
