@@ -524,8 +524,8 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    documentId = documentId.replace(' ', '') # remove spaces
-    documentId = documentId.replace(',', '') # remove commas
+    documentId = documentId.replace(' ', '_') # remove spaces
+    documentId = documentId.replace(',', '_') # remove commas
     documentId = documentId.lower() # change to lowercase
 
     index_name = "rag-index-"+userId+'-'+documentId
