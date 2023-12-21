@@ -499,10 +499,36 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
 
+from opensearchpy import OpenSearch
+def delete_index_if_exist(index_name):
+    client = OpenSearch(
+        hosts = [{
+            'host': opensearch_url.replace("https://", ""), 
+            'port': 443
+        }],
+        http_compress = True, # enables gzip compression for request bodies
+        http_auth=(opensearch_account, opensearch_passwd),
+        use_ssl = True,
+        verify_certs = True,
+        ssl_assert_hostname = False,
+        ssl_show_warn = False,
+    )
+
+    if client.indices.exists(index_name):
+        print('remove index: ', index_name)
+        response = client.indices.delete(
+            index=index_name
+        )
+        print('delete response: ', response)    
+    else:
+        print('no index: ', index_name)
+
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    #index_name = "rag-index-"+userId+'-'+documentId
-    index_name = "rag-index-"+userId
+    index_name = "rag-index-"+userId+'-'+documentId
+    #index_name = "rag-index-"+userId
     print('index_name: ', index_name)
+
+    #delete_index_if_exist(index_name)
 
     try:
         new_vectorstore = OpenSearchVectorSearch(
