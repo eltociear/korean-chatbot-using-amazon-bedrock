@@ -525,9 +525,9 @@ def update_index_if_exist(index_name):
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
     print('documentId(before): ', documentId)
-    documentId.replace(' ', '') # remove spaces
-    documentId.replace(',', '') # remove commas
-    documentId.lower() # change to lowercase
+    documentId = documentId.replace(' ', '') # remove spaces
+    documentId = documentId.replace(',', '') # remove commas
+    documentId = documentId.lower() # change to lowercase
     print('documentId(after): ', documentId)
 
     index_name = "rag-index-"+userId+'-'+documentId
