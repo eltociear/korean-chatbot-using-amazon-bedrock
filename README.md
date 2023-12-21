@@ -527,6 +527,8 @@ opensearch-py를 설치합니다.
 pip install opensearch-py
 ```
 
+[Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
+
 ## Reference 
 
 [Claude - Constructing a prompt](https://docs.anthropic.com/claude/docs/constructing-a-prompt)
