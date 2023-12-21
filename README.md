@@ -517,6 +517,15 @@ aws kendra create-data-source
 --region us-west-2
 ```
 
+### OpenSearch
+
+[Python client](https://opensearch.org/docs/latest/clients/python-low-level/)에 따라 OpenSearch를 활용합니다.
+
+opensearch-py를 설치합니다.
+
+```text
+pip install opensearch-py
+```
 
 ## Reference 
 
