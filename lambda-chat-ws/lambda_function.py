@@ -500,7 +500,7 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     print('uploaded into faiss')
 
 from opensearchpy import OpenSearch
-def update_index_if_exist(index_name):
+def delete_index_if_exist(index_name):
     client = OpenSearch(
         hosts = [{
             'host': opensearch_url.replace("https://", ""), 
@@ -524,17 +524,14 @@ def update_index_if_exist(index_name):
         print('no index: ', index_name)
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    print('documentId(before): ', documentId)
     documentId = documentId.replace(' ', '') # remove spaces
     documentId = documentId.replace(',', '') # remove commas
     documentId = documentId.lower() # change to lowercase
-    print('documentId(after): ', documentId)
 
     index_name = "rag-index-"+userId+'-'+documentId
-    #index_name = "rag-index-"+userId
     print('index_name: ', index_name)
 
-    #update_index_if_exist(index_name)
+    delete_index_if_exist(index_name)
 
     try:
         new_vectorstore = OpenSearchVectorSearch(
