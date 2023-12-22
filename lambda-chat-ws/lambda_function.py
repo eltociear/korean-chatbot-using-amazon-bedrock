@@ -71,12 +71,12 @@ try:
     get_secret_value_response = secretsmanager.get_secret_value(
         SecretId=googleApiSecret
     )
-    print('get_secret_value_response: ', get_secret_value_response)
+    #print('get_secret_value_response: ', get_secret_value_response)
     secret = json.loads(get_secret_value_response['SecretString'])
-    print('secret: ', secret)
+    #print('secret: ', secret)
     google_api_key = secret['google_api_key']
     google_cse_id = secret['google_cse_id']
-    print('google_cse_id: ', google_cse_id)    
+    #print('google_cse_id: ', google_cse_id)    
 
 except Exception as e:
     raise e
@@ -2268,7 +2268,7 @@ def getResponse(connectionId, jsonBody):
                             metadata={
                                 'name': object,
                                 # 'page':i+1,
-                                'uri': path+parse.quote(object)
+                                'uri': path+doc_prefix+parse.quote(object)
                             }
                         )
                     )        
@@ -2365,7 +2365,7 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
-        if isKorean(msg):
+        if isKorean(msg) and (conv_type=='qa' or  conv_type == "normal"):
             if speech_generation: # generate mp3 file
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
                 print('speech_uri: ', speech_uri)      
