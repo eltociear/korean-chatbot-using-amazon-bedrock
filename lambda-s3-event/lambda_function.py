@@ -3,6 +3,7 @@ import boto3
 import os
 import traceback
 from botocore.config import Config
+from urllib.parse import unquote
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -50,13 +51,9 @@ def lambda_handler(event, context):
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
         # translate utf8
-        key = record['s3']['object']['key'].encode('utf-8') 
+        key = unquote(record['s3']['object']['key'])  # url decoding
         print('bucket: ', bucket)
         print('key: ', key)
-
-        from urllib.parse import unquote
-        key = unquote(key)
-        print(key)
 
         # get metadata from s3
         metadata_key = meta_prefix+key+'.metadata.json'
@@ -65,9 +62,7 @@ def lambda_handler(event, context):
         metadata_body = metadata_obj['Body'].read().decode('utf-8')
         metadata = json.loads(metadata_body)
         print('metadata: ', metadata)
-        userId = metadata['userId']
-        documentId = metadata['documentId']
-        print('userId: ', userId)
+        documentId = metadata['DocumentId']
         print('documentId: ', documentId)
 
         documentIds.append(documentId)
