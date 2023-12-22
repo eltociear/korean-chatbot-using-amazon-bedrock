@@ -25,7 +25,6 @@ const projectName = `korean-chatbot`;
 const bucketName = `storage-for-${projectName}-${region}`; 
 let kendra_region = process.env.CDK_DEFAULT_REGION;   //  "us-west-2"
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
-let deployed_rag_type = 'all';   // all, opensearch, kendra, faiss
 
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
@@ -206,89 +205,88 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
 
     // Kendra  
     let kendraIndex = "";
-    if(deployed_rag_type=='kendra' || deployed_rag_type=='all') {        
-      const roleKendra = new iam.Role(this, `role-kendra-for-${projectName}`, {
-        roleName: `role-kendra-for-${projectName}-${region}`,
-        assumedBy: new iam.CompositePrincipal(
-          new iam.ServicePrincipal("kendra.amazonaws.com")
-        )
-      });
-      const cfnIndex = new kendra.CfnIndex(this, 'MyCfnIndex', {
-        edition: 'DEVELOPER_EDITION',  // ENTERPRISE_EDITION, 
-        name: `reg-kendra-${projectName}`,
-        roleArn: roleKendra.roleArn,
+    const roleKendra = new iam.Role(this, `role-kendra-for-${projectName}`, {
+      roleName: `role-kendra-for-${projectName}-${region}`,
+      assumedBy: new iam.CompositePrincipal(
+        new iam.ServicePrincipal("kendra.amazonaws.com")
+      )
+    });
+    const cfnIndex = new kendra.CfnIndex(this, 'MyCfnIndex', {
+      edition: 'DEVELOPER_EDITION',  // ENTERPRISE_EDITION, 
+      name: `reg-kendra-${projectName}`,
+      roleArn: roleKendra.roleArn,
+    }); 
+    const kendraLogPolicy = new iam.PolicyStatement({
+      resources: ['*'],
+      actions: ["logs:*", "cloudwatch:GenerateQuery"],
+    });
+    roleKendra.attachInlinePolicy( // add kendra policy
+      new iam.Policy(this, `kendra-log-policy-for-${projectName}`, {
+        statements: [kendraLogPolicy],
+      }),
+    );
+    const kendraS3ReadPolicy = new iam.PolicyStatement({
+      resources: ['*'],
+      actions: ["s3:Get*","s3:List*","s3:Describe*"],
+    });
+    roleKendra.attachInlinePolicy( // add kendra policy
+      new iam.Policy(this, `kendra-s3-read-policy-for-${projectName}`, {
+        statements: [kendraS3ReadPolicy],
+      }),
+    );    
+    new cdk.CfnOutput(this, `index-of-kendra-for-${projectName}`, {
+      value: cfnIndex.attrId,
+      description: 'The index of kendra',
+    }); 
+
+    const accountId = process.env.CDK_DEFAULT_ACCOUNT;
+    const kendraResourceArn = `arn:aws:kendra:${kendra_region}:${accountId}:index/${cfnIndex.attrId}`
+    if(debug) {
+      new cdk.CfnOutput(this, `resource-arn-of-kendra-for-${projectName}`, {
+        value: kendraResourceArn,
+        description: 'The arn of resource',
       }); 
-      const kendraLogPolicy = new iam.PolicyStatement({
-        resources: ['*'],
-        actions: ["logs:*", "cloudwatch:GenerateQuery"],
-      });
-      roleKendra.attachInlinePolicy( // add kendra policy
-        new iam.Policy(this, `kendra-log-policy-for-${projectName}`, {
-          statements: [kendraLogPolicy],
-        }),
-      );
-      const kendraS3ReadPolicy = new iam.PolicyStatement({
-        resources: ['*'],
-        actions: ["s3:Get*","s3:List*","s3:Describe*"],
-      });
-      roleKendra.attachInlinePolicy( // add kendra policy
-        new iam.Policy(this, `kendra-s3-read-policy-for-${projectName}`, {
-          statements: [kendraS3ReadPolicy],
-        }),
-      );    
-      new cdk.CfnOutput(this, `index-of-kendra-for-${projectName}`, {
-        value: cfnIndex.attrId,
-        description: 'The index of kendra',
-      }); 
-
-      const accountId = process.env.CDK_DEFAULT_ACCOUNT;
-      const kendraResourceArn = `arn:aws:kendra:${kendra_region}:${accountId}:index/${cfnIndex.attrId}`
-      if(debug) {
-        new cdk.CfnOutput(this, `resource-arn-of-kendra-for-${projectName}`, {
-          value: kendraResourceArn,
-          description: 'The arn of resource',
-        }); 
-      }           
+    }           
       
-      const kendraPolicy = new iam.PolicyStatement({  
-        resources: [kendraResourceArn],      
-        actions: ['kendra:*'],
-      });      
-      roleKendra.attachInlinePolicy( // add kendra policy
-        new iam.Policy(this, `kendra-inline-policy-for-${projectName}`, {
-          statements: [kendraPolicy],
-        }),
-      );      
-      kendraIndex = cfnIndex.attrId;
+    const kendraPolicy = new iam.PolicyStatement({  
+      resources: [kendraResourceArn],      
+      actions: ['kendra:*'],
+    });      
+    roleKendra.attachInlinePolicy( // add kendra policy
+      new iam.Policy(this, `kendra-inline-policy-for-${projectName}`, {
+        statements: [kendraPolicy],
+      }),
+    );      
+    kendraIndex = cfnIndex.attrId;
 
-      roleLambdaWebsocket.attachInlinePolicy( 
-        new iam.Policy(this, `lambda-inline-policy-for-kendra-in-${projectName}`, {
-          statements: [kendraPolicy],
-        }),
-      ); 
+    roleLambdaWebsocket.attachInlinePolicy( 
+      new iam.Policy(this, `lambda-inline-policy-for-kendra-in-${projectName}`, {
+        statements: [kendraPolicy],
+      }),
+    ); 
 
-      const passRoleResourceArn = roleLambdaWebsocket.roleArn;
-      const passRolePolicy = new iam.PolicyStatement({  
-        resources: [passRoleResourceArn],      
-        actions: ['iam:PassRole'],
-      });
+    const passRoleResourceArn = roleLambdaWebsocket.roleArn;
+    const passRolePolicy = new iam.PolicyStatement({  
+      resources: [passRoleResourceArn],      
+      actions: ['iam:PassRole'],
+    });
       
-      roleLambdaWebsocket.attachInlinePolicy( // add pass role policy
-        new iam.Policy(this, `pass-role-of-kendra-for-${projectName}`, {
-          statements: [passRolePolicy],
-        }), 
-      );  
+    roleLambdaWebsocket.attachInlinePolicy( // add pass role policy
+      new iam.Policy(this, `pass-role-of-kendra-for-${projectName}`, {
+      statements: [passRolePolicy],
+      }), 
+    );  
 
-      // Poly Role
-      const PollyPolicy = new iam.PolicyStatement({  
-        actions: ['polly:*'],
-        resources: ['*'],
-      });
-      roleLambdaWebsocket.attachInlinePolicy(
-        new iam.Policy(this, 'polly-policy', {
-          statements: [PollyPolicy],
-        }),
-      );
+    // Poly Role
+    const PollyPolicy = new iam.PolicyStatement({  
+      actions: ['polly:*'],
+      resources: ['*'],
+    });
+    roleLambdaWebsocket.attachInlinePolicy(
+      new iam.Policy(this, 'polly-policy', {
+        statements: [PollyPolicy],
+      }),
+    );
 
       // data source
     /*  const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
@@ -310,16 +308,14 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           },
         },        
       });  */
-      new cdk.CfnOutput(this, `create-S3-data-source-for-${projectName}`, {
-        value: 'aws kendra create-data-source --index-id '+kendraIndex+' --name data-source-for-upload-file --type S3 --role-arn '+roleLambdaWebsocket.roleArn+' --configuration \'{\"S3Configuration\":{\"BucketName\":\"'+s3Bucket.bucketName+'\", \"DocumentsMetadataConfiguration\": {\"S3Prefix\":\"metadata/\"},\"InclusionPrefixes\": [\"'+s3_prefix+'/\"]}}\' --language-code ko --region '+kendra_region,
-        description: 'The commend to create data source using S3',
-      });
-    }
+    new cdk.CfnOutput(this, `create-S3-data-source-for-${projectName}`, {
+      value: 'aws kendra create-data-source --index-id '+kendraIndex+' --name data-source-for-upload-file --type S3 --role-arn '+roleLambdaWebsocket.roleArn+' --configuration \'{\"S3Configuration\":{\"BucketName\":\"'+s3Bucket.bucketName+'\", \"DocumentsMetadataConfiguration\": {\"S3Prefix\":\"metadata/\"},\"InclusionPrefixes\": [\"'+s3_prefix+'/\"]}}\' --language-code ko --region '+kendra_region,
+      description: 'The commend to create data source using S3',
+    });
 
     // opensearch
     // Permission for OpenSearch
     const domainName = projectName
-    const accountId = process.env.CDK_DEFAULT_ACCOUNT;
     const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
     if(debug) {
       new cdk.CfnOutput(this, `resource-arn-for-${projectName}`, {
@@ -377,7 +373,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       value: 'https://'+domain.domainEndpoint,
       description: 'The endpoint of OpenSearch Domain',
     });
-
     opensearch_url = 'https://'+domain.domainEndpoint;
 
     // api role
