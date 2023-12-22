@@ -97,7 +97,8 @@ def lambda_handler(event, context):
     try: 
         result = kendra_client.batch_delete_document(
             IndexId = kendraIndex,
-            
+            RoleArn = roleArn,
+
             DocumentIdList=[
                 documentId,
             ]
