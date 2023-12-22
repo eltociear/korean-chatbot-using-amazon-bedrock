@@ -15,6 +15,7 @@ import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as kendra from 'aws-cdk-lib/aws-kendra';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -725,6 +726,32 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       value: 'aws kendra create-faq --index-id '+kendraIndex+' --name faq-banking --s3-path \'{\"Bucket\":\"'+s3Bucket.bucketName+'\", \"Key\":\"faq/faq-banking.csv\"}\' --role-arn '+roleLambdaWebsocket.roleArn+' --language-code ko --region '+kendra_region+' --file-format CSV',
       description: 'The commend for uploading contents of FAQ',
     });
+    
+    // Lambda for s3 event
+    const lambdaS3event = new lambda.Function(this, `lambda-S3-event-for-${projectName}`, {
+      description: 'S3 event',
+      functionName: `lambda-s3-event-for-${projectName}`,
+      handler: 'lambda_function.lambda_handler',
+      runtime: lambda.Runtime.PYTHON_3_11,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event')),
+      timeout: cdk.Duration.seconds(60),
+      environment: {
+        bucket: s3Bucket.bucketName,
+      }
+    });         
+    s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
+
+    // s3 put/delete event source
+    const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
+      events: [
+        // s3.EventType.OBJECT_CREATED_PUT,
+        s3.EventType.OBJECT_REMOVED_DELETE
+      ],
+      filters: [
+        { prefix: s3_prefix+'/' },
+      ]
+    });
+    lambdaS3event.addEventSource(s3PutEventSource);
 
     // deploy components
     new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)     
