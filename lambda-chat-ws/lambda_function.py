@@ -524,7 +524,8 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 
 def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    index_name = "rag-index-"+userId+'-'+documentId
+    #index_name = "rag-index-"+userId+'-'+documentId
+    index_name = "rag-index-"+documentId
     index_name = index_name.replace(' ', '_') # remove spaces
     index_name = index_name.replace(',', '_') # remove commas
     index_name = index_name.lower() # change to lowercase
@@ -2286,9 +2287,15 @@ def getResponse(connectionId, jsonBody):
                                 
             if conv_type == 'qa':
                 start_time = time.time()
+                
                 category = "upload"
                 key = object
                 documentId = category + "-" + key
+                documentId = documentId.replace(' ', '_') # remove spaces
+                documentId = documentId.replace(',', '_') # remove commas
+                documentId = documentId.lower() # change to lowercase
+                print('documentId: ', documentId)
+
                 if useParallelUpload == 'false':
                     if rag_type == 'all':      
                         for type in capabilities:             
