@@ -54,7 +54,7 @@ def lambda_handler(event, context):
         print('key: ', key)
 
         # get metadata from s3
-        metadata_key = meta_prefix+key
+        metadata_key = meta_prefix+key+'.metadata.json'
         print('metadata_key: ', metadata_key)
         metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
         metadata_body = metadata_obj['Body'].read().decode('utf-8')
