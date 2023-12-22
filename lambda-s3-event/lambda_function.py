@@ -7,17 +7,13 @@ from urllib.parse import unquote_plus
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
-s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
-doc_prefix = s3_prefix+'/'
-
 kendraIndex = os.environ.get('kendraIndex')
-roleArn = os.environ.get('roleArn')
 
 from opensearchpy import OpenSearch
 def delete_index_if_exist(index_name):
@@ -100,9 +96,9 @@ def lambda_handler(event, context):
             DocumentIdList=[
                 documentId,
             ],
-            DataSourceSyncJobMetricTarget={
-                'DataSourceId': '850d68bd-464e-4831-bc4a-ccc8c59d8fe1'
-            }
+            #DataSourceSyncJobMetricTarget={
+            #    'DataSourceId': '850d68bd-464e-4831-bc4a-ccc8c59d8fe1'
+            #}
         )
         print('result: ', result)
     except Exception:
