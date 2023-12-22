@@ -31,7 +31,7 @@ def delete_index_if_exist(index_name):
     )
 
     if client.indices.exists(index_name):
-        print('delete document index of opensearch: ', index_name)
+        print('delete opensearch document index: ', index_name)
         response = client.indices.delete(
             index=index_name
         )
