@@ -31,7 +31,7 @@ def delete_index_if_exist(index_name):
     )
 
     if client.indices.exists(index_name):
-        print('remove index: ', index_name)
+        print('delete document index of opensearch: ', index_name)
         response = client.indices.delete(
             index=index_name
         )
@@ -75,21 +75,22 @@ def lambda_handler(event, context):
         documentIds.append(documentId)
 
         # delete metadata
+        print('delete metadata: ', metadata_key)
         try: 
             result = s3.delete_object(Bucket=bucket, Key=metadata_key)
-            print('result to delete metadata in S3: ', result)
+            # print('result of metadata deletion: ', result)
         except Exception:
             err_msg = traceback.format_exc()
             print('err_msg: ', err_msg)
             raise Exception ("Not able to delete documents in Kendra")
   
-        # delete index of opensearch
+        # delete document index of opensearch
         index_name = "rag-index-"+documentId
-        print('index_name: ', index_name)
-
+        # print('index_name: ', index_name)
         delete_index_if_exist(index_name)
 
     # delete kendra documents
+    print('delete kendra documents: ', documentIds)
     try: 
         result = kendra_client.batch_delete_document(
             IndexId = kendraIndex,
