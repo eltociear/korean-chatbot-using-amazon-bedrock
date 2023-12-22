@@ -201,11 +201,11 @@ def get_prompt_template(query, conv_type, rag_type):
             Assistant:"""
                 
         elif conv_type == "translation":  # for translation, input
-            prompt_template = """\n\nHuman: 다음의 <translation>를 영어로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
+            prompt_template = """\n\nHuman: 다음의 <article>를 English로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
 
-            <translation>
+            <article>
             {input}
-            </translation>
+            </article>
                         
             Assistant:"""
 
