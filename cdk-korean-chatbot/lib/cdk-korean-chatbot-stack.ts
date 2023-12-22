@@ -728,11 +728,12 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
 
     // Lambda for s3 event
-    const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
+ /*   const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
       description: 'S3 event',
       functionName: `lambda-s3-event-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
+    //  memorySize: 2048,
       role: roleLambdaWebsocket,
       environment: {
         s3_bucket: s3Bucket.bucketName,
@@ -741,7 +742,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         opensearch_passwd: opensearch_passwd,
         opensearch_url: opensearch_url,
         kendraIndex: kendraIndex,
-        // roleArn: roleLambdaWebsocket.roleArn,
+        roleArn: roleLambdaWebsocket.roleArn,
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
@@ -756,7 +757,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         { prefix: s3_prefix+'/' },
       ]
     });
-    lambdaS3event.addEventSource(s3PutEventSource);
+    lambdaS3event.addEventSource(s3PutEventSource); */
 
     // deploy components
     new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)     
