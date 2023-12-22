@@ -736,7 +736,12 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
       environment: {
-        bucket: s3Bucket.bucketName,
+        s3_bucket: s3Bucket.bucketName,
+        s3_prefix: s3_prefix,
+        opensearch_account: opensearch_account,
+        opensearch_passwd: opensearch_passwd,
+        opensearch_url: opensearch_url,
+        kendraIndex: kendraIndex,
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
