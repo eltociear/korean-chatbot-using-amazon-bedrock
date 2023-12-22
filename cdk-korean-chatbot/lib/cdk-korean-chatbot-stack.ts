@@ -774,7 +774,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
 
     // POST method - provisioning
     const provisioning_info = api.root.addResource("provisioning");
-    upload.addMethod('POST', new apiGateway.LambdaIntegration(lambdaProvisioning, {
+    provisioning_info.addMethod('POST', new apiGateway.LambdaIntegration(lambdaProvisioning, {
       passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_TEMPLATES,
       credentialsRole: role,
       integrationResponses: [{
