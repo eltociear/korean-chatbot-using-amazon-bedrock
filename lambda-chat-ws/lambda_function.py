@@ -46,7 +46,7 @@ enableReference = os.environ.get('enableReference', 'false')
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_url = os.environ.get('opensearch_url')
 path = os.environ.get('path')
-doc_prefix = s3_bucket+'/'
+doc_prefix = s3_prefix+'/'
 speech_prefix = 'speech/'
 
 useParallelUpload = os.environ.get('useParallelUpload', 'true')
