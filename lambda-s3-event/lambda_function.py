@@ -97,11 +97,12 @@ def lambda_handler(event, context):
     try: 
         result = kendra_client.batch_delete_document(
             IndexId = kendraIndex,
-            RoleArn = roleArn,
-
             DocumentIdList=[
                 documentId,
-            ]
+            ],
+            DataSourceSyncJobMetricTarget={
+                'DataSourceId': '850d68bd-464e-4831-bc4a-ccc8c59d8fe1'
+            }
         )
         print('result: ', result)
     except Exception:
