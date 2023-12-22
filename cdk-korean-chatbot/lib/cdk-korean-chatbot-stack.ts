@@ -723,7 +723,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
 
     // Lambda - s3 event management
-    const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
+  /*  const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
       roleName: `role-lambda-event-for-${projectName}-${region}`,      
       assumedBy: new iam.ServicePrincipal('kendra.amazonaws.com'),
       description: 'role for lambda-s3-event',
@@ -735,7 +735,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       new iam.Policy(this, `lambda-event-inline-policy-for-kendra-in-${projectName}`, {
         statements: [kendraPolicy],
       }),
-    ); 
+    ); */
 
     // Lambda for s3 event
     const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
@@ -743,7 +743,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       functionName: `lambda-s3-event-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
-      role: roleLambdaEvent,
+      role: roleLambdaWebsocket,
       environment: {
         s3_bucket: s3Bucket.bucketName,
         opensearch_account: opensearch_account,
