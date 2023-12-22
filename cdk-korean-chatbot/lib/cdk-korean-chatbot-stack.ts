@@ -723,7 +723,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
 
     // Lambda - s3 event management
-    const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
+    /*const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
       roleName: `role-lambda-event-for-${projectName}-${region}`,      
       assumedBy: new iam.ServicePrincipal('kendra.amazonaws.com'),
       description: 'role for lambda-s3-event',
@@ -738,7 +738,30 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     ); 
     roleLambdaEvent.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonKendraFullAccess',
+    }); */
+
+    const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
+      roleName: `role-lambda-event-for-${projectName}-${region}`,   
+      assumedBy: new iam.CompositePrincipal(
+        new iam.ServicePrincipal("lambda.amazonaws.com"),
+        new iam.ServicePrincipal("kendra.amazonaws.com")
+      )
     });
+    roleLambdaEvent.attachInlinePolicy( 
+      new iam.Policy(this, `kendra-policy-for-${projectName}`, {
+        statements: [kendraPolicy],
+      }),
+    ); 
+    roleLambdaEvent.addToPolicy(new iam.PolicyStatement({
+      resources: ['*'],
+      actions: [
+        'lambda:InvokeFunction',
+        'cloudwatch:*'
+      ]
+    }));
+    roleLambdaEvent.addManagedPolicy({
+      managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambdaExecute',
+    }); 
 
     // Lambda for s3 event
     const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
