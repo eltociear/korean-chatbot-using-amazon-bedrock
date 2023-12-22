@@ -740,7 +740,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonKendraFullAccess',
     }); */
 
-    const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
+  /*  const roleLambdaEvent = new iam.Role(this, `role-lambda-event-for-${projectName}`, {
       roleName: `role-lambda-event-for-${projectName}-${region}`,   
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -761,7 +761,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }));
     roleLambdaEvent.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/AWSLambdaExecute',
-    }); 
+    }); */
 
     // Lambda for s3 event
     const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
@@ -769,7 +769,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       functionName: `lambda-s3-event-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
-      role: roleLambdaEvent,
+      // role: roleLambdaEvent,
       environment: {
         s3_bucket: s3Bucket.bucketName,
         opensearch_account: opensearch_account,
@@ -779,11 +779,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
-    /*lambdaS3event.role?.attachInlinePolicy(
+    lambdaS3event.role?.attachInlinePolicy(
       new iam.Policy(this, `kendra-policy-${projectName}`, {
         statements: [kendraPolicy],
       }),
-    )*/
+    )
 
     // s3 put/delete event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
