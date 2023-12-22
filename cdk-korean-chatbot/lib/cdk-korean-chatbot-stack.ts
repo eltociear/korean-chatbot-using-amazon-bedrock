@@ -779,11 +779,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
-    lambdaS3event.role?.attachInlinePolicy(
+  /*  lambdaS3event.role?.attachInlinePolicy(
       new iam.Policy(this, `kendra-policy-${projectName}`, {
         statements: [kendraPolicy],
       }),
-    )
+    ) */
 
     // s3 put/delete event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
