@@ -35,7 +35,7 @@ def delete_index_if_exist(index_name):
         response = client.indices.delete(
             index=index_name
         )
-        print('response(remove): ', response)    
+        print('removed index: ', response)    
     else:
         print('no index: ', index_name)
 
