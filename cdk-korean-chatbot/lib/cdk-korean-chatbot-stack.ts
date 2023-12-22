@@ -732,7 +732,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
     });
     roleLambdaEvent.attachInlinePolicy( 
-      new iam.Policy(this, `lambda-event-inline-policy-for-kendra-in-${projectName}`, {
+      new iam.Policy(this, `kendra-policy-for-${projectName}`, {
         statements: [kendraPolicy],
       }),
     ); 
@@ -756,11 +756,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
-    lambdaS3event.role?.attachInlinePolicy(
-      new iam.Policy(this, 'list-buckets-policy', {
+    /*lambdaS3event.role?.attachInlinePolicy(
+      new iam.Policy(this, `kendra-policy-${projectName}`, {
         statements: [kendraPolicy],
       }),
-    )
+    )*/
 
     // s3 put/delete event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
