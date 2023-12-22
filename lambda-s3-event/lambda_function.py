@@ -54,6 +54,9 @@ def lambda_handler(event, context):
         print('bucket: ', bucket)
         print('key: ', key)
 
+        from urllib.parse import unquote
+        key = unquote(key)
+        print(key)
 
         # get metadata from s3
         metadata_key = meta_prefix+key+'.metadata.json'
