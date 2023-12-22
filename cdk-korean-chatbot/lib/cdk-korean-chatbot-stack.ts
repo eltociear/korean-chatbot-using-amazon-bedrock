@@ -317,70 +317,68 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     }
 
     // opensearch
-    if(deployed_rag_type=='opensearch' || deployed_rag_type=='all') {
-      // Permission for OpenSearch
-      const domainName = projectName
-      const accountId = process.env.CDK_DEFAULT_ACCOUNT;
-      const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
-      if(debug) {
-        new cdk.CfnOutput(this, `resource-arn-for-${projectName}`, {
-          value: resourceArn,
-          description: 'The arn of resource',
-        }); 
-      }
-
-      const OpenSearchAccessPolicy = new iam.PolicyStatement({        
-        resources: [resourceArn],      
-        actions: ['es:*'],
-        effect: iam.Effect.ALLOW,
-        principals: [new iam.AnyPrincipal()],      
-      });  
-
-      const domain = new opensearch.Domain(this, 'Domain', {
-        version: opensearch.EngineVersion.OPENSEARCH_2_3,
-      
-        domainName: domainName,
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
-        enforceHttps: true,
-        fineGrainedAccessControl: {
-          masterUserName: opensearch_account,
-          // masterUserPassword: cdk.SecretValue.secretsManager('opensearch-private-key'),
-          masterUserPassword:cdk.SecretValue.unsafePlainText(opensearch_passwd)
-        },
-        capacity: {
-          masterNodes: 3,
-          masterNodeInstanceType: 'm6g.large.search',
-          // multiAzWithStandbyEnabled: false,
-          dataNodes: 3,
-          dataNodeInstanceType: 'r6g.large.search',        
-          // warmNodes: 2,
-          // warmInstanceType: 'ultrawarm1.medium.search',
-        },
-        accessPolicies: [OpenSearchAccessPolicy],      
-        ebs: {
-          volumeSize: 100,
-          volumeType: ec2.EbsDeviceVolumeType.GP3,
-        },
-        nodeToNodeEncryption: true,
-        encryptionAtRest: {
-          enabled: true,
-        },
-        zoneAwareness: {
-          enabled: true,
-          availabilityZoneCount: 3,        
-        }
-      });
-      new cdk.CfnOutput(this, `Domain-of-OpenSearch-for-${projectName}`, {
-        value: domain.domainArn,
-        description: 'The arm of OpenSearch Domain',
-      });
-      new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
-        value: 'https://'+domain.domainEndpoint,
-        description: 'The endpoint of OpenSearch Domain',
-      });
-
-      opensearch_url = 'https://'+domain.domainEndpoint;
+    // Permission for OpenSearch
+    const domainName = projectName
+    const accountId = process.env.CDK_DEFAULT_ACCOUNT;
+    const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
+    if(debug) {
+      new cdk.CfnOutput(this, `resource-arn-for-${projectName}`, {
+        value: resourceArn,
+        description: 'The arn of resource',
+      }); 
     }
+
+    const OpenSearchAccessPolicy = new iam.PolicyStatement({        
+      resources: [resourceArn],      
+      actions: ['es:*'],
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AnyPrincipal()],      
+    });  
+
+    const domain = new opensearch.Domain(this, 'Domain', {
+      version: opensearch.EngineVersion.OPENSEARCH_2_3,
+      
+      domainName: domainName,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      enforceHttps: true,
+      fineGrainedAccessControl: {
+        masterUserName: opensearch_account,
+        // masterUserPassword: cdk.SecretValue.secretsManager('opensearch-private-key'),
+        masterUserPassword:cdk.SecretValue.unsafePlainText(opensearch_passwd)
+      },
+      capacity: {
+        masterNodes: 3,
+        masterNodeInstanceType: 'm6g.large.search',
+        // multiAzWithStandbyEnabled: false,
+        dataNodes: 3,
+        dataNodeInstanceType: 'r6g.large.search',        
+        // warmNodes: 2,
+        // warmInstanceType: 'ultrawarm1.medium.search',
+      },
+      accessPolicies: [OpenSearchAccessPolicy],      
+      ebs: {
+        volumeSize: 100,
+        volumeType: ec2.EbsDeviceVolumeType.GP3,
+      },
+      nodeToNodeEncryption: true,
+      encryptionAtRest: {
+        enabled: true,
+      },
+      zoneAwareness: {
+        enabled: true,
+        availabilityZoneCount: 3,        
+      }
+    });
+    new cdk.CfnOutput(this, `Domain-of-OpenSearch-for-${projectName}`, {
+      value: domain.domainArn,
+      description: 'The arm of OpenSearch Domain',
+    });
+    new cdk.CfnOutput(this, `Endpoint-of-OpenSearch-for-${projectName}`, {
+      value: 'https://'+domain.domainEndpoint,
+      description: 'The endpoint of OpenSearch Domain',
+    });
+
+    opensearch_url = 'https://'+domain.domainEndpoint;
 
     // api role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
@@ -733,7 +731,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       functionName: `lambda-s3-event-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
-      // role: roleLambdaWebsocket,
       environment: {
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
