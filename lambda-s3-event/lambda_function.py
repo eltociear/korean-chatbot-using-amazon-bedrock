@@ -49,9 +49,11 @@ def lambda_handler(event, context):
     documentIds = []
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
-        key = record['s3']['object']['key']
+        # translate utf8
+        key = record['s3']['object']['key'].encode('utf-8') 
         print('bucket: ', bucket)
         print('key: ', key)
+
 
         # get metadata from s3
         metadata_key = meta_prefix+key+'.metadata.json'
