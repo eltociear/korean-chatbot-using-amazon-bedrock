@@ -51,13 +51,21 @@ def lambda_handler(event, context):
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
         # translate utf8
-        key = unquote(record['s3']['object']['key'])  # url decoding
+        key = record['s3']['object']['key'] # url decoding
         print('bucket: ', bucket)
         print('key: ', key)
 
+        from urllib.parse import unquote_plus
+        object_key = unquote_plus(key)
+        print('object_key: ', object_key)
+
         # get metadata from s3
-        metadata_key = meta_prefix+key+'.metadata.json'
+        metadata_key = meta_prefix+object_key+'.metadata.json'
         print('metadata_key: ', metadata_key)
+
+
+        
+
         metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
         metadata_body = metadata_obj['Body'].read().decode('utf-8')
         metadata = json.loads(metadata_body)
@@ -66,6 +74,8 @@ def lambda_handler(event, context):
         print('documentId: ', documentId)
 
         documentIds.append(documentId)
+
+
 
         # delete metadata
         try: 
