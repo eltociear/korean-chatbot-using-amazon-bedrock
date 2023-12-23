@@ -69,11 +69,6 @@ cdk deploy --all
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/766b4d33-13c9-49b1-9462-832120f73109)
 
-9) Output의 websocketurl을 복사한 후, 'korean-chatbot-using-amazon-bedrock/html/'의 "chat.js"를 열어서 아래와 같이 endpoint를 업데이트 합니다.
-
-![noname](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/d38d5606-5ebf-43d5-b2d3-190e5bc3fcdb)
-
-
 9) HTMl 파일을 S3에 복사합니다.
 
 아래와 같이 Output의 HtmlUpdateCommend을 붙여넣기 합니다. 
