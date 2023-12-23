@@ -63,7 +63,7 @@ MSG_HISTORY_LENGTH = 20
 speech_generation = True
 history_length = 0
 token_counter_history = 0
-allowTranslatedQustion = 'true'
+allowTranslatedQustion = 'False'
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -1693,42 +1693,26 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         else:
             print('start RAG for revised question')
             relevant_docs = get_relevant_documents_using_parallel_processing(llm=llm, question=revised_question, top_k=top_k)
-
-            print('start RAG for translated revised question')
-            translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
-            print('translated_revised_question: ', translated_revised_question)
-
-            relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
             
-            if len(relevant_docs_raw)>=1:
-                for i, doc in enumerate(relevant_docs_raw):
-                    if isKorean(doc)==False:
-                        translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-                        print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                        print(f"#### {i} (KOR): {translated_excerpt}")
+            if allowTranslatedQustion==True:
+                print('start RAG for translated revised question')
+                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+                print('translated_revised_question: ', translated_revised_question)
 
-                        doc['metadata']['excerpt'] = translated_excerpt
-                        relevant_docs.append(doc)
-                    else:
-                        print(f"original {i}: {doc}")
-                        relevant_docs.append(doc)
-        """
-        if allowTranslatedQustion=='true' and isKorean(text)==True:    
-            translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
-            print('translated_revised_question: ', translated_revised_question)
+                relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
+                
+                if len(relevant_docs_raw)>=1:
+                    for i, doc in enumerate(relevant_docs_raw):
+                        if isKorean(doc)==False:
+                            translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                            print(f"#### {i} (KOR): {translated_excerpt}")
 
-            relevant_docs_translated = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
-
-            print("Documents based on translated question:")
-            if len(relevant_docs_translated)>=1:
-                for i, doc in enumerate(relevant_docs_translated):
-                    print(f"{i}: {doc}")
-
-                    if isKorean(doc)==False:
-                        translated_doc = traslation_to_korean(llm=llm, msg=doc)
-                    
-                    print(f"translated {i}: {translated_doc}")
-        """
+                            doc['metadata']['excerpt'] = translated_excerpt
+                            relevant_docs.append(doc)
+                        else:
+                            print(f"original {i}: {doc}")
+                            relevant_docs.append(doc)
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
