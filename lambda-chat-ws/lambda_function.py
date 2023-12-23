@@ -1688,6 +1688,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         relevant_docs_translated = []        
         if allowTranslatedQustion=='true' and isKorean(text)==True:    
+            processes = []
+            parent_connections = []
+            
             translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
             print('translated_revised_question: ', translated_revised_question)
 
