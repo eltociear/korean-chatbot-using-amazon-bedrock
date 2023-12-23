@@ -1170,7 +1170,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
         # print('doc: ', doc)
         excerpts.append(
             Document(
-                page_content=int(doc['metadata']['excerpt']),
+                page_content=doc['metadata']['excerpt'],
                 metadata={
                     'name': doc['metadata']['title'],
                     'order':i,
@@ -1699,9 +1699,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             if len(relevant_docs_raw)>=1:
                 for i, doc in enumerate(relevant_docs_raw):
                     if isKorean(doc)==False:
-                        translated_doc = traslation_to_korean(llm=llm, msg=doc)
-                        print(f"translated {i}: {translated_doc}")
-                        relevant_docs.append(translated_doc)
+                        translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+                        print(f"translated {i}: {translated_excerpt}")
+
+                        doc['metadata']['excerpt'] = translated_excerpt
+                        relevant_docs.append(doc)
                     else:
                         print(f"original {i}: {doc}")
                         relevant_docs.append(doc)
@@ -2082,7 +2084,7 @@ def traslation_to_korean(llm, msg):
         #print('translated_msg: ', translated_msg)
     except Exception:
         err_msg = traceback.format_exc()
-        #print('error message: ', err_msg)        
+        print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
     msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
@@ -2103,7 +2105,7 @@ def traslation_to_english(llm, msg):
         #print('translated_msg: ', translated_msg)
     except Exception:
         err_msg = traceback.format_exc()
-        #print('error message: ', err_msg)        
+        print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
