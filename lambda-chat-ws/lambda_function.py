@@ -151,11 +151,13 @@ def isKorean(text):
     # check korean
     pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
     word_kor = pattern_hangul.search(str(text))
-    print('word_kor: ', word_kor)
+    # print('word_kor: ', word_kor)
 
     if word_kor and word_kor != 'None':
+        print('Korean: ', word_kor)
         return True
     else:
+        print('Not Korean: ', word_kor)
         return False
 
 def get_prompt_template(query, conv_type, rag_type):    
@@ -1371,7 +1373,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
 
-                print('opensearch page: ', page)
+                #print('opensearch page: ', page)
 
                 if page:                
                     reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
@@ -1700,7 +1702,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 for i, doc in enumerate(relevant_docs_raw):
                     if isKorean(doc)==False:
                         translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-                        print(f"translated {i}: {translated_excerpt}")
+                        print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                        print(f"#### {i} (KOR): {translated_excerpt}")
 
                         doc['metadata']['excerpt'] = translated_excerpt
                         relevant_docs.append(doc)
@@ -1787,7 +1790,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('selected_relevant_docs (google): ', selected_relevant_docs)
 
         end_time_for_priority_search = time.time() 
-        time_for_priority_search = end_time_for_priority_search - end_time_for_revise
+        time_for_priority_search = end_time_for_priority_search - end_time_for_rag
         print('processing time for priority search: ', time_for_priority_search)
         number_of_relevant_docs = len(selected_relevant_docs)
 
