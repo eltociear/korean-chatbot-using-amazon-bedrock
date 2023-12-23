@@ -1672,17 +1672,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, revised_question, top_k, rag))
                 processes.append(process)
 
-            if allowTranslatedQustion=='true' and isKorean(text)==True:    
-                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
-                print('translated_revised_question: ', translated_revised_question)
-
-                for rag in capabilities:
-                    parent_conn, child_conn = Pipe()
-                    parent_connections.append(parent_conn)
-                
-                    process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, translated_revised_question, top_k, rag))
-                    processes.append(process)
-
             for process in processes:
                 process.start()
             
@@ -1696,6 +1685,36 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             for process in processes:
                 process.join()
         #print('relevant_docs: ', relevant_docs)
+
+        relevant_docs_translated = []        
+        if allowTranslatedQustion=='true' and isKorean(text)==True:    
+            translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+            print('translated_revised_question: ', translated_revised_question)
+
+            for rag in capabilities:
+                parent_conn, child_conn = Pipe()
+                parent_connections.append(parent_conn)
+                
+                process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn,translated_revised_question, top_k, rag))
+                processes.append(process)     
+
+            for process in processes:
+                process.start()
+            
+            for parent_conn in parent_connections:
+                rel_docs = parent_conn.recv()
+
+                if(len(rel_docs)>=1):
+                    for doc in rel_docs:
+                        relevant_docs_translated.append(doc)    
+
+            for process in processes:
+                process.join()           
+
+            print("Documents based on translated question")
+            if len(relevant_docs_translated)>=1:
+                for i, doc in enumerate(relevant_docs_translated):
+                    print(f"{i}: {doc}")
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
