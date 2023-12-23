@@ -1611,15 +1611,15 @@ def retrieve_process_from_RAG(llm, conn, query, top_k, rag_type):
         for doc in rel_docs:
             relevant_docs.append(doc)  
 
-    if allowTranslatedQustion=='true' and isKorean(query)=='false':    
-        translated_query = traslation_to_korean(llm=llm, msg=query)
-        print('translated_query: ', translated_query)
+    if allowTranslatedQustion=='true' and isKorean(query)=='true':    
+        query_english = traslation_to_english(llm=llm, msg=query)
+        print('query_english: ', query_english)
 
         if rag_type == 'kendra':
-            rel_docs = retrieve_from_kendra(query=translated_query, top_k=top_k)      
+            rel_docs = retrieve_from_kendra(query=query_english, top_k=top_k)      
             print('rel_docs (kendra): '+json.dumps(rel_docs))
         else:
-            rel_docs = retrieve_from_vectorstore(query=translated_query, top_k=top_k, rag_type=rag_type)
+            rel_docs = retrieve_from_vectorstore(query=query_english, top_k=top_k, rag_type=rag_type)
             print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
         
         if(len(rel_docs)>=1):
@@ -2054,6 +2054,25 @@ def get_text_speech(path, speech_prefix, bucket, msg):
 def traslation_to_korean(llm, msg):
     PROMPT = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
             
+    <article>
+    {input}
+    </article>
+                        
+    Assistant:"""
+
+    try: 
+        translated_msg = llm(PROMPT.format(input=msg))
+        print('translated_msg: ', translated_msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to translate the message")
+    
+    return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
+
+def traslation_to_english(llm, msg):
+    PROMPT = """\n\nHuman: 다음의 <article>를 English로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
+
     <article>
     {input}
     </article>
