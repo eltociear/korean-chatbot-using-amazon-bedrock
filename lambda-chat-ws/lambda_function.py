@@ -1704,7 +1704,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     print(f"{i}: {doc}")
 
                     if isKorean(doc)==False:
-                        translated_doc = traslation_to_korean(doc)
+                        translated_doc = traslation_to_korean(llm=llm, msg=doc)
                     
                     print(f"translated {i}: {translated_doc}")
 
