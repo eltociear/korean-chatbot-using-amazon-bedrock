@@ -1611,7 +1611,7 @@ def retrieve_process_from_RAG(llm, conn, query, top_k, rag_type):
         for doc in rel_docs:
             relevant_docs.append(doc)  
 
-    if allowTranslatedQustion=='true' and isKorean(query)=='true':    
+    if allowTranslatedQustion=='true' and isKorean(query)==True:    
         query_english = traslation_to_english(llm=llm, msg=query)
         print('query_english: ', query_english)
 
