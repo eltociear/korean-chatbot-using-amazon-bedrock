@@ -1630,6 +1630,34 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
 
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
+def get_relevant_documents_using_parallel_processing(llm, question, top_k):
+    relevant_docs = []    
+
+    processes = []
+    parent_connections = []
+    for rag in capabilities:
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, question, top_k, rag))
+        processes.append(process)
+
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        rel_docs = parent_conn.recv()
+
+        if(len(rel_docs)>=1):
+            for doc in rel_docs:
+                relevant_docs.append(doc)    
+
+    for process in processes:
+        process.join()
+    
+    #print('relevant_docs: ', relevant_docs)
+    return relevant_docs
+
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
     time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
@@ -1645,9 +1673,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         end_time_for_revise = time.time()
         time_for_revise = end_time_for_revise - start_time_for_revise
         print('processing time for revised question: ', time_for_revise)
-
-        relevant_docs = []        
+              
         if useParallelRAG == 'false':
+            relevant_docs = []  
             print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
                 if reg == 'kendra':
@@ -1662,62 +1690,23 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         relevant_docs.append(doc)
         else:
             print('start the parallel processing for multiple RAG')
+            relevant_docs = get_relevant_documents_using_parallel_processing(llm=llm, question=revised_question, top_k=top_k)
 
-            processes = []
-            parent_connections = []
-            for rag in capabilities:
-                parent_conn, child_conn = Pipe()
-                parent_connections.append(parent_conn)
-            
-                process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, revised_question, top_k, rag))
-                processes.append(process)
-
-            for process in processes:
-                process.start()
-            
-            for parent_conn in parent_connections:
-                rel_docs = parent_conn.recv()
-
-                if(len(rel_docs)>=1):
-                    for doc in rel_docs:
-                        relevant_docs.append(doc)    
-
-            for process in processes:
-                process.join()
-        #print('relevant_docs: ', relevant_docs)
-
-        relevant_docs_translated = []        
         if allowTranslatedQustion=='true' and isKorean(text)==True:    
-            processes = []
-            parent_connections = []
-            
             translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
             print('translated_revised_question: ', translated_revised_question)
 
-            for rag in capabilities:
-                parent_conn, child_conn = Pipe()
-                parent_connections.append(parent_conn)
-                
-                process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn,translated_revised_question, top_k, rag))
-                processes.append(process)     
+            relevant_docs_translated = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
 
-            for process in processes:
-                process.start()
-            
-            for parent_conn in parent_connections:
-                rel_docs = parent_conn.recv()
-
-                if(len(rel_docs)>=1):
-                    for doc in rel_docs:
-                        relevant_docs_translated.append(doc)    
-
-            for process in processes:
-                process.join()           
-
-            print("Documents based on translated question")
+            print("Documents based on translated question:")
             if len(relevant_docs_translated)>=1:
                 for i, doc in enumerate(relevant_docs_translated):
                     print(f"{i}: {doc}")
+
+                    if isKorean(doc)==False:
+                        translated_doc = traslation_to_korean(doc)
+                    
+                    print(f"translated {i}: {translated_doc}")
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
