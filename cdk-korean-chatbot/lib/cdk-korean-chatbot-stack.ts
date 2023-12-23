@@ -768,7 +768,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
-        connection_url: connection_url,
+        wss_url: wss_url,
       }
     });
 
