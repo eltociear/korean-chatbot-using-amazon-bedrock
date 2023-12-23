@@ -1673,9 +1673,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         end_time_for_revise = time.time()
         time_for_revise = end_time_for_revise - start_time_for_revise
         print('processing time for revised question: ', time_for_revise)
-              
+
+        relevant_docs = [] 
         if useParallelRAG == 'false':
-            relevant_docs = []  
             print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
                 if reg == 'kendra':
@@ -1695,8 +1695,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('translated_revised_question: ', translated_revised_question)
 
             relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
-
-            relevant_docs = []
+            
             if len(relevant_docs)>=1:
                 for i, doc in enumerate(relevant_docs_raw):
                     if isKorean(doc)==False:
