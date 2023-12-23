@@ -1610,26 +1610,6 @@ def retrieve_process_from_RAG(llm, conn, query, top_k, rag_type):
     if(len(rel_docs)>=1):
         for doc in rel_docs:
             relevant_docs.append(doc)  
-
-    if allowTranslatedQustion=='true' and isKorean(query)==True:    
-        query_english = traslation_to_english(llm=llm, msg=query)
-        print('query_english: ', query_english)
-
-        if rag_type == 'kendra':
-            rel_docs = retrieve_from_kendra(query=query_english, top_k=top_k)      
-            print('rel_docs (kendra): '+json.dumps(rel_docs))
-        else:
-            rel_docs = retrieve_from_vectorstore(query=query_english, top_k=top_k, rag_type=rag_type)
-            print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
-        
-        if(len(rel_docs)>=1):
-            if(isKorean(rel_docs[0])==False):
-                rel_doc_translated = traslation_to_korean(llm=llm, msg=rel_docs[0])
-                print('rel_doc_translated: ', rel_doc_translated)
-
-        if(len(rel_docs)>=1):
-            for doc in rel_docs:
-                relevant_docs.append(doc)  
     
     conn.send(relevant_docs)
     conn.close()
@@ -1682,7 +1662,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         relevant_docs.append(doc)
         else:
             print('start the parallel processing for multiple RAG')
-            
+
             processes = []
             parent_connections = []
             for rag in capabilities:
@@ -1691,6 +1671,17 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             
                 process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, revised_question, top_k, rag))
                 processes.append(process)
+
+            if allowTranslatedQustion=='true' and isKorean(text)==True:    
+                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+                print('translated_revised_question: ', translated_revised_question)
+
+                for rag in capabilities:
+                    parent_conn, child_conn = Pipe()
+                    parent_connections.append(parent_conn)
+                
+                    process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, translated_revised_question, top_k, rag))
+                    processes.append(process)
 
             for process in processes:
                 process.start()
