@@ -63,6 +63,7 @@ MSG_HISTORY_LENGTH = 20
 speech_generation = True
 history_length = 0
 token_counter_history = 0
+allowTranslatedQustion = 'true'
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -1597,7 +1598,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(conn, query, top_k, rag_type):
+def retrieve_process_from_RAG(llm, conn, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
@@ -1605,10 +1606,30 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     else:
         rel_docs = retrieve_from_vectorstore(query=query, top_k=top_k, rag_type=rag_type)
         print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
-    
+
     if(len(rel_docs)>=1):
         for doc in rel_docs:
-            relevant_docs.append(doc)    
+            relevant_docs.append(doc)  
+
+    if allowTranslatedQustion=='true':    
+        translated_query = traslation_to_korean(llm=llm, msg=query)
+        print('translated_query: ', translated_query)
+
+        if rag_type == 'kendra':
+            rel_docs = retrieve_from_kendra(query=translated_query, top_k=top_k)      
+            print('rel_docs (kendra): '+json.dumps(rel_docs))
+        else:
+            rel_docs = retrieve_from_vectorstore(query=translated_query, top_k=top_k, rag_type=rag_type)
+            print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
+        
+        if(len(rel_docs)>=1):
+            if(isKorean(rel_docs[0])==False):
+                rel_doc_translated = traslation_to_korean(llm=llm, msg=rel_docs[0])
+                print('rel_doc_translated: ', rel_doc_translated)
+
+        if(len(rel_docs)>=1):
+            for doc in rel_docs:
+                relevant_docs.append(doc)  
     
     conn.send(relevant_docs)
     conn.close()
@@ -1668,7 +1689,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 parent_conn, child_conn = Pipe()
                 parent_connections.append(parent_conn)
             
-                process = Process(target=retrieve_process_from_RAG, args=(child_conn, revised_question, top_k, rag))
+                process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, revised_question, top_k, rag))
                 processes.append(process)
 
             for process in processes:
@@ -2372,11 +2393,7 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
-        if isKorean(msg) and (conv_type=='qa' or  conv_type == "normal"):
-            if speech_generation: # generate mp3 file
-                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
-                print('speech_uri: ', speech_uri)      
-        else:
+        if isKorean(msg)==False and (conv_type=='qa' or  conv_type == "normal"):
             translated_msg = traslation_to_korean(llm, msg)
             print('translated_msg: ', translated_msg)
             
@@ -2384,6 +2401,10 @@ def getResponse(connectionId, jsonBody):
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
                 print('speech_uri: ', speech_uri)  
             msg = msg+'\n[한국어]\n'+translated_msg
+        else:
+            if speech_generation: # generate mp3 file
+                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
+                print('speech_uri: ', speech_uri)  
 
         item = {    # save dialog
             'user_id': {'S':userId},
