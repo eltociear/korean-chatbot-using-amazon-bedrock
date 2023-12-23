@@ -471,7 +471,7 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 한영동시 검색을 하지 않았을때의 결과는 아래와 같습니다. 동일한 질문이지만, OpenSearch의 결과를 많이 참조하여 잘못된 답변을 할 수 있습니다.
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/0bff53b0-2159-4b75-8ba8-f56ad44f1648)
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b5548594-abc8-4447-8f95-d6d12d36c23e)
 
 
 ## 리소스 정리하기 
