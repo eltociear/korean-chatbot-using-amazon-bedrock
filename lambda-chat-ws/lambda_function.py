@@ -1170,7 +1170,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
         # print('doc: ', doc)
         excerpts.append(
             Document(
-                page_content=doc['metadata']['excerpt'],
+                page_content=int(doc['metadata']['excerpt']),
                 metadata={
                     'name': doc['metadata']['title'],
                     'order':i,
@@ -2079,10 +2079,10 @@ def traslation_to_korean(llm, msg):
 
     try: 
         translated_msg = llm(PROMPT.format(input=msg))
-        print('translated_msg: ', translated_msg)
+        #print('translated_msg: ', translated_msg)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
+        #print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
@@ -2098,10 +2098,10 @@ def traslation_to_english(llm, msg):
 
     try: 
         translated_msg = llm(PROMPT.format(input=msg))
-        print('translated_msg: ', translated_msg)
+        #print('translated_msg: ', translated_msg)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
+        #print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
