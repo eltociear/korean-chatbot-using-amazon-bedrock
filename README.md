@@ -384,6 +384,15 @@ def get_text_speech(path, speech_prefix, bucket, msg):
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/8c484742-a294-4876-afe9-df0e0f2d96c5)
 
+#### 한영 동시검색
+
+"Amazon의 Athena 서비스에 대해 설명해주세요."로 검색할때 한영 동시 검색을 하면 영어 문서에서 답변에 필요한 관련문서를 추출할 수 있습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/4526c9aa-a0aa-4b23-8818-860f5376b898)
+
+한영동시 검색을 하지 않았을때의 결과는 아래와 같습니다. 동일한 질문이지만, OpenSearch의 결과를 많이 참조하여 잘못된 답변을 할 수 있습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b5548594-abc8-4447-8f95-d6d12d36c23e)
 
 
 ### Prompt Engineering 결과 예제
@@ -463,15 +472,6 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/cbbece5c-5476-4f3b-89f7-c7fcf90ca796)
 
 
-#### 한영 동시검색
-
-"Amazon의 Athena 서비스에 대해 설명해주세요."로 검색할때 한영 동시 검색을 하면 영어 문서에서 답변에 필요한 관련문서를 추출할 수 있습니다.
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/91c41b7e-b6ee-4ce3-a3e9-d24cc80a7f86)
-
-한영동시 검색을 하지 않았을때의 결과는 아래와 같습니다. 동일한 질문이지만, OpenSearch의 결과를 많이 참조하여 잘못된 답변을 할 수 있습니다.
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b5548594-abc8-4447-8f95-d6d12d36c23e)
 
 
 ## 리소스 정리하기 
