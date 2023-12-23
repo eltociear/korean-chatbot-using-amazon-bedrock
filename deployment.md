@@ -59,7 +59,7 @@ aws sts get-caller-identity --query Account --output text
 cdk bootstrap aws://account-id/ap-northeast-2
 ```
 
-8) 인프라를 설치합니다.
+7) 인프라를 설치합니다.
 
 ```java
 cdk deploy --all
@@ -69,13 +69,13 @@ cdk deploy --all
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/766b4d33-13c9-49b1-9462-832120f73109)
 
-9) HTMl 파일을 S3에 복사합니다.
+8) HTMl 파일을 S3에 복사합니다.
 
 아래와 같이 Output의 HtmlUpdateCommend을 붙여넣기 합니다. 
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/130bae3d-3bde-43a8-8bcb-55cee1e06e42)
 
-10) Google API Key Update하기
+9) Google API Key Update하기
 
 [api_key](https://developers.google.com/custom-search/docs/paid_element?hl=ko#api_key)에서 [키 가져오기] - [Select or create project]를 선택하여 Google API Key를 가져옵니다. 만약 기존 키가 없다면 새로 생성합니다.
 
@@ -83,5 +83,5 @@ cdk deploy --all
 
 [Secret Console](https://us-west-2.console.aws.amazon.com/secretsmanager/secret?name=googl_api_key&region=us-west-2)에 접속하여 [Retrieve secret value]를 선택하여, google_api_key와 google_cse_id를 업데이트합니다.
 
-9) WebUrl를 선택하여 브라우저로 접속합니다.
+10) WebUrl를 선택하여 브라우저로 접속합니다.
 
