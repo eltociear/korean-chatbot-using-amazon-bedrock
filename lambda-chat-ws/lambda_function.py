@@ -1694,7 +1694,18 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
             print('translated_revised_question: ', translated_revised_question)
 
-            relevant_docs = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
+            relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
+
+            relevant_docs = []
+            if len(relevant_docs)>=1:
+                for i, doc in enumerate(relevant_docs_raw):
+                    if isKorean(doc)==False:
+                        translated_doc = traslation_to_korean(llm=llm, msg=doc)
+                        print(f"translated {i}: {translated_doc}")
+                        relevant_docs.append(translated_doc)
+                    else:
+                        print(f"original {i}: {doc}")
+                        relevant_docs.append(doc)
         """
         if allowTranslatedQustion=='true' and isKorean(text)==True:    
             translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
