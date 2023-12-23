@@ -1692,6 +1692,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('start the parallel processing for multiple RAG')
             relevant_docs = get_relevant_documents_using_parallel_processing(llm=llm, question=revised_question, top_k=top_k)
 
+        """
         if allowTranslatedQustion=='true' and isKorean(text)==True:    
             translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
             print('translated_revised_question: ', translated_revised_question)
@@ -1707,7 +1708,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         translated_doc = traslation_to_korean(llm=llm, msg=doc)
                     
                     print(f"translated {i}: {translated_doc}")
-
+        """
+        
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
         print('processing time for RAG: ', time_for_rag)
