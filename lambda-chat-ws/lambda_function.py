@@ -1696,7 +1696,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
             
-            if len(relevant_docs)>=1:
+            if len(relevant_docs_raw)>=1:
                 for i, doc in enumerate(relevant_docs_raw):
                     if isKorean(doc)==False:
                         translated_doc = traslation_to_korean(llm=llm, msg=doc)
