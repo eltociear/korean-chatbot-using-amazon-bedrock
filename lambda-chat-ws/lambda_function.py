@@ -109,6 +109,39 @@ def get_parameter(model_type, maxOutputTokens):
 map_chain = dict() # For RAG
 map_chat = dict() # For general conversation  
 
+
+# Multi-LLM
+def initiate_multiple_llm():
+    boto3_bedrock = []
+    multi_llm = []
+    for i, profile in enumerate(profile_of_LLMs):
+        profile = profile_of_LLMs[i]
+        bedrock_region =  profile['bedrock_region']
+        modelId = profile['model_id']
+        #print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+        
+        # bedrock   
+        boto3_bedrock[i] = boto3.client(
+            service_name='bedrock-runtime',
+            region_name=bedrock_region,
+            config=Config(
+                retries = {
+                    'max_attempts': 30
+                }            
+            )
+        )
+        parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+        print('parameters: ', parameters)
+
+        # langchain for bedrock
+        multi_llm[i] = Bedrock(
+            model_id=modelId, 
+            client=boto3_bedrock, 
+            # streaming=True,
+            # callbacks=[StreamingStdOutCallbackHandler()],
+            model_kwargs=parameters)
+    return multi_llm
+
 def sendMessage(id, body):
     try:
         client.post_to_connection(
@@ -1600,7 +1633,7 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(llm, conn, query, top_k, rag_type):
+def retrieve_process_from_RAG(conn, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
@@ -1632,7 +1665,7 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
 
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
-def get_relevant_documents_using_parallel_processing(llm, question, top_k):
+def get_relevant_documents_using_parallel_processing(question, top_k):
     relevant_docs = []    
 
     processes = []
@@ -1641,7 +1674,7 @@ def get_relevant_documents_using_parallel_processing(llm, question, top_k):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        process = Process(target=retrieve_process_from_RAG, args=(llm, child_conn, question, top_k, rag))
+        process = Process(target=retrieve_process_from_RAG, args=(child_conn, question, top_k, rag))
         processes.append(process)
 
     for process in processes:
@@ -1692,14 +1725,14 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         relevant_docs.append(doc)
         else:
             print('start RAG for revised question')
-            relevant_docs = get_relevant_documents_using_parallel_processing(llm=llm, question=revised_question, top_k=top_k)
+            relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
             
             if allowTranslatedQustion==True:
                 print('start RAG for translated revised question')
                 translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
 
-                relevant_docs_raw = get_relevant_documents_using_parallel_processing(llm=llm, question=translated_revised_question, top_k=top_k)
+                relevant_docs_raw = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
                 
                 if len(relevant_docs_raw)>=1:
                     for i, doc in enumerate(relevant_docs_raw):
@@ -2279,7 +2312,7 @@ def getResponse(connectionId, jsonBody):
                         msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
                     except Exception:
                         err_msg = traceback.format_exc()
-                        print('error message: ', err_msg)        
+                        print('error message: ', err_msg)
 
                         sendErrorMessage(connectionId, requestId, err_msg)    
                         raise Exception ("Not able to request to LLM")
@@ -2295,7 +2328,7 @@ def getResponse(connectionId, jsonBody):
         elif type == 'document':
             isTyping(connectionId, requestId)
             
-            object = body            
+            object = body
             file_type = object[object.rfind('.')+1:len(object)]            
             print('file_type: ', file_type)
 
@@ -2322,7 +2355,7 @@ def getResponse(connectionId, jsonBody):
                                 'uri': path+doc_prefix+parse.quote(object)
                             }
                         )
-                    )        
+                    )
                 print('docs[0]: ', docs[0])    
                 print('docs size: ', len(docs))
 
@@ -2348,8 +2381,8 @@ def getResponse(connectionId, jsonBody):
 
                 if useParallelUpload == 'false':
                     if rag_type == 'all':      
-                        for type in capabilities:             
-                            print('rag_type: ', type)        
+                        for type in capabilities:
+                            print('rag_type: ', type)
                             if type=='kendra':      
                                 print('upload to kendra: ', object)           
                                 store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
@@ -2366,19 +2399,19 @@ def getResponse(connectionId, jsonBody):
                                             isReady = True
                                         else:
                                             store_document_for_faiss(docs, vectorstore_faiss)
-                                                                        
+
                                     elif type == 'opensearch':    
                                         store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
                     else:
-                        print('rag_type: ', rag_type)                
-                        if rag_type=='kendra':      
-                            print('upload to kendra: ', object)           
+                        print('rag_type: ', rag_type)
+                        if rag_type=='kendra':
+                            print('upload to kendra: ', object)
                             store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
                                                 
                         else:
                             if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                                 if rag_type == 'faiss':
-                                    if isReady == False:   
+                                    if isReady == False:
                                         embeddings = bedrock_embeddings
                                         vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
                                                 docs,  # documents
@@ -2462,7 +2495,7 @@ def getResponse(connectionId, jsonBody):
         sendResultMessage(connectionId, requestId, msg+reference+speech)
 
         if conv_type=='qa' and debugMessageMode=='true' and reference:
-            statusMsg = f"\n[통계] - {bedrock_region}\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
+            statusMsg = f"\n[통계]\nRegion: {bedrock_region}\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             statusMsg = statusMsg + f"RAG: {str(relevant_length)}자 / {token_counter_relevant_docs}토큰 ({number_of_relevant_docs})\n"
 
