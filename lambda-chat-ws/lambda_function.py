@@ -63,7 +63,8 @@ MSG_HISTORY_LENGTH = 20
 speech_generation = True
 history_length = 0
 token_counter_history = 0
-allowTranslatedQustion = 'True'
+allowTranslatedQustion = True
+allowTranslationWithMulipleProcessing = True
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -1766,42 +1767,41 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('start RAG for revised question')
             relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
             
-            if allowTranslatedQustion==True:
+            if allowTranslatedQustion==True:                
                 print('start RAG for translated revised question')
                 translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
 
-                relevant_docs_raw = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
-                
-                docs_translation_required = []
-                if len(relevant_docs_raw)>=1:
-                    for i, doc in enumerate(relevant_docs_raw):
-                        if isKorean(doc)==False:
-                            docs_translation_required.append(doc)
-                        else:
-                            print(f"original {i}: {doc}")
-                            relevant_docs.append(doc)
-                                        
-                    translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
-                    if(debugMessageMode=='true'):
-                        for i, doc in enumerate(docs_translation_required):
-                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                            print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
+                if allowTranslationWithMulipleProcessing == True:
+                    relevant_docs_raw = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
+                    
+                    docs_translation_required = []
+                    if len(relevant_docs_raw)>=1:
+                        for i, doc in enumerate(relevant_docs_raw):
+                            if isKorean(doc)==False:
+                                docs_translation_required.append(doc)
+                            else:
+                                print(f"original {i}: {doc}")
+                                relevant_docs.append(doc)
+                                            
+                        translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
+                        if(debugMessageMode=='true'):
+                            for i, doc in enumerate(docs_translation_required):
+                                print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                                print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
+                else:
+                    if len(relevant_docs_raw)>=1:
+                        for i, doc in enumerate(relevant_docs_raw):
+                            if isKorean(doc)==False:
+                                translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+                                print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                                print(f"#### {i} (KOR): {translated_excerpt}")
 
-                """
-                if len(relevant_docs_raw)>=1:
-                    for i, doc in enumerate(relevant_docs_raw):
-                        if isKorean(doc)==False:
-                            translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                            print(f"#### {i} (KOR): {translated_excerpt}")
-
-                            doc['metadata']['excerpt'] = translated_excerpt
-                            relevant_docs.append(doc)
-                        else:
-                            print(f"original {i}: {doc}")
-                            relevant_docs.append(doc)
-                """
+                                doc['metadata']['excerpt'] = translated_excerpt
+                                relevant_docs.append(doc)
+                            else:
+                                print(f"original {i}: {doc}")
+                                relevant_docs.append(doc)
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
