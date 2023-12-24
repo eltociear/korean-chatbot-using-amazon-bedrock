@@ -1713,7 +1713,7 @@ def translate_relevant_documents_using_parallel_processing(docs):
         processes.append(process)
 
         n = n + 1
-        if n == len(llm):
+        if n == len(profile_of_LLMs):
             n = 0
 
     for process in processes:
