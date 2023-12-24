@@ -1373,7 +1373,11 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
     elif rag_method == 'RetrievalPrompt':
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
-            excerpt = str(doc['metadata']['excerpt']).replace('"'," ") 
+            if doc['metadata']['translated_excerpt']:
+                excerpt = str(doc['metadata']['excerpt']+'\n\n'+doc['metadata']['translated_excerpt']).replace('"'," ") 
+            else:
+                excerpt = str(doc['metadata']['excerpt']).replace('"'," ")
+
             if doc['rag_type'] == 'kendra':                
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
@@ -2051,7 +2055,12 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             relevant_context = ""
             for document in relevant_docs:
-                relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+                if document['metadata']['translated_excerpt']:
+                    content = document['metadata']['translated_excerpt']
+                else:
+                    content = document['metadata']['excerpt']
+
+                relevant_context = relevant_context + content + "\n\n"
             print('relevant_context: ', relevant_context)
 
             try: 
