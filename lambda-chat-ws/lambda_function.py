@@ -112,36 +112,33 @@ map_chat = dict() # For general conversation
 
 
 # Multi-LLM
-def initiate_multiple_llm(profile_of_LLMs):
-    boto3_bedrock = []
-    multi_llm = []
-    for i, profile in enumerate(profile_of_LLMs):
-        profile = profile_of_LLMs[i]
-        bedrock_region =  profile['bedrock_region']
-        modelId = profile['model_id']
-        #print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+def get_llm(profile_of_LLMs, i):
+    profile = profile_of_LLMs[i]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    #print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
         
-        # bedrock   
-        boto3_bedrock[i] = boto3.client(
-            service_name='bedrock-runtime',
-            region_name=bedrock_region,
-            config=Config(
-                retries = {
-                    'max_attempts': 30
-                }            
-            )
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
         )
-        parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
-        print('parameters: ', parameters)
+    )
+    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    print('parameters: ', parameters)
 
-        # langchain for bedrock
-        multi_llm[i] = Bedrock(
-            model_id=modelId, 
-            client=boto3_bedrock[i], 
-            # streaming=True,
-            # callbacks=[StreamingStdOutCallbackHandler()],
-            model_kwargs=parameters)
-    return multi_llm
+    # langchain for bedrock
+    llm = Bedrock(
+        model_id=modelId, 
+        client=boto3_bedrock, 
+        # streaming=True,
+        # callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters)
+    return llm
 
 def sendMessage(id, body):
     try:
@@ -1703,9 +1700,7 @@ def translate_process_from_relevent_doc(conn, llm, doc):
     conn.close()
 
 def translate_relevant_documents_using_parallel_processing(docs):
-    multi_llm = initiate_multiple_llm(profile_of_LLMs)
     n = 0
-
     relevant_docs = []    
     processes = []
     parent_connections = []
@@ -1713,7 +1708,8 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, multi_llm[n], doc))            
+        llm = get_llm(profile_of_LLMs, n)
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc))            
         processes.append(process)
 
         n = n + 1
