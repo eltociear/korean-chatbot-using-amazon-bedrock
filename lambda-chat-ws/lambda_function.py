@@ -997,7 +997,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
     for i, document in enumerate(relevant_documents):
         #print('document.page_content:', document.page_content)
         #print('document.metadata:', document.metadata)
-        print(f'## Document {i+1}: {document}')
+        print(f'## Document(retrieve_from_kendra_using_kendra_retriever) {i+1}: {document}')
 
         result_id = document.metadata['result_id']
         document_id = document.metadata['document_id']
@@ -1195,7 +1195,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
         raise Exception ("Not able to retrieve from Kendra")     
 
     for i, rel_doc in enumerate(relevant_docs):
-        print(f'## Document {i+1}: {json.dumps(rel_doc)}')  
+        print(f'## Document(retrieve_from_kendra_using_kendra_retriever) {i+1}: {json.dumps(rel_doc)}')  
 
     return relevant_docs
 
@@ -1231,7 +1231,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
 
     docs = []
     for i, document in enumerate(rel_documents):
-        print(f'## Document {i+1}: {document}')
+        print(f'## Document(priority_search) {i+1}: {document}')
 
         order = document[0].metadata['order']
         name = document[0].metadata['name']
@@ -1362,7 +1362,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         else:
             reference = "\n\nFrom\n"
             for i, doc in enumerate(docs):
-                print(f'## Document {i+1}: {doc}')
+                print(f'## Document(get_reference) {i+1}: {doc}')
 
                 name = doc.metadata['name']
                 page = doc.metadata['page']
@@ -1374,7 +1374,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
             if doc['metadata']['translated_excerpt']:
-                excerpt = str(doc['metadata']['excerpt']+'\n\n'+doc['metadata']['translated_excerpt']).replace('"'," ") 
+                excerpt = str(doc['metadata']['excerpt']+'  [번역]'+doc['metadata']['translated_excerpt']).replace('"'," ") 
             else:
                 excerpt = str(doc['metadata']['excerpt']).replace('"'," ")
 
@@ -1409,7 +1409,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                         elif uri:
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             elif doc['rag_type'] == 'opensearch':
-                print(f'## Document {i+1}: {doc}')
+                print(f'## Document(get_reference) {i+1}: {doc}')
                 
                 page = ""
                 if "document_attributes" in doc['metadata']:
@@ -1426,7 +1426,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                     reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         
             elif doc['rag_type'] == 'faiss':
-                print(f'## Document {i+1}: {doc}')
+                print(f'## Document(get_reference) {i+1}: {doc}')
                 
                 page = ""
                 if "document_attributes" in doc['metadata']:
@@ -1441,7 +1441,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                     reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             
             elif doc['rag_type'] == 'search': # google search
-                print(f'## Document {i+1}: {doc}')
+                print(f'## Document(get_reference) {i+1}: {doc}')
                 
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
@@ -1470,7 +1470,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
-            print(f'## Document {i+1}: {document}')
+            print(f'## Document(retrieve_from_vectorstore) {i+1}: {document}')
 
             name = document[0].metadata['name']
             page = ""
@@ -1539,7 +1539,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
-            print(f'## Document {i+1}: {document}')
+            print(f'## Document(retrieve_from_vectorstore) {i+1}: {document}')
 
             name = document[0].metadata['name']
             print('metadata: ', document[0].metadata)
@@ -2551,7 +2551,7 @@ def getResponse(connectionId, jsonBody):
                 print('processing time: ', str(time.time() - start_time))
                         
         sendResultMessage(connectionId, requestId, msg+reference)
-        print('msg+reference: ', msg+reference)
+        # print('msg+reference: ', msg+reference)
 
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
