@@ -63,7 +63,7 @@ MSG_HISTORY_LENGTH = 20
 speech_generation = True
 history_length = 0
 token_counter_history = 0
-allowTranslatedQustion = 'False'
+allowTranslatedQustion = 'True'
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -111,7 +111,7 @@ map_chat = dict() # For general conversation
 
 
 # Multi-LLM
-def initiate_multiple_llm():
+def initiate_multiple_llm(profile_of_LLMs):
     boto3_bedrock = []
     multi_llm = []
     for i, profile in enumerate(profile_of_LLMs):
@@ -136,7 +136,7 @@ def initiate_multiple_llm():
         # langchain for bedrock
         multi_llm[i] = Bedrock(
             model_id=modelId, 
-            client=boto3_bedrock, 
+            client=boto3_bedrock[i], 
             # streaming=True,
             # callbacks=[StreamingStdOutCallbackHandler()],
             model_kwargs=parameters)
@@ -1693,6 +1693,45 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
     #print('relevant_docs: ', relevant_docs)
     return relevant_docs
 
+def translate_process_from_relevent_doc(conn, llm, doc):
+    translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+
+    doc['metadata']['excerpt'] = translated_excerpt
+
+    conn.send(doc)
+    conn.close()
+
+def translate_relevant_documents_using_parallel_processing(docs):
+    multi_llm = initiate_multiple_llm(profile_of_LLMs)
+    n = 0
+
+    relevant_docs = []    
+    processes = []
+    parent_connections = []
+    for doc in docs:
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, multi_llm[n], doc))            
+        processes.append(process)
+
+        n = n + 1
+        if n == len(multi_llm):
+            n = 0
+
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        doc = parent_conn.recv()
+        relevant_docs.append(doc)    
+
+    for process in processes:
+        process.join()
+    
+    #print('relevant_docs: ', relevant_docs)
+    return relevant_docs
+
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
     time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
@@ -1734,6 +1773,22 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
                 relevant_docs_raw = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
                 
+                docs_translation_required = []
+                if len(relevant_docs_raw)>=1:
+                    for i, doc in enumerate(relevant_docs_raw):
+                        if isKorean(doc)==False:
+                            docs_translation_required.append(doc)
+                        else:
+                            print(f"original {i}: {doc}")
+                            relevant_docs.append(doc)
+                                        
+                    translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
+                    if(debugMessageMode=='true'):
+                        for i, doc in enumerate(docs_translation_required):
+                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                            print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
+
+                """
                 if len(relevant_docs_raw)>=1:
                     for i, doc in enumerate(relevant_docs_raw):
                         if isKorean(doc)==False:
@@ -1746,6 +1801,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         else:
                             print(f"original {i}: {doc}")
                             relevant_docs.append(doc)
+                """
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
