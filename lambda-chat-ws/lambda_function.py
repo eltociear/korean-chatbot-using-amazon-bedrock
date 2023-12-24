@@ -112,11 +112,11 @@ map_chat = dict() # For general conversation
 
 
 # Multi-LLM
-def get_llm(profile_of_LLMs, i):
-    profile = profile_of_LLMs[i]
+def get_llm(profile_of_LLMs, selected_LLM):
+    profile = profile_of_LLMs[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
-    #print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
         
     # bedrock   
     boto3_bedrock = boto3.client(
@@ -129,7 +129,7 @@ def get_llm(profile_of_LLMs, i):
         )
     )
     parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
-    print('parameters: ', parameters)
+    # print('parameters: ', parameters)
 
     # langchain for bedrock
     llm = Bedrock(
@@ -1700,7 +1700,7 @@ def translate_process_from_relevent_doc(conn, llm, doc):
     conn.close()
 
 def translate_relevant_documents_using_parallel_processing(docs):
-    n = 0
+    selected_LLM = 0
     relevant_docs = []    
     processes = []
     parent_connections = []
@@ -1708,13 +1708,13 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        llm = get_llm(profile_of_LLMs, n)
+        llm = get_llm(profile_of_LLMs, selected_LLM)
         process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc))            
         processes.append(process)
 
-        n = n + 1
-        if n == len(profile_of_LLMs):
-            n = 0
+        selected_LLM = selected_LLM + 1
+        if selected_LLM == len(profile_of_LLMs):
+            selected_LLM = 0
 
     for process in processes:
         process.start()
@@ -1781,10 +1781,11 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                                 relevant_docs.append(doc)
                                             
                         translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
-                        if(debugMessageMode=='true'):
-                            for i, doc in enumerate(docs_translation_required):
-                                print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                                print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
+                        for i, doc in enumerate(docs_translation_required):
+                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                            print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
+                            relevant_docs.append(doc)
+
                 else:
                     if len(relevant_docs_raw)>=1:
                         for i, doc in enumerate(relevant_docs_raw):
