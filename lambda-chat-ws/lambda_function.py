@@ -1203,9 +1203,14 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
+        if doc['metadata']['translated_excerpt']:
+            content = doc['metadata']['translated_excerpt']
+        else:
+            content = doc['metadata']['excerpt']
+        
         excerpts.append(
             Document(
-                page_content=doc['metadata']['excerpt'],
+                page_content=content,
                 metadata={
                     'name': doc['metadata']['title'],
                     'order':i,
@@ -1897,7 +1902,12 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         relevant_context = ""
         for document in selected_relevant_docs:
-            relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
+            if document['metadata']['translated_excerpt']:
+                content = document['metadata']['translated_excerpt']
+            else:
+                content = document['metadata']['excerpt']
+        
+            relevant_context = relevant_context + content + "\n\n"
         print('relevant_context: ', relevant_context)
 
         try: 
