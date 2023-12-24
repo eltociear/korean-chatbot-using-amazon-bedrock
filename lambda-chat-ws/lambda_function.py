@@ -1027,6 +1027,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
                     "source": uri,
                     "title": title,
                     "excerpt": excerpt,
+                    "translated_excerpt": "",                    
                     "document_attributes": {
                         "_excerpt_page_number": page
                     }
@@ -1048,6 +1049,7 @@ def retrieve_from_kendra_using_kendra_retriever(query, top_k):
                     "source": uri,
                     "title": title,
                     "excerpt": excerpt,
+                    "translated_excerpt": ""
                 },
                 #"query_id": query_id,
                 #"feedback_token": feedback_token
@@ -1264,6 +1266,7 @@ def extract_relevant_doc_for_kendra(query_id, api_type, query_result):
                 "source": document_uri,
                 "title": document_title,
                 "excerpt": excerpt,
+                "translated_excerpt": ""
             },
             "assessed_score": "",
         }
@@ -1307,6 +1310,7 @@ def extract_relevant_doc_for_kendra(query_id, api_type, query_result):
                     "source": document_uri,
                     "title": document_title,
                     "excerpt": excerpt,
+                    "translated_excerpt": "",
                     "document_attributes": {
                         "_excerpt_page_number": page
                     }
@@ -1326,6 +1330,7 @@ def extract_relevant_doc_for_kendra(query_id, api_type, query_result):
                     "source": document_uri,
                     "title": document_title,
                     "excerpt": excerpt,
+                    "translated_excerpt": "",
                 },
                 "assessed_score": "",
                 "query_id": query_id,
@@ -1480,6 +1485,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         "source": uri,
                         "title": name,
                         "excerpt": document[0].page_content,
+                        "translated_excerpt": "",
                         "document_attributes": {
                             "_excerpt_page_number": page
                         }
@@ -1500,6 +1506,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         "source": uri,
                         "title": name,
                         "excerpt": document[0].page_content,
+                        "translated_excerpt": ""
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
@@ -1551,6 +1558,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         "source": uri,
                         "title": name,
                         "excerpt": excerpt,
+                        "translated_excerpt": "",
                         "document_attributes": {
                             "_excerpt_page_number": page
                         }
@@ -1570,6 +1578,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         "source": uri,
                         "title": name,
                         "excerpt": excerpt,
+                        "translated_excerpt": ""
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
@@ -1694,7 +1703,8 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
 def translate_process_from_relevent_doc(conn, llm, doc):
     translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
 
-    doc['metadata']['excerpt'] = translated_excerpt
+    # doc['metadata']['excerpt'] = translated_excerpt
+    doc['metadata']['translated_excerpt'] = translated_excerpt
 
     conn.send(doc)
     conn.close()
@@ -1746,7 +1756,61 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('processing time for revised question: ', time_for_revise)
 
         relevant_docs = [] 
-        if useParallelRAG == 'false':
+        if useParallelRAG == 'true':  # parallel processing
+            print('start RAG for revised question')
+            relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
+            
+            if allowTranslatedQustion==True:                
+                print('start RAG for translated revised question')
+                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+                print('translated_revised_question: ', translated_revised_question)
+
+                if allowTranslationWithMulipleProcessing == True:
+                    relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
+                    
+                    docs_translation_required = []
+                    if len(relevant_docs_using_translated_question)>=1:
+                        for i, doc in enumerate(relevant_docs_using_translated_question):
+                            if isKorean(doc)==False:
+                                docs_translation_required.append(doc)
+                            else:
+                                print(f"original {i}: {doc}")
+                                relevant_docs.append(doc)
+                                           
+                        translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
+                        for i, doc in enumerate(translated_docs):
+                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                            print(f"#### {i} (KOR): {doc['metadata']['translated_excerpt']}")
+                            relevant_docs.append(doc)
+
+                else:
+                    relevant_docs_using_translated_question = []
+                    for reg in capabilities:            
+                        if reg == 'kendra':
+                            rel_docs = retrieve_from_kendra(query=translated_revised_question, top_k=top_k)      
+                            print('rel_docs (kendra): '+json.dumps(rel_docs))
+                        else:
+                            rel_docs = retrieve_from_vectorstore(query=translated_revised_question, top_k=top_k, rag_type=reg)
+                            print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
+                    
+                        if(len(rel_docs)>=1):
+                            for doc in rel_docs:
+                                relevant_docs_using_translated_question.append(doc)    
+
+                    if len(relevant_docs_using_translated_question)>=1:
+                        for i, doc in enumerate(relevant_docs_using_translated_question):
+                            if isKorean(doc)==False:
+                                translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+                                print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
+                                print(f"#### {i} (KOR): {translated_excerpt}")
+
+                                #doc['metadata']['excerpt'] = translated_excerpt
+                                doc['metadata']['translated_excerpt'] = translated_excerpt
+                                relevant_docs.append(doc)
+                            else:
+                                print(f"original {i}: {doc}")
+                                relevant_docs.append(doc)
+        else: # sequencial processing
             print('start the sequencial processing for multiple RAG')
             for reg in capabilities:            
                 if reg == 'kendra':
@@ -1759,46 +1823,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 if(len(rel_docs)>=1):
                     for doc in rel_docs:
                         relevant_docs.append(doc)
-        else:
-            print('start RAG for revised question')
-            relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
-            
-            if allowTranslatedQustion==True:                
-                print('start RAG for translated revised question')
-                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
-                print('translated_revised_question: ', translated_revised_question)
 
-                if allowTranslationWithMulipleProcessing == True:
-                    relevant_docs_raw = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=top_k)
-                    
-                    docs_translation_required = []
-                    if len(relevant_docs_raw)>=1:
-                        for i, doc in enumerate(relevant_docs_raw):
-                            if isKorean(doc)==False:
-                                docs_translation_required.append(doc)
-                            else:
-                                print(f"original {i}: {doc}")
-                                relevant_docs.append(doc)
-                                            
-                        translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
-                        for i, doc in enumerate(docs_translation_required):
-                            print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                            print(f"#### {i} (KOR): {translated_docs[i]['metadata']['excerpt']}")
-                            relevant_docs.append(doc)
-
-                else:
-                    if len(relevant_docs_raw)>=1:
-                        for i, doc in enumerate(relevant_docs_raw):
-                            if isKorean(doc)==False:
-                                translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-                                print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
-                                print(f"#### {i} (KOR): {translated_excerpt}")
-
-                                doc['metadata']['excerpt'] = translated_excerpt
-                                relevant_docs.append(doc)
-                            else:
-                                print(f"original {i}: {doc}")
-                                relevant_docs.append(doc)
+        if debugMessageMode=='true':
+            for i, doc in enumerate(relevant_docs):
+                print(f"#### relevant_docs ({i}): {json.dumps(doc)}")
 
         end_time_for_rag = time.time()
         time_for_rag = end_time_for_rag - end_time_for_revise
@@ -1839,6 +1867,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                                 "source": uri,
                                 "title": title,
                                 "excerpt": excerpt,
+                                "translated_excerpt": "",
                                 #"document_attributes": {
                                 #    "_excerpt_page_number": page
                                 #}
