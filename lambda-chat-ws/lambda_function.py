@@ -2254,7 +2254,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference
-    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM
+    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowTranslatedQustion
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2384,6 +2384,13 @@ def getResponse(connectionId, jsonBody):
             elif text == 'disableDebug':
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
+            elif text == 'enableTranslatedQuestion':
+                allowTranslatedQustion = 'true'
+                msg  = "Translated question is enabled"
+            elif text == 'disableTranslatedQuestion':
+                allowTranslatedQustion = 'false'
+                msg  = "Translated question is disabled"
+
             elif text == 'clearMemory':
                 memory_chain.clear()
                 map_chain[userId] = memory_chain
