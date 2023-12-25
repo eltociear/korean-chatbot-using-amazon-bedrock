@@ -33,7 +33,7 @@ let opensearch_url = "";
 const debugMessageMode = 'true'; // if true, debug messages will be delivered to the client.
 const useParallelUpload = 'true';
 const useParallelRAG = 'true';
-const numberOfRelevantDocs = '6';
+const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 
 const claude_instance = JSON.stringify([
