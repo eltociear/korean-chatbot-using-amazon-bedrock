@@ -1786,7 +1786,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('processing time for RAG (Question Translation): ', time_for_rag_question_translation)
 
                 if allowDualSearchingWithMulipleProcessing == True:
-                    relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=2)
+                    relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=4)
 
                     end_time_for_rag_2nd_inference = time.time()
                     time_for_rag_2nd_inference = end_time_for_rag_2nd_inference - end_time_for_rag_question_translation
