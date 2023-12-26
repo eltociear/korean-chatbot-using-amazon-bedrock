@@ -1751,6 +1751,9 @@ def translate_relevant_documents_using_parallel_processing(docs):
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
     global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
     time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
+
+    global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
+    time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
     
     reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
@@ -1769,13 +1772,25 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('start RAG for revised question')
             relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
 
+            end_time_for_rag_inference = time.time()
+            time_for_rag_inference = end_time_for_rag_inference - end_time_for_revise
+            print('processing time for RAG (Inference): ', time_for_rag_inference)
+
             if allowDualSearching=='true' and isKorean(text)==True:                
                 print('start RAG for translated revised question')
                 translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
 
+                end_time_for_rag_question_translation = time.time()
+                time_for_rag_question_translation = end_time_for_rag_question_translation - end_time_for_rag_inference
+                print('processing time for RAG (Question Translation): ', time_for_rag_question_translation)
+
                 if allowDualSearchingWithMulipleProcessing == True:
                     relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=4)
+
+                    end_time_for_rag_2nd_inference = time.time()
+                    time_for_rag_2nd_inference = end_time_for_rag_2nd_inference - end_time_for_rag_question_translation
+                    print('processing time for RAG (2nd Inference): ', time_for_rag_2nd_inference)
                     
                     docs_translation_required = []
                     if len(relevant_docs_using_translated_question)>=1:
@@ -1791,6 +1806,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                             print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
                             print(f"#### {i} (KOR): {doc['metadata']['translated_excerpt']}")
                             relevant_docs.append(doc)
+                        
+                        end_time_for_rag_translation = time.time()
+                        time_for_rag_translation = end_time_for_rag_translation - end_time_for_rag_2nd_inference
+                        print('processing time for RAG (translation): ', time_for_rag_translation)
 
                 else:
                     relevant_docs_using_translated_question = []
@@ -2617,6 +2636,16 @@ def getResponse(connectionId, jsonBody):
             if time_for_inference != 0:
                 statusMsg = statusMsg + f"{time_for_inference:.2f}(Inference), "
             statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
+
+            
+            if time_for_rag_inference != 0:
+                statusMsg = statusMsg + f"\nRAG-Detail: {time_for_rag_inference:.2f}(Inference(KOR)), "
+            if time_for_rag_question_translation != 0:
+                statusMsg = statusMsg + f"{time_for_rag_question_translation:.2f}(Question(ENG)), "
+            if time_for_rag_2nd_inference != 0:
+                statusMsg = statusMsg + f"{time_for_rag_2nd_inference:.2f}(Inference(ENG)), "
+            if time_for_rag_translation != 0:
+                statusMsg = statusMsg + f"{time_for_rag_translation:.2f}(Doc Translation), "
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
 
