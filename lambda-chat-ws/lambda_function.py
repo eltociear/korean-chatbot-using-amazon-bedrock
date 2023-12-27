@@ -2636,7 +2636,6 @@ def getResponse(connectionId, jsonBody):
             if time_for_inference != 0:
                 statusMsg = statusMsg + f"{time_for_inference:.2f}(Inference), "
             statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
-
             
             if time_for_rag_inference != 0:
                 statusMsg = statusMsg + f"\nRAG-Detail: {time_for_rag_inference:.2f}(Inference(KOR)), "
