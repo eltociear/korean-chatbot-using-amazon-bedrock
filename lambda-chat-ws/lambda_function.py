@@ -2406,7 +2406,7 @@ def getResponse(connectionId, jsonBody):
             elif text == 'disableDebug':
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
-            elif text == 'enableDualSearching':
+            elif text == 'enableDualSearch':
                 allowDualSearching = 'true'
                 msg  = "Translated question is enabled"
             elif text == 'disableDualSearching':

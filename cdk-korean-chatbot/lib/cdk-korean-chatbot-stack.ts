@@ -35,7 +35,7 @@ const useParallelUpload = 'true';
 const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
-const allowDualSearching = 'true'
+const allowDualSearching = 'false'
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
 
 const claude_instance = JSON.stringify([
