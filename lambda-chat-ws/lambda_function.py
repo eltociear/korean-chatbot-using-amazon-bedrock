@@ -1711,8 +1711,8 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
 
 def translate_process_from_relevent_doc(conn, llm, doc):
     translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+    print('translated_excerpt: ', translated_excerpt)
 
-    # doc['metadata']['excerpt'] = translated_excerpt
     doc['metadata']['translated_excerpt'] = translated_excerpt
 
     conn.send(doc)
@@ -1780,6 +1780,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('start RAG for translated revised question')
                 translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
+
+                if debugMessageMode=='true':
+                    sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n번역된 새로운 질문: {translated_revised_question}")
 
                 end_time_for_rag_question_translation = time.time()
                 time_for_rag_question_translation = end_time_for_rag_question_translation - end_time_for_rag_inference
