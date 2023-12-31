@@ -944,7 +944,7 @@ def get_revised_question(llm, connectionId, requestId, query):
     try:         
         revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
         print('revised_question: '+revised_question)
-
+        
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
@@ -954,9 +954,9 @@ def get_revised_question(llm, connectionId, requestId, query):
     
     if debugMessageMode=='true':
         # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId)
+        debug_msg_for_revised_question(llm, revised_question.replace("\n"," "), chat_history, connectionId, requestId)
     
-    return revised_question
+    return revised_question.replace("\n"," ")
 
 kendraRetriever = AmazonKendraRetriever(
     index_id=kendraIndex, 
