@@ -36,6 +36,7 @@ const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearching = 'true'
+const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
 
 const claude_instance = JSON.stringify([
   {
@@ -80,8 +81,6 @@ const claude_basic = JSON.stringify([
 ]);
 
 const profile_of_LLMs = claude_instance;
-
-const capabilities = JSON.stringify(["kendra", "opensearch", "faiss"]);
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
