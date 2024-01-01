@@ -1710,11 +1710,17 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
     return relevant_docs
 
 def translate_process_from_relevent_doc(conn, llm, doc):
-    translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-    print('translated_excerpt: ', translated_excerpt)
+    try: 
+        translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+        print('translated_excerpt: ', translated_excerpt)
 
-    doc['metadata']['translated_excerpt'] = translated_excerpt
-
+        doc['metadata']['translated_excerpt'] = translated_excerpt
+    
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)       
+        raise Exception (f"Not able to translate: {doc}")   
+    
     conn.send(doc)
     conn.close()
 
