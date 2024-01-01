@@ -1709,10 +1709,10 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
     #print('relevant_docs: ', relevant_docs)
     return relevant_docs
 
-def translate_process_from_relevent_doc(conn, llm, doc):
+def translate_process_from_relevent_doc(conn, llm, doc, bedrock_region):
     try: 
         translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
-        print('translated_excerpt: ', translated_excerpt)
+        print(f"translated_excerpt ({bedrock_region}): {translated_excerpt}")
 
         doc['metadata']['translated_excerpt'] = translated_excerpt
     
@@ -1734,7 +1734,9 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_connections.append(parent_conn)
             
         llm = get_llm(profile_of_LLMs, selected_LLM)
-        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc))            
+        bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
+
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc, bedrock_region))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1
