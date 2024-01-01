@@ -63,8 +63,8 @@ MSG_HISTORY_LENGTH = 20
 speech_generation = True
 history_length = 0
 token_counter_history = 0
-allowDualSearching = 'true'
-allowDualSearchingWithMulipleProcessing = True
+allowDualSearch = os.environ.get('allowDualSearch')
+allowDualSearchWithMulipleProcessing = True
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -1776,7 +1776,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             time_for_rag_inference = end_time_for_rag_inference - end_time_for_revise
             print('processing time for RAG (Inference): ', time_for_rag_inference)
 
-            if allowDualSearching=='true' and isKorean(text)==True:
+            if allowDualSearch=='true' and isKorean(text)==True:
                 print('start RAG for translated revised question')
                 translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
@@ -1788,7 +1788,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 time_for_rag_question_translation = end_time_for_rag_question_translation - end_time_for_rag_inference
                 print('processing time for RAG (Question Translation): ', time_for_rag_question_translation)
 
-                if allowDualSearchingWithMulipleProcessing == True:
+                if allowDualSearchWithMulipleProcessing == True:
                     relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=4)
 
                     end_time_for_rag_2nd_inference = time.time()
@@ -2276,7 +2276,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference
-    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearching
+    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2407,10 +2407,10 @@ def getResponse(connectionId, jsonBody):
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'enableDualSearch':
-                allowDualSearching = 'true'
+                allowDualSearch = 'true'
                 msg  = "Translated question is enabled"
             elif text == 'disableDualSearch':
-                allowDualSearching = 'false'
+                allowDualSearch = 'false'
                 msg  = "Translated question is disabled"
 
             elif text == 'clearMemory':

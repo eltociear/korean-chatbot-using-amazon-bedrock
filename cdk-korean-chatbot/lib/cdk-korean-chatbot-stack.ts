@@ -35,7 +35,7 @@ const useParallelUpload = 'true';
 const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
-const allowDualSearching = 'false'
+const allowDualSearch = 'false'
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
 
 const claude_instance = JSON.stringify([
@@ -660,7 +660,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
-        allowDualSearching: allowDualSearching
+        allowDualSearch: allowDualSearch
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
