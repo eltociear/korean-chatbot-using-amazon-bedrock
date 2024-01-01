@@ -1445,7 +1445,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                 
                 uri = doc['metadata']['source']
                 name = doc['metadata']['title']
-                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         
     return reference
 
@@ -1877,7 +1877,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             try: 
                 service = build("customsearch", "v1", developerKey=api_key)
                 result = service.cse().list(q=revised_question, cx=cse_id).execute()
-                print('google search result: ', result)
+                # print('google search result: ', result)
 
                 if "items" in result:
                     for item in result['items']:
@@ -1919,7 +1919,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             if len(relevant_docs)>=1:
                 selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
-            print('selected_relevant_docs (google): ', selected_relevant_docs)
+            # print('selected_relevant_docs (google): ', selected_relevant_docs)
 
         end_time_for_priority_search = time.time() 
         time_for_priority_search = end_time_for_priority_search - end_time_for_rag
