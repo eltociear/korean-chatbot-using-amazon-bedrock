@@ -552,7 +552,12 @@ pip install opensearch-py
 opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
 ```
 
-[Cluster has already maximum shards open](https://stackoverflow.com/questions/62284168/cluster-has-already-maximum-shards-open) 와 같이 cluster.max_shards_per_node의 증설이 필요합니다.
+[Cluster has already maximum shards open](https://stackoverflow.com/questions/62284168/cluster-has-already-maximum-shards-open)와 같이 cluster.max_shards_per_node의 증설이 필요합니다.
+
+실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
+
 
 ## Reference 
 
