@@ -546,15 +546,13 @@ pip install opensearch-py
 
 ### OpenSearch의 add_documents시 에러
 
-문서를 700개 이상 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
+문서를 충분히 많이 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
 
 ```text
 opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
 ```
 
-[Cluster has already maximum shards open](https://stackoverflow.com/questions/62284168/cluster-has-already-maximum-shards-open)와 같이 cluster.max_shards_per_node의 증설이 필요합니다.
-
-실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 
+실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 이때에는 cluster.max_shards_per_node를 올리거나(default 1000), node수를 늘려서 해당 문제를 해결할 수 있습니다.
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
 
