@@ -544,6 +544,16 @@ pip install opensearch-py
 
 [Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
 
+### OpenSearch의 add_documents시 에러
+
+문서를 700개 이상 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
+
+```text
+opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
+```
+
+[Cluster has already maximum shards open](https://stackoverflow.com/questions/62284168/cluster-has-already-maximum-shards-open) 와 같이 cluster.max_shards_per_node의 증설이 필요합니다.
+
 ## Reference 
 
 [Claude - Constructing a prompt](https://docs.anthropic.com/claude/docs/constructing-a-prompt)
