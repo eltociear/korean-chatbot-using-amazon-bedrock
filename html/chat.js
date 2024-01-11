@@ -57,7 +57,7 @@ let retryNum = new HashMap();
 // message log list
 let msglist = [];
 let maxMsgItems = 200;
-// let msgHistory = new HashMap();
+let msgHistory = new HashMap();
 let sentTime = new HashMap();
 
 let undelivered = new HashMap();

@@ -308,7 +308,7 @@ def get_prompt_template(query, conv_type, rag_type):
 
             Assistant:"""      
 
-        elif conv_type == "timestamp-extraction":  # Child Conversation (few shot)
+        elif conv_type == "timestamp-extraction":
             prompt_template = """\n\nHuman: 아래의 <text>는 시간을 포함한 텍스트입니다. 친절한 AI Assistant로서 시간을 추출하여 아래를 참조하여 <example>과 같이 정리해주세요.
             
             - 년도를 추출해서 <year>/<year>로 넣을것 
@@ -2416,10 +2416,10 @@ def getResponse(connectionId, jsonBody):
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'enableDualSearch':
                 allowDualSearch = 'true'
-                msg  = "Translated question is enabled"
+                msg  = "Dual Search is enabled"
             elif text == 'disableDualSearch':
                 allowDualSearch = 'false'
-                msg  = "Translated question is disabled"
+                msg  = "Dual Search is disabled"
 
             elif text == 'clearMemory':
                 memory_chain.clear()
