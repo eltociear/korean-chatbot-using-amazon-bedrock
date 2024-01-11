@@ -750,7 +750,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // s3 event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
       events: [
-        // s3.EventType.OBJECT_CREATED_PUT,
+        s3.EventType.OBJECT_CREATED_PUT,
         s3.EventType.OBJECT_REMOVED_DELETE
       ],
       filters: [
