@@ -174,7 +174,7 @@ def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
         RoleArn = roleArn,
         Documents = documents       
     )
-    # print('batch_put_document(kendra): ', result)
+    print('batch_put_document(kendra): ', result)
     print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
