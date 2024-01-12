@@ -303,6 +303,7 @@ def lambda_handler(event, context):
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces
             documentId = documentId.replace(',', '_') # remove commas
+            documentId = documentId.replace('/', '_') # remove slash
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
             
