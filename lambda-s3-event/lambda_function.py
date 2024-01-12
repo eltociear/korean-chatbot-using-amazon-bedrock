@@ -28,7 +28,6 @@ kendraIndex = os.environ.get('kendraIndex')
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
-doc_prefix = s3_prefix+'/'
 
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
@@ -112,12 +111,12 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     print('uploaded into opensearch')
  
 # store document into Kendra
-def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
+def store_document_for_kendra(path, key, documentId):
     print('store document into kendra')
-    encoded_name = parse.quote(s3_file_name)
-    source_uri = path+doc_prefix+encoded_name    
+    encoded_name = parse.quote(key)
+    source_uri = path+encoded_name    
     #print('source_uri: ', source_uri)
-    ext = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
+    ext = (key[key.rfind('.')+1:len(key)]).upper()
     print('ext: ', ext)
 
     # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
@@ -145,10 +144,10 @@ def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
     documents = [
         {
             "Id": documentId,
-            "Title": s3_file_name,
+            "Title": key,
             "S3Path": {
                 "Bucket": s3_bucket,
-                "Key": s3_prefix+'/'+s3_file_name
+                "Key": key
             },
             "Attributes": [
                 {
@@ -313,7 +312,7 @@ def lambda_handler(event, context):
             for type in capabilities:                
                 if type=='kendra':         
                     print('upload to kendra: ', key)                            
-                    store_document_for_kendra(path, doc_prefix, key, documentId)  # store the object into kendra
+                    store_document_for_kendra(path, key, documentId)  # store the object into kendra
                 elif type=='opensearch':
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                         print('upload to opensearch: ', key) 
@@ -327,7 +326,7 @@ def lambda_handler(event, context):
                                     metadata={
                                         'name': key,
                                         # 'page':i+1,
-                                        'uri': path+doc_prefix+parse.quote(key)
+                                        'uri': path+parse.quote(key)
                                     }
                                 )
                             )
