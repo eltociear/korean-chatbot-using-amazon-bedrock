@@ -359,9 +359,9 @@ def lambda_handler(event, context):
                         print('upload to opensearch: ', key) 
                         texts = load_document(file_type, key)
                         
-                        if len(texts)>0:
-                            docs = []
-                            for i in range(len(texts)):
+                        docs = []
+                        for i in range(len(texts)):
+                            if texts[i]:
                                 docs.append(
                                     Document(
                                         page_content=texts[i],
@@ -372,10 +372,11 @@ def lambda_handler(event, context):
                                         }
                                     )
                                 )
-                            print('docs[0]: ', docs[0])    
-                            print('docs size: ', len(docs))
+                        print('docs[0]: ', docs[0])    
+                        print('docs size: ', len(docs))
                         
-                            store_document_for_opensearch(bedrock_embeddings, docs, documentId)                        
+                        if len(docs)>0:
+                            store_document_for_opensearch(bedrock_embeddings, docs, documentId)
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
