@@ -329,23 +329,24 @@ def lambda_handler(event, context):
             metadata_key = meta_prefix+objectName+'.metadata.json'
             print('metadata_key: ', metadata_key)
 
-            metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
-            metadata_body = metadata_obj['Body'].read().decode('utf-8')
-            metadata = json.loads(metadata_body)
-            print('metadata: ', metadata)
-            documentId = metadata['DocumentId']
-            print('documentId: ', documentId)
-            documentIds.append(documentId)
-
-            # delete metadata
-            print('delete metadata: ', metadata_key)
             try: 
+                metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
+                metadata_body = metadata_obj['Body'].read().decode('utf-8')
+                metadata = json.loads(metadata_body)
+                print('metadata: ', metadata)
+                documentId = metadata['DocumentId']
+                print('documentId: ', documentId)
+                documentIds.append(documentId)
+
+                # delete metadata
+                print('delete metadata: ', metadata_key)
+                
                 result = s3.delete_object(Bucket=bucket, Key=metadata_key)
                 # print('result of metadata deletion: ', result)
             except Exception:
                 err_msg = traceback.format_exc()
                 print('err_msg: ', err_msg)
-                raise Exception ("Not able to delete documents in Kendra")
+                # raise Exception ("Not able to delete documents in Kendra")
     
             # delete document index of opensearch
             index_name = "rag-index-"+documentId
