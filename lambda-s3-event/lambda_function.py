@@ -274,9 +274,12 @@ def lambda_handler(event, context):
             key = unquote_plus(record['s3']['object']['key']) # url decoding
             print('bucket: ', bucket)
             print('key: ', key)
-
+            
+            objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+            print('objectName: ', objectName)
+            
             # get metadata from s3
-            metadata_key = meta_prefix+key+'.metadata.json'
+            metadata_key = meta_prefix+objectName+'.metadata.json'
             print('metadata_key: ', metadata_key)
 
             metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
