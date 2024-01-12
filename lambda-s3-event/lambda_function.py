@@ -191,13 +191,16 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         "DocumentId": documentId,        
     }
     print('metadata: ', metadata)
+    
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+    print('objectName: ', objectName)
 
     client = boto3.client('s3')
     try: 
         client.put_object(
             Body=json.dumps(metadata), 
             Bucket=bucket, 
-            Key=meta_prefix+s3_prefix+'/'+key+'.metadata.json' 
+            Key=meta_prefix+'/'+objectName+'.metadata.json' 
         )
     except Exception:
         err_msg = traceback.format_exc()
