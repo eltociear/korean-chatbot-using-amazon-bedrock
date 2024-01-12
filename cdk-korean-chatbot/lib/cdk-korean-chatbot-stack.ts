@@ -17,6 +17,7 @@ import * as kendra from 'aws-cdk-lib/aws-kendra';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -720,36 +721,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The commend for uploading contents of FAQ',
     });
 
-    // Lambda for document manager
-    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
-      description: 'S3 document manager',
-      functionName: `lambda-document-manager-for-${projectName}`,
-      role: roleLambdaWebsocket,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
-      timeout: cdk.Duration.seconds(120),
-      environment: {
-        s3_bucket: s3Bucket.bucketName,
-        s3_prefix: s3_prefix,
-        kendra_region: String(kendra_region),
-        opensearch_account: opensearch_account,
-        opensearch_passwd: opensearch_passwd,
-        opensearch_url: opensearch_url,
-        kendraIndex: kendraIndex,
-        roleArn: roleLambdaWebsocket.roleArn,
-        path: 'https://'+distribution.domainName+'/', 
-        capabilities: capabilities
-      }
-    });         
-    s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
-    /*lambdaS3event.role?.addManagedPolicy({
-      managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonKendraFullAccess',
-    });*/
-    /*lambdaS3event.role?.attachInlinePolicy(
-      new iam.Policy(this, `kendra-policy-${projectName}`, {
-        statements: [kendraPolicy],
-      }),
-    )*/
-
     // SQS for S3 event
     const queueS3event = new sqs.Queue(this, `queue-s3-event-for-${projectName}`, {
       visibilityTimeout: cdk.Duration.seconds(120),
@@ -773,8 +744,31 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         queueS3event: queueS3event.queueUrl
       }
     });
-    queueS3event.grantSendMessages(lambdaS3event); // permision for SQS Event
+    queueS3event.grantSendMessages(lambdaS3event); // permision for SQS putItem
 
+    // Lambda for document manager
+    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
+      description: 'S3 document manager',
+      functionName: `lambda-document-manager-for-${projectName}`,
+      role: roleLambdaWebsocket,
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
+      timeout: cdk.Duration.seconds(120),
+      environment: {
+        s3_bucket: s3Bucket.bucketName,
+        s3_prefix: s3_prefix,
+        kendra_region: String(kendra_region),
+        opensearch_account: opensearch_account,
+        opensearch_passwd: opensearch_passwd,
+        opensearch_url: opensearch_url,
+        kendraIndex: kendraIndex,
+        roleArn: roleLambdaWebsocket.roleArn,
+        path: 'https://'+distribution.domainName+'/', 
+        capabilities: capabilities
+      }
+    });         
+    s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
+    lambdDocumentManager.addEventSource(new SqsEventSource(queueS3event)); // permission for SQS
+    
     // s3 event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
       events: [

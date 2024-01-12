@@ -39,6 +39,7 @@ def lambda_handler(event, context):
                 MessageGroupId="putEvent",
                 MessageBody=json.dumps(s3EventInfo)
             )
+            print('Successfully push the queue message: ', s3EventInfo)
 
         except Exception as e:        
             print('Fail to push the queue message: ', e)
