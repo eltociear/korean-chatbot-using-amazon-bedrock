@@ -300,6 +300,12 @@ def load_document(file_type, key):
         texts = text_splitter.split_text(new_contents) 
                         
     return texts
+
+def check_supported_type(size, file_type):
+    if size<object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+        return True
+    else:
+        return False
     
 # load csv documents from s3
 def lambda_handler(event, context):
@@ -321,61 +327,73 @@ def lambda_handler(event, context):
         print('key: ', key)        
         eventName = jsonbody['type']
         
-        start_time = time.time()            
-        if eventName == 'ObjectRemoved:Delete':                        
-            objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
-            print('objectName: ', objectName)
+        start_time = time.time()      
+        
+        file_type = key[key.rfind('.')+1:len(key)].lower()
+        print('file_type: ', file_type)
             
-            # get metadata from s3
-            metadata_key = meta_prefix+objectName+'.metadata.json'
-            print('metadata_key: ', metadata_key)
+        size = 0
+        try:
+            result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=['ObjectSize'])  
+            size = int(result['ObjectSize'])
+            print('object size: ', size)
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('err_msg: ', err_msg)
+            # raise Exception ("Not able to delete unsupported file") 
+                      
+        if eventName == 'ObjectRemoved:Delete':
+            if check_supported_type(size, file_type):
+                objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+                print('objectName: ', objectName)
+                
+                # get metadata from s3
+                metadata_key = meta_prefix+objectName+'.metadata.json'
+                print('metadata_key: ', metadata_key)
 
-            documentId = ""
-            try: 
-                metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
-                metadata_body = metadata_obj['Body'].read().decode('utf-8')
-                metadata = json.loads(metadata_body)
-                print('metadata: ', metadata)
-                documentId = metadata['DocumentId']
-                print('documentId: ', documentId)
-                documentIds.append(documentId)
-            except Exception:
-                err_msg = traceback.format_exc()
-                print('err_msg: ', err_msg)
-                # raise Exception ("Not able to get the object")
-                
-            if documentId:
-                try:
-                    # delete metadata
-                    print('delete metadata: ', metadata_key)
-                    
-                    result = s3.delete_object(Bucket=bucket, Key=metadata_key)
-                    # print('result of metadata deletion: ', result)
-                    
-                    # delete document index of opensearch
-                    index_name = "rag-index-"+documentId
-                    # print('index_name: ', index_name)
-                    delete_index_if_exist(index_name)
-                
-                except Exception:
-                    err_msg = traceback.format_exc()
-                    print('err_msg: ', err_msg)
-                    # raise Exception ("Not able to delete documents in Kendra")
-                
-                # delete kendra documents
-                print('delete kendra documents: ', documentIds)            
+                documentId = ""
                 try: 
-                    result = kendra_client.batch_delete_document(
-                        IndexId = kendraIndex,
-                        DocumentIdList=[
-                            documentId,
-                        ]
-                    )
-                    print('result: ', result)
+                    metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
+                    metadata_body = metadata_obj['Body'].read().decode('utf-8')
+                    metadata = json.loads(metadata_body)
+                    print('metadata: ', metadata)
+                    documentId = metadata['DocumentId']
+                    print('documentId: ', documentId)
+                    documentIds.append(documentId)
                 except Exception:
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
-                    # raise Exception ("Not able to delete documents in Kendra")
+                    # raise Exception ("Not able to get the object")
+                    
+                if documentId:
+                    try: # delete metadata                        
+                        print('delete metadata: ', metadata_key)                        
+                        result = s3.delete_object(Bucket=bucket, Key=metadata_key)
+                        # print('result of metadata deletion: ', result)
+                        
+                        # delete document index of opensearch
+                        index_name = "rag-index-"+documentId
+                        # print('index_name: ', index_name)
+                        delete_index_if_exist(index_name)                    
+                    except Exception:
+                        err_msg = traceback.format_exc()
+                        print('err_msg: ', err_msg)
+                        # raise Exception ("Not able to delete documents in Kendra")
+                    
+                    # delete kendra documents
+                    print('delete kendra documents: ', documentIds)            
+                    try: 
+                        result = kendra_client.batch_delete_document(
+                            IndexId = kendraIndex,
+                            DocumentIdList=[
+                                documentId,
+                            ]
+                        )
+                        print('result: ', result)
+                    except Exception:
+                        err_msg = traceback.format_exc()
+                        print('err_msg: ', err_msg)
+                        # raise Exception ("Not able to delete documents in Kendra")
                     
         elif eventName == "ObjectCreated:Put":
             category = "upload"
@@ -386,22 +404,7 @@ def lambda_handler(event, context):
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
             
-            file_type = key[key.rfind('.')+1:len(key)].lower()
-            print('file_type: ', file_type)
-            
-            size = 0
-            try:
-                result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=['ObjectSize'])  
-                size = int(result['ObjectSize'])
-                
-                print('contents info: ', result)
-                print('object size: ', size)                
-            except Exception:
-                err_msg = traceback.format_exc()
-                print('err_msg: ', err_msg)
-                # raise Exception ("Not able to delete unsupported file") 
-            
-            if size<size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+            if check_supported_type(size, file_type):
                 for type in capabilities:                
                     if type=='kendra':         
                         print('upload to kendra: ', key)                                                
@@ -432,7 +435,7 @@ def lambda_handler(event, context):
                                 store_document_for_opensearch(bedrock_embeddings, docs, documentId)
                     
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
-            else: # delete other unsupported file
+            else: # delete if the object is unsupported format
                 try:
                     print('delete unsupported file: ', key)                                
                     result = s3.delete_object(Bucket=bucket, Key=key)
