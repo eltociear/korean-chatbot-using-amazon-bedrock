@@ -175,13 +175,18 @@ def store_document_for_kendra(path, key, documentId):
     ]
     print('document info: ', documents)
 
-    result = kendra_client.batch_put_document(
-        IndexId = kendraIndex,
-        RoleArn = roleArn,
-        Documents = documents       
-    )
-    print('batch_put_document(kendra): ', result)
-    print('uploaded into kendra')
+    try:
+        result = kendra_client.batch_put_document(
+            IndexId = kendraIndex,
+            RoleArn = roleArn,
+            Documents = documents       
+        )
+        print('batch_put_document(kendra): ', result)
+        print('uploaded into kendra')
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        # raise Exception ("Not able to put a document in Kendra")
 
 def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId):    
     title = key
