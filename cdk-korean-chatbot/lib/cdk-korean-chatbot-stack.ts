@@ -36,8 +36,9 @@ const debugMessageMode = 'true'; // if true, debug messages will be delivered to
 const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
-const allowDualSearch = 'false'
+const allowDualSearch = 'false';
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
+const object_size = 100; // max size of an object 50MB(default)
 
 const claude_instance = JSON.stringify([
   {
@@ -765,7 +766,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         roleArn: roleLambdaWebsocket.roleArn,
         path: 'https://'+distribution.domainName+'/', 
         capabilities: capabilities,
-        sqsUrl: queueS3event.queueUrl
+        sqsUrl: queueS3event.queueUrl,
+        object_size: String(object_size)
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3

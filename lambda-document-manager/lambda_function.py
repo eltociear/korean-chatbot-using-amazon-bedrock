@@ -31,6 +31,7 @@ sqs = boto3.client('sqs')
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
+object_size = os.environ.get('object_size') 
 
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
@@ -385,39 +386,63 @@ def lambda_handler(event, context):
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
             
-            file_type = key[key.rfind('.')+1:len(key)]            
+            file_type = key[key.rfind('.')+1:len(key)].lower()
             print('file_type: ', file_type)
             
-            for type in capabilities:                
-                if type=='kendra':         
-                    print('upload to kendra: ', key)                            
-                    store_document_for_kendra(path, key, documentId)  # store the object into kendra
-                    
-                elif type=='opensearch':
-                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                        print('upload to opensearch: ', key) 
-                        texts = load_document(file_type, key)
-                        
-                        docs = []
-                        for i in range(len(texts)):
-                            if texts[i]:
-                                docs.append(
-                                    Document(
-                                        page_content=texts[i],
-                                        metadata={
-                                            'name': key,
-                                            # 'page':i+1,
-                                            'uri': path+parse.quote(key)
-                                        }
-                                    )
-                                )
-                        print('docs size: ', len(docs))
-                        
-                        if len(docs)>0:
-                            print('docs[0]: ', docs[0])                            
-                            store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+            size = 0
+            try:
+                response = s3.get_object_attributes(Bucket=bucket, Key=key)  
+                size = response['ContentLength']
                 
-            create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
+                print('contents info: ', json.dumps(response))
+                print('object size: ', size)                
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                # raise Exception ("Not able to delete unsupported file") 
+            
+            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx':                
+                for type in capabilities:                
+                    if type=='kendra':         
+                        print('upload to kendra: ', key)                                                
+                        # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL                    
+                        store_document_for_kendra(path, key, documentId)  # store the object into kendra
+                        
+                    elif type=='opensearch':
+                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
+                            print('upload to opensearch: ', key) 
+                            texts = load_document(file_type, key)
+                            
+                            docs = []
+                            for i in range(len(texts)):
+                                if texts[i]:
+                                    docs.append(
+                                        Document(
+                                            page_content=texts[i],
+                                            metadata={
+                                                'name': key,
+                                                # 'page':i+1,
+                                                'uri': path+parse.quote(key)
+                                            }
+                                        )
+                                    )
+                            print('docs size: ', len(docs))
+                            if len(docs)>0:
+                                print('docs[0]: ', docs[0])                            
+                                store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                    
+                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
+            else: # delete other unsupported file
+                try:
+                    print('delete unsupported file: ', key)                                
+                    result = s3.delete_object(Bucket=bucket, Key=key)
+                    print('result of deletion of the unsupported file: ', result)
+                            
+                except Exception:
+                    err_msg = traceback.format_exc()
+                    print('err_msg: ', err_msg)
+                    # raise Exception ("Not able to delete unsupported file")
+
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
