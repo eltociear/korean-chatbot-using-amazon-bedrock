@@ -178,9 +178,9 @@ def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
     print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
-def load_document(file_type, s3_file_name):
+def load_document(file_type, key):
     s3r = boto3.resource("s3")
-    doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
+    doc = s3r.Object(s3_bucket, key)
     
     if file_type == 'pdf':
         Byte_contents = doc.get()['Body'].read()
