@@ -329,6 +329,7 @@ def lambda_handler(event, context):
             metadata_key = meta_prefix+objectName+'.metadata.json'
             print('metadata_key: ', metadata_key)
 
+            documentId = ""
             try: 
                 metadata_obj = s3.get_object(Bucket=bucket, Key=metadata_key)
                 metadata_body = metadata_obj['Body'].read().decode('utf-8')
@@ -337,37 +338,44 @@ def lambda_handler(event, context):
                 documentId = metadata['DocumentId']
                 print('documentId: ', documentId)
                 documentIds.append(documentId)
-
-                # delete metadata
-                print('delete metadata: ', metadata_key)
-                
-                result = s3.delete_object(Bucket=bucket, Key=metadata_key)
-                # print('result of metadata deletion: ', result)
-                
-                # delete document index of opensearch
-                index_name = "rag-index-"+documentId
-                # print('index_name: ', index_name)
-                delete_index_if_exist(index_name)
-            
             except Exception:
                 err_msg = traceback.format_exc()
                 print('err_msg: ', err_msg)
-                # raise Exception ("Not able to delete documents in Kendra")
-            
-            # delete kendra documents
-            print('delete kendra documents: ', documentIds)            
-            try: 
-                result = kendra_client.batch_delete_document(
-                    IndexId = kendraIndex,
-                    DocumentIdList=[
-                        documentId,
-                    ]
-                )
-                print('result: ', result)
-            except Exception:
-                err_msg = traceback.format_exc()
-                print('err_msg: ', err_msg)
-                raise Exception ("Not able to delete documents in Kendra")
+                # raise Exception ("Not able to get the object")
+                
+            if documentId:
+                try:
+                    # delete metadata
+                    print('delete metadata: ', metadata_key)
+                    
+                    result = s3.delete_object(Bucket=bucket, Key=metadata_key)
+                    # print('result of metadata deletion: ', result)
+                    
+                    # delete document index of opensearch
+                    index_name = "rag-index-"+documentId
+                    # print('index_name: ', index_name)
+                    delete_index_if_exist(index_name)
+                
+                except Exception:
+                    err_msg = traceback.format_exc()
+                    print('err_msg: ', err_msg)
+                    # raise Exception ("Not able to delete documents in Kendra")
+                
+                # delete kendra documents
+                print('delete kendra documents: ', documentIds)            
+                try: 
+                    result = kendra_client.batch_delete_document(
+                        IndexId = kendraIndex,
+                        DocumentIdList=[
+                            documentId,
+                        ]
+                    )
+                    print('result: ', result)
+                except Exception:
+                    err_msg = traceback.format_exc()
+                    print('err_msg: ', err_msg)
+                    # raise Exception ("Not able to delete documents in Kendra")
+                    
         elif eventName == "ObjectCreated:Put":
             category = "upload"
             documentId = category + "-" + key
@@ -385,8 +393,6 @@ def lambda_handler(event, context):
                     print('upload to kendra: ', key)                            
                     store_document_for_kendra(path, key, documentId)  # store the object into kendra
                     
-                    create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
-                
                 elif type=='opensearch':
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                         print('upload to opensearch: ', key) 
@@ -410,6 +416,8 @@ def lambda_handler(event, context):
                         if len(docs)>0:
                             print('docs[0]: ', docs[0])                            
                             store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                
+            create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
