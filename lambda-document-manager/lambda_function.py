@@ -358,23 +358,24 @@ def lambda_handler(event, context):
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                         print('upload to opensearch: ', key) 
                         texts = load_document(file_type, key)
-
-                        docs = []
-                        for i in range(len(texts)):
-                            docs.append(
-                                Document(
-                                    page_content=texts[i],
-                                    metadata={
-                                        'name': key,
-                                        # 'page':i+1,
-                                        'uri': path+parse.quote(key)
-                                    }
+                        
+                        if len(texts)>0:
+                            docs = []
+                            for i in range(len(texts)):
+                                docs.append(
+                                    Document(
+                                        page_content=texts[i],
+                                        metadata={
+                                            'name': key,
+                                            # 'page':i+1,
+                                            'uri': path+parse.quote(key)
+                                        }
+                                    )
                                 )
-                            )
-                        print('docs[0]: ', docs[0])    
-                        print('docs size: ', len(docs))
-                    
-                        store_document_for_opensearch(bedrock_embeddings, docs, documentId)                        
+                            print('docs[0]: ', docs[0])    
+                            print('docs size: ', len(docs))
+                        
+                            store_document_for_opensearch(bedrock_embeddings, docs, documentId)                        
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
