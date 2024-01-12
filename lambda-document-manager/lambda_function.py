@@ -372,10 +372,10 @@ def lambda_handler(event, context):
                                         }
                                     )
                                 )
-                        print('docs[0]: ', docs[0])    
                         print('docs size: ', len(docs))
                         
                         if len(docs)>0:
+                            print('docs[0]: ', docs[0])                            
                             store_document_for_opensearch(bedrock_embeddings, docs, documentId)
         print('processing time: ', str(time.time() - start_time))
         
