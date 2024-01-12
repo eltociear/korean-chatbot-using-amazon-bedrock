@@ -222,13 +222,19 @@ def load_document(file_type, key):
     contents = ""
     if file_type == 'pdf':
         Byte_contents = doc.get()['Body'].read()
-        reader = PyPDF2.PdfReader(BytesIO(Byte_contents))
         
-        texts = []
-        for page in reader.pages:
-            texts.append(page.extract_text())
-        contents = '\n'.join(texts)
-        
+        try: 
+            reader = PyPDF2.PdfReader(BytesIO(Byte_contents))
+            
+            texts = []
+            for page in reader.pages:
+                texts.append(page.extract_text())
+            contents = '\n'.join(texts)
+        except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                # raise Exception ("Not able to load the pdf file")
+                
     elif file_type == 'pptx':
         Byte_contents = doc.get()['Body'].read()
             
