@@ -31,7 +31,7 @@ sqs = boto3.client('sqs')
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
-object_size = int(os.environ.get('object_size'))
+max_object_size = int(os.environ.get('max_object_size'))
 
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
@@ -301,8 +301,8 @@ def load_document(file_type, key):
                         
     return texts
 
-def check_supported_type(size, file_type):
-    if size<object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+def check_supported_type(file_type):
+    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx':
         return True
     else:
         return False
@@ -341,9 +341,9 @@ def lambda_handler(event, context):
             err_msg = traceback.format_exc()
             print('err_msg: ', err_msg)
             # raise Exception ("Not able to delete unsupported file") 
-                      
+        
         if eventName == 'ObjectRemoved:Delete':
-            if check_supported_type(size, file_type):
+            if check_supported_type(file_type) and size > 0 and size < max_object_size:
                 objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
                 print('objectName: ', objectName)
                 
@@ -404,7 +404,7 @@ def lambda_handler(event, context):
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
             
-            if check_supported_type(size, file_type):
+            if check_supported_type(file_type) and size<max_object_size:
                 for type in capabilities:                
                     if type=='kendra':         
                         print('upload to kendra: ', key)                                                
@@ -435,7 +435,7 @@ def lambda_handler(event, context):
                                 store_document_for_opensearch(bedrock_embeddings, docs, documentId)
                     
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
-            else: # delete if the object is unsupported format
+            else: # delete if the object is unsupported one for format or size
                 try:
                     print('delete unsupported file: ', key)                                
                     result = s3.delete_object(Bucket=bucket, Key=key)

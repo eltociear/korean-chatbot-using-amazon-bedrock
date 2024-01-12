@@ -38,7 +38,7 @@ const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearch = 'false';
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
-const object_size = 100000000; // max size of an object 50MB(default)
+const max_object_size = 100000000; // max size of an object 50MB(default)
 
 const claude_instance = JSON.stringify([
   {
@@ -767,7 +767,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         path: 'https://'+distribution.domainName+'/', 
         capabilities: capabilities,
         sqsUrl: queueS3event.queueUrl,
-        object_size: String(object_size)
+        max_object_size: String(max_object_size)
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
