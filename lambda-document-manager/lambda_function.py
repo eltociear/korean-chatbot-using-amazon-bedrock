@@ -259,8 +259,13 @@ def load_document(file_type, key):
                 print('err_msg: ', err_msg)
                 # raise Exception ("Not able to load texts from preseation file")
         
-    elif file_type == 'txt':        
-        contents = doc.get()['Body'].read().decode('utf-8')
+    elif file_type == 'txt':       
+        try:  
+            contents = doc.get()['Body'].read().decode('utf-8')
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)        
+            # raise Exception ("Not able to load the file")
 
     elif file_type == 'docx':
         Byte_contents = doc.get()['Body'].read()                    
