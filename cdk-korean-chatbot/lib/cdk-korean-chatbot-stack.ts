@@ -725,6 +725,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
       description: 'S3 event',
       functionName: `lambda-s3-event-for-${projectName}`,
+      role: roleLambdaWebsocket,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
       timeout: cdk.Duration.seconds(60),
       environment: {
