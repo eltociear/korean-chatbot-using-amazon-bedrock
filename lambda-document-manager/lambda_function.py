@@ -25,6 +25,8 @@ opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
 kendraIndex = os.environ.get('kendraIndex')
+sqsUrl = os.environ.get('sqsUrl')
+sqs = boto3.client('sqs')
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
@@ -271,9 +273,16 @@ def lambda_handler(event, context):
     
     documentIds = []
     for record in event['Records']:
-        bucket = record['bucket']
+        receiptHandle = record['receiptHandle']
+        print("receiptHandle: ", receiptHandle)
+        
+        body = record['body']
+        print("body: ", body)
+        
+        jsonbody = json.loads(body)        
+        bucket = jsonbody['bucket']        
         # translate utf8
-        key = unquote_plus(record['key']) # url decoding
+        key = unquote_plus(jsonbody['key']) # url decoding
         print('bucket: ', bucket)
         print('key: ', key)
         
@@ -365,6 +374,12 @@ def lambda_handler(event, context):
                     
                         store_document_for_opensearch(bedrock_embeddings, docs, documentId)                        
         print('processing time: ', str(time.time() - start_time))
+        
+        # delete queue
+        try:
+            sqs.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
+        except Exception as e:        
+            print('Fail to delete the queue message: ', e)
     return {
         'statusCode': 200
     }

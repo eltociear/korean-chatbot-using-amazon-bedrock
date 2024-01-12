@@ -763,7 +763,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         kendraIndex: kendraIndex,
         roleArn: roleLambdaWebsocket.roleArn,
         path: 'https://'+distribution.domainName+'/', 
-        capabilities: capabilities
+        capabilities: capabilities,
+        sqsUrl: queueS3event.queueUrl
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
