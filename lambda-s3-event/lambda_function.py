@@ -176,6 +176,34 @@ def store_document_for_kendra(path, key, documentId):
     print('batch_put_document(kendra): ', result)
     print('uploaded into kendra')
 
+def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId):    
+    title = key
+    timestamp = int(time.time())
+
+    metadata = {
+        "Attributes": {
+            "_category": category,
+            "_source_uri": uri,
+            "_version": str(timestamp),
+            "_language_code": "ko"
+        },
+        "Title": title,
+        "DocumentId": documentId,        
+    }
+    print('metadata: ', metadata)
+
+    client = boto3.client('s3')
+    try: 
+        client.put_object(
+            Body=json.dumps(metadata), 
+            Bucket=bucket, 
+            Key=meta_prefix+s3_prefix+'/'+key+'.metadata.json' 
+        )
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create meta file")
+
 # load documents from s3 for pdf and txt
 def load_document(file_type, key):
     s3r = boto3.resource("s3")
@@ -313,6 +341,9 @@ def lambda_handler(event, context):
                 if type=='kendra':         
                     print('upload to kendra: ', key)                            
                     store_document_for_kendra(path, key, documentId)  # store the object into kendra
+                    
+                    create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
+                
                 elif type=='opensearch':
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                         print('upload to opensearch: ', key) 
@@ -333,8 +364,8 @@ def lambda_handler(event, context):
                         print('docs[0]: ', docs[0])    
                         print('docs size: ', len(docs))
                     
-                        store_document_for_opensearch(bedrock_embeddings, docs, documentId)
-    
+                        store_document_for_opensearch(bedrock_embeddings, docs, documentId)                        
+            print('processing time: ', str(time.time() - start_time))
     return {
         'statusCode': 200
     }

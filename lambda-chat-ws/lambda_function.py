@@ -33,7 +33,6 @@ from googleapiclient.discovery import build
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
-meta_prefix = "metadata/"
 callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
@@ -49,7 +48,6 @@ path = os.environ.get('path')
 doc_prefix = s3_prefix+'/'
 speech_prefix = 'speech/'
 
-useParallelUpload = os.environ.get('useParallelUpload', 'true')
 useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
 kendra_method = os.environ.get('kendraMethod')
@@ -556,100 +554,6 @@ def delete_index_if_exist(index_name):
         print('response(remove): ', response)    
     else:
         print('no index: ', index_name)
-
-def store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId):
-    #index_name = "rag-index-"+userId+'-'+documentId
-    index_name = "rag-index-"+documentId
-    #index_name = index_name.replace(' ', '_') # remove spaces
-    #index_name = index_name.replace(',', '_') # remove commas
-    #index_name = index_name.lower() # change to lowercase
-    print('index_name: ', index_name)
-    
-    delete_index_if_exist(index_name)
-
-    try:
-        new_vectorstore = OpenSearchVectorSearch(
-            index_name=index_name,  
-            is_aoss = False,
-            #engine="faiss",  # default: nmslib
-            embedding_function = bedrock_embeddings,
-            opensearch_url = opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd),
-        )
-        response = new_vectorstore.add_documents(docs)
-        print('response of adding documents: ', response)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-        raise Exception ("Not able to request to LLM")
-
-    print('uploaded into opensearch')
-    
-# store document into Kendra
-def store_document_for_kendra(path, doc_prefix, s3_file_name, documentId):
-    print('store document into kendra')
-    encoded_name = parse.quote(s3_file_name)
-    source_uri = path+doc_prefix+encoded_name    
-    #print('source_uri: ', source_uri)
-    ext = (s3_file_name[s3_file_name.rfind('.')+1:len(s3_file_name)]).upper()
-    print('ext: ', ext)
-
-    # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
-    if(ext == 'PPTX'):
-        file_type = 'PPT'
-    elif(ext == 'TXT'):
-        file_type = 'PLAIN_TEXT'         
-    elif(ext == 'XLS' or ext == 'XLSX'):
-        file_type = 'MS_EXCEL'      
-    elif(ext == 'DOC' or ext == 'DOCX'):
-        file_type = 'MS_WORD'
-    else:
-        file_type = ext
-
-    kendra_client = boto3.client(
-        service_name='kendra', 
-        region_name=kendra_region,
-        config = Config(
-            retries=dict(
-                max_attempts=10
-            )
-        )
-    )
-
-    documents = [
-        {
-            "Id": documentId,
-            "Title": s3_file_name,
-            "S3Path": {
-                "Bucket": s3_bucket,
-                "Key": s3_prefix+'/'+s3_file_name
-            },
-            "Attributes": [
-                {
-                    "Key": '_source_uri',
-                    'Value': {
-                        'StringValue': source_uri
-                    }
-                },
-                {
-                    "Key": '_language_code',
-                    'Value': {
-                        'StringValue': "ko"
-                    }
-                },
-            ],
-            "ContentType": file_type
-        }
-    ]
-    print('document info: ', documents)
-
-    result = kendra_client.batch_put_document(
-        IndexId = kendraIndex,
-        RoleArn = roleArn,
-        Documents = documents       
-    )
-    # print('batch_put_document(kendra): ', result)
-    print('uploaded into kendra')
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
@@ -2170,34 +2074,6 @@ def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
     
     return msg
 
-def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId):    
-    title = key
-    timestamp = int(time.time())
-
-    metadata = {
-        "Attributes": {
-            "_category": category,
-            "_source_uri": uri,
-            "_version": str(timestamp),
-            "_language_code": "ko"
-        },
-        "Title": title,
-        "DocumentId": documentId,        
-    }
-    print('metadata: ', metadata)
-
-    client = boto3.client('s3')
-    try: 
-        client.put_object(
-            Body=json.dumps(metadata), 
-            Bucket=bucket, 
-            Key=meta_prefix+s3_prefix+'/'+key+'.metadata.json' 
-        )
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to create meta file")
-
 def get_text_speech(path, speech_prefix, bucket, msg):
     ext = "mp3"
     polly = boto3.client('polly')
@@ -2506,86 +2382,21 @@ def getResponse(connectionId, jsonBody):
             else:
                 msg = "uploaded file: "+object
                                 
-            if conv_type == 'qa':
-                start_time = time.time()
-                
-                category = "upload"
-                key = object
-                documentId = category + "-" + key
-                documentId = documentId.replace(' ', '_') # remove spaces
-                documentId = documentId.replace(',', '_') # remove commas
-                documentId = documentId.lower() # change to lowercase
-                print('documentId: ', documentId)
-
-                if useParallelUpload == 'false':
-                    if rag_type == 'all':      
-                        for type in capabilities:
-                            print('rag_type: ', type)
-                            if type=='kendra':      
-                                print('upload to kendra: ', object)           
-                                store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
+            if conv_type == 'qa': # for Faiss 
+                for type in capabilities:
+                    print('rag_type: ', type)
                                                 
-                            else:
-                                if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                                    if type == 'faiss':
-                                        if isReady == False:   
-                                            embeddings = bedrock_embeddings
-                                            vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                                                    docs,  # documents
-                                                    embeddings  # embeddings
-                                            )
-                                            isReady = True
-                                        else:
-                                            store_document_for_faiss(docs, vectorstore_faiss)
-
-                                    elif type == 'opensearch':    
-                                        store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
-                    else:
-                        print('rag_type: ', rag_type)
-                        if rag_type=='kendra':
-                            print('upload to kendra: ', object)
-                            store_document_for_kendra(path, doc_prefix, object, documentId)  # store the object into kendra
-                                                
-                        else:
-                            if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                                if rag_type == 'faiss':
-                                    if isReady == False:
-                                        embeddings = bedrock_embeddings
-                                        vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                                                docs,  # documents
-                                                embeddings  # embeddings
-                                        )
-                                        isReady = True
-                                    else:
-                                        store_document_for_faiss(docs, vectorstore_faiss)
-                                                                        
-                                elif rag_type == 'opensearch':    
-                                    store_document_for_opensearch(bedrock_embeddings, docs, userId, documentId)
-                            
-                else:                    
-                    p1 = Process(target=store_document_for_kendra, args=(path, doc_prefix, object, documentId))
-                    p1.start(); p1.join()
-                    
                     if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                        # opensearch
-                        p2 = Process(target=store_document_for_opensearch, args=(bedrock_embeddings, docs, userId, documentId,))
-                        p2.start(); p2.join()
-
-                        # faiss
-                        if isReady == False:   
-                            embeddings = bedrock_embeddings
-                            vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                                docs,  # documents
-                                embeddings  # embeddings
-                            )
-                            isReady = True
-                        else: 
-                            #p3 = Process(target=store_document_for_faiss, args=(docs, vectorstore_faiss))
-                            #p3.start(); p3.join()
-                            vectorstore_faiss.add_documents(docs)       
-
-                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+doc_prefix+parse.quote(object), category=category, documentId=documentId)
-                print('processing time: ', str(time.time() - start_time))
+                        if type == 'faiss':
+                            if isReady == False:   
+                                embeddings = bedrock_embeddings
+                                vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
+                                    docs,  # documents
+                                    embeddings  # embeddings
+                                )
+                                isReady = True
+                            else:
+                                store_document_for_faiss(docs, vectorstore_faiss)
                         
         sendResultMessage(connectionId, requestId, msg+reference)
         # print('msg+reference: ', msg+reference)
