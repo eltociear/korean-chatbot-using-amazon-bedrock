@@ -284,10 +284,11 @@ def lambda_handler(event, context):
         # translate utf8
         key = unquote_plus(jsonbody['key']) # url decoding
         print('bucket: ', bucket)
-        print('key: ', key)
+        print('key: ', key)        
+        eventName = jsonbody['type']
         
         start_time = time.time()            
-        if record['eventName'] == 'ObjectRemoved:Delete':                        
+        if eventName == 'ObjectRemoved:Delete':                        
             objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
             print('objectName: ', objectName)
             
@@ -333,7 +334,7 @@ def lambda_handler(event, context):
                 err_msg = traceback.format_exc()
                 print('err_msg: ', err_msg)
                 raise Exception ("Not able to delete documents in Kendra")
-        elif record['eventName'] == "ObjectCreated:Put":
+        elif eventName == "ObjectCreated:Put":
             category = "upload"
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces
