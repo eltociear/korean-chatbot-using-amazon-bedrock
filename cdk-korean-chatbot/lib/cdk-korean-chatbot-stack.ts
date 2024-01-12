@@ -16,6 +16,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as kendra from 'aws-cdk-lib/aws-kendra';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 const region = process.env.CDK_DEFAULT_REGION;    
 const debug = false;
@@ -31,7 +32,6 @@ const opensearch_passwd = "Wifi1234!";
 const enableReference = 'true';
 let opensearch_url = "";
 const debugMessageMode = 'true'; // if true, debug messages will be delivered to the client.
-const useParallelUpload = 'true';
 const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
@@ -653,7 +653,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         roleArn: roleLambdaWebsocket.roleArn,
         debugMessageMode: debugMessageMode,
         rag_method: rag_method,
-        useParallelUpload: useParallelUpload,
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
         kendraMethod: kendraMethod,
@@ -721,13 +720,13 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The commend for uploading contents of FAQ',
     });
 
-    // Lambda for s3 event
-    const lambdaS3event = new lambda.DockerImageFunction(this, `lambda-S3-event-for-${projectName}`, {
-      description: 'S3 event',
-      functionName: `lambda-s3-event-for-${projectName}`,
+    // Lambda for document manager
+    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
+      description: 'S3 document manager',
+      functionName: `lambda-document-manager-for-${projectName}`,
       role: roleLambdaWebsocket,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-s3-event')),
-      timeout: cdk.Duration.seconds(60),
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
+      timeout: cdk.Duration.seconds(120),
       environment: {
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
@@ -741,7 +740,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         capabilities: capabilities
       }
     });         
-    s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
+    s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
     /*lambdaS3event.role?.addManagedPolicy({
       managedPolicyArn: 'arn:aws:iam::aws:policy/AmazonKendraFullAccess',
     });*/
@@ -750,6 +749,31 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         statements: [kendraPolicy],
       }),
     )*/
+
+    // SQS for S3 event
+    const queueS3event = new sqs.Queue(this, `queue-s3-event-for-${projectName}`, {
+      visibilityTimeout: cdk.Duration.seconds(120),
+      queueName: `queue-s3-event-for-${projectName}.fifo`,
+      fifo: true,
+      contentBasedDeduplication: false,
+      deliveryDelay: cdk.Duration.millis(0),
+      retentionPeriod: cdk.Duration.days(2),
+    });
+
+    // Lambda for s3 event
+    const lambdaS3event = new lambda.Function(this, `lambda-s3-event-for-${projectName}`, {
+      description: 'lambda for s3 event',
+      functionName: `lambda-s3-event-for-${projectName}`,
+      handler: 'lambda_function.lambda_handler',
+      runtime: lambda.Runtime.PYTHON_3_11,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event')),
+      timeout: cdk.Duration.seconds(120),      
+      logRetention: logs.RetentionDays.ONE_DAY,
+      environment: {
+        queueS3event: queueS3event.queueUrl
+      }
+    });
+    queueS3event.grantSendMessages(lambdaS3event); // permision for SQS Event
 
     // s3 event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
