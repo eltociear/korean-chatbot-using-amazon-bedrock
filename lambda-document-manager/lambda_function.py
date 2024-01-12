@@ -394,7 +394,7 @@ def lambda_handler(event, context):
                 result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=['ObjectSize'])  
                 size = result['ObjectSize']
                 
-                print('contents info: ', json.dumps(result))
+                print('contents info: ', result)
                 print('object size: ', size)                
             except Exception:
                 err_msg = traceback.format_exc()
