@@ -268,16 +268,21 @@ def load_document(file_type, key):
             # raise Exception ("Not able to load the file")
 
     elif file_type == 'docx':
-        Byte_contents = doc.get()['Body'].read()                    
-        doc_contents =docx.Document(BytesIO(Byte_contents))
+        try:
+            Byte_contents = doc.get()['Body'].read()                    
+            doc_contents =docx.Document(BytesIO(Byte_contents))
 
-        texts = []
-        for i, para in enumerate(doc_contents.paragraphs):
-            if(para.text):
-                texts.append(para.text)
-                # print(f"{i}: {para.text}")        
-        contents = '\n'.join(texts)            
-    # print('contents: ', contents)
+            texts = []
+            for i, para in enumerate(doc_contents.paragraphs):
+                if(para.text):
+                    texts.append(para.text)
+                    # print(f"{i}: {para.text}")        
+            contents = '\n'.join(texts)            
+            # print('contents: ', contents)
+        except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                # raise Exception ("Not able to load docx")   
     
     texts = ""
     if len(contents)>0:
