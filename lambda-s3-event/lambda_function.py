@@ -17,6 +17,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
+s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 
@@ -25,7 +26,6 @@ opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
 kendraIndex = os.environ.get('kendraIndex')
 
-s3_prefix = os.environ.get('s3_prefix')
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
 doc_prefix = s3_prefix+'/'
@@ -277,6 +277,19 @@ def lambda_handler(event, context):
             
             # delete kendra documents
             print('delete kendra documents: ', documentIds)
+            
+            try: 
+                result = kendra_client.batch_delete_document(
+                    IndexId = kendraIndex,
+                    DocumentIdList=[
+                        documentId,
+                    ]
+                )
+                print('result: ', result)
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                raise Exception ("Not able to delete documents in Kendra")
         elif record['eventName'] != "ObjectCreated:Put":
             bucket = record['s3']['bucket']['name']
             # translate utf8
@@ -321,19 +334,6 @@ def lambda_handler(event, context):
                         print('docs size: ', len(docs))
                     
                         store_document_for_opensearch(bedrock_embeddings, docs, documentId)
-        
-    try: 
-        result = kendra_client.batch_delete_document(
-            IndexId = kendraIndex,
-            DocumentIdList=[
-                documentId,
-            ]
-        )
-        print('result: ', result)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('err_msg: ', err_msg)
-        raise Exception ("Not able to delete documents in Kendra")
     
     return {
         'statusCode': 200
