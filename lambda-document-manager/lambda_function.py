@@ -31,7 +31,7 @@ sqs = boto3.client('sqs')
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
-object_size = os.environ.get('object_size') 
+object_size = int(os.environ.get('object_size'))
 
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
@@ -302,7 +302,7 @@ def load_document(file_type, key):
     return texts
 
 def check_supported_type(size, file_type):
-    if size<int(object_size) and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+    if size<object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
         return True
     else:
         return False
