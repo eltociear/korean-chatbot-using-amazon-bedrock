@@ -14,6 +14,7 @@ from langchain_community.embeddings import BedrockEmbeddings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pptx import Presentation
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -230,17 +231,21 @@ def load_document(file_type, key):
     elif file_type == 'pptx':
         Byte_contents = doc.get()['Body'].read()
             
-        from pptx import Presentation
-        prs = Presentation(BytesIO(Byte_contents))
+        try:
+            prs = Presentation(BytesIO(Byte_contents))
 
-        texts = []
-        for i, slide in enumerate(prs.slides):
-            text = ""
-            for shape in slide.shapes:
-                if shape.has_text_frame:
-                    text = text + shape.text
-            texts.append(text)
-        contents = '\n'.join(texts)
+            texts = []
+            for i, slide in enumerate(prs.slides):
+                text = ""
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        text = text + shape.text
+                texts.append(text)
+            contents = '\n'.join(texts)
+        except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                # raise Exception ("Not able to load texts from preseation file")
         
     elif file_type == 'txt':        
         contents = doc.get()['Body'].read().decode('utf-8')
@@ -259,7 +264,7 @@ def load_document(file_type, key):
     # print('contents: ', contents)
     new_contents = str(contents).replace("\n"," ") 
     print('length: ', len(new_contents))
-
+    
     if len(new_contents)>0:
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
