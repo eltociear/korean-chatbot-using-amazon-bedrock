@@ -108,7 +108,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
-        raise Exception ("Not able to request to LLM")
+        #raise Exception ("Not able to request to LLM")
 
     print('uploaded into opensearch')
  
