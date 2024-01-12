@@ -256,15 +256,16 @@ def load_document(file_type, key):
     new_contents = str(contents).replace("\n"," ") 
     print('length: ', len(new_contents))
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100,
-        separators=["\n\n", "\n", ".", " ", ""],
-        length_function = len,
-    ) 
+    if len(new_contents)>0:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100,
+            separators=["\n\n", "\n", ".", " ", ""],
+            length_function = len,
+        ) 
 
-    texts = text_splitter.split_text(new_contents) 
-                
+        texts = text_splitter.split_text(new_contents) 
+                    
     return texts
     
 # load csv documents from s3
