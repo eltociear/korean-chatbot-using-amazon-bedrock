@@ -92,6 +92,10 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     index_name = "rag-index-"+documentId
     print('index_name: ', index_name)
     
+    if len(index_name)>=255:
+        index_name = index_name[1:255]
+        print('index_name: ', index_name)
+    
     delete_index_if_exist(index_name)
 
     try:
