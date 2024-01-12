@@ -290,7 +290,7 @@ def lambda_handler(event, context):
                 err_msg = traceback.format_exc()
                 print('err_msg: ', err_msg)
                 raise Exception ("Not able to delete documents in Kendra")
-        elif record['eventName'] != "ObjectCreated:Put":
+        elif record['eventName'] == "ObjectCreated:Put":
             bucket = record['s3']['bucket']['name']
             # translate utf8
             key = unquote_plus(record['s3']['object']['key']) # url decoding
