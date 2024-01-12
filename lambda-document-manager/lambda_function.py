@@ -302,7 +302,7 @@ def load_document(file_type, key):
     return texts
 
 def check_supported_type(size, file_type):
-    if size<object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+    if size<int(object_size) and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
         return True
     else:
         return False
