@@ -10,7 +10,7 @@ from io import BytesIO
 from urllib import parse
 from botocore.config import Config
 from urllib.parse import unquote_plus
-from langchain.embeddings import BedrockEmbeddings
+from langchain_community.embeddings import BedrockEmbeddings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
