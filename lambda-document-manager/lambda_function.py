@@ -392,7 +392,7 @@ def lambda_handler(event, context):
             size = 0
             try:
                 result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=['ObjectSize'])  
-                size = result['ObjectSize']
+                size = int(result['ObjectSize'])
                 
                 print('contents info: ', result)
                 print('object size: ', size)                
@@ -401,7 +401,7 @@ def lambda_handler(event, context):
                 print('err_msg: ', err_msg)
                 # raise Exception ("Not able to delete unsupported file") 
             
-            if size<object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+            if size<size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
                 for type in capabilities:                
                     if type=='kendra':         
                         print('upload to kendra: ', key)                                                
