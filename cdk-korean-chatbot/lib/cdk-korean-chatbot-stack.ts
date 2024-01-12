@@ -730,11 +730,14 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       environment: {
         s3_bucket: s3Bucket.bucketName,
         s3_prefix: s3_prefix,
+        kendra_region: String(kendra_region),
         opensearch_account: opensearch_account,
         opensearch_passwd: opensearch_passwd,
         opensearch_url: opensearch_url,
         kendraIndex: kendraIndex,
         roleArn: roleLambdaWebsocket.roleArn,
+        path: 'https://'+distribution.domainName+'/', 
+        capabilities: capabilities
       }
     });         
     s3Bucket.grantReadWrite(lambdaS3event); // permission for s3
