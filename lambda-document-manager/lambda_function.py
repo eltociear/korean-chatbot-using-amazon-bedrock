@@ -219,6 +219,7 @@ def load_document(file_type, key):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, key)
     
+    contents = ""
     if file_type == 'pdf':
         Byte_contents = doc.get()['Body'].read()
         reader = PyPDF2.PdfReader(BytesIO(Byte_contents))
@@ -259,13 +260,14 @@ def load_document(file_type, key):
             if(para.text):
                 texts.append(para.text)
                 # print(f"{i}: {para.text}")        
-        contents = '\n'.join(texts)
-            
+        contents = '\n'.join(texts)            
     # print('contents: ', contents)
-    new_contents = str(contents).replace("\n"," ") 
-    print('length: ', len(new_contents))
     
-    if len(new_contents)>0:
+    texts = ""
+    if len(contents)>0:
+        new_contents = str(contents).replace("\n"," ") 
+        print('length: ', len(new_contents))
+        
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=100,
@@ -274,7 +276,7 @@ def load_document(file_type, key):
         ) 
 
         texts = text_splitter.split_text(new_contents) 
-                    
+                        
     return texts
     
 # load csv documents from s3
