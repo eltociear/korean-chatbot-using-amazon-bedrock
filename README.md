@@ -35,6 +35,11 @@
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/251d2666-8837-4e8b-8521-534cbd3ced53" width="1000">
 
+파일 업로드 또는 삭제시는 아래와 같이 동작합니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/86a1ac13-4bc7-4fe2-8292-3320ba574f86)
+
+
 ## 주요 구성
 
 ### Bedrock을 LangChain으로 연결
