@@ -577,11 +577,10 @@ new_vectorstore = OpenSearchVectorSearch(
     is_aoss = False,
     #engine="faiss",  # default: nmslib
     embedding_function = bedrock_embeddings,
-    bulk_size = 2000,
     opensearch_url = opensearch_url,
     http_auth=(opensearch_account, opensearch_passwd),
 )
-response = new_vectorstore.add_documents(docs)
+response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 ```
 
 ## Reference 
