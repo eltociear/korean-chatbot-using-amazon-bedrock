@@ -739,7 +739,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       handler: 'lambda_function.lambda_handler',
       runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event')),
-      timeout: cdk.Duration.seconds(120),      
+      timeout: cdk.Duration.seconds(300),      
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
         queueS3event: queueS3event.queueUrl
@@ -753,7 +753,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       functionName: `lambda-document-manager-for-${projectName}`,
       role: roleLambdaWebsocket,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
-      timeout: cdk.Duration.seconds(600),
+      timeout: cdk.Duration.seconds(300),
       memorySize: 8192,
       environment: {
         s3_bucket: s3Bucket.bucketName,
