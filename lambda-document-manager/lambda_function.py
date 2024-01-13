@@ -101,16 +101,18 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     delete_index_if_exist(index_name)
 
     try:
-        new_vectorstore = OpenSearchVectorSearch(
+        vectorstore = OpenSearchVectorSearch(
             index_name=index_name,  
             is_aoss = False,
             #engine="faiss",  # default: nmslib
-            embedding_function = bedrock_embeddings,
-            bulk_size = 2000,
+            #embedding_function = bedrock_embeddings,
+            # bulk_size = 2000,
             opensearch_url = opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd),
         )
-        response = new_vectorstore.add_documents(docs)
+        vectorstore.add_embeddings(text_embeddings=bedrock_embeddings, bulk_size=2000)
+        
+        response = vectorstore.add_documents(docs)
         print('response of adding documents: ', response)
     except Exception:
         err_msg = traceback.format_exc()
