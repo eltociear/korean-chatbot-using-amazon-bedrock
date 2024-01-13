@@ -561,6 +561,28 @@ opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_except
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
 
+### OpenSearch Embedding 에
+
+아래와 같이 OpenSearch에서 Embedding의 길이는 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 
+
+```text
+RuntimeError: The embeddings count, 1840 is more than the [bulk_size], 500. Increase the value of [bulk_size].
+```
+
+수정 코드는 아래와 같습니다.
+
+```python
+new_vectorstore = OpenSearchVectorSearch(
+    index_name=index_name,  
+    is_aoss = False,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
+    bulk_size = 2000,
+    opensearch_url = opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd),
+)
+response = new_vectorstore.add_documents(docs)
+```
 
 ## Reference 
 
