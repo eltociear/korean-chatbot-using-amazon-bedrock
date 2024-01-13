@@ -301,8 +301,10 @@ def load_document(file_type, key):
                         
     return texts
 
-def check_supported_type(file_type):
-    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx':
+def check_supported_type(file_type, size):
+    if size > 5000 and size<max_object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+        return True
+    if size > 0 and file_type == 'txt':
         return True
     else:
         return False
@@ -343,7 +345,7 @@ def lambda_handler(event, context):
             # raise Exception ("Not able to delete unsupported file") 
         
         if eventName == 'ObjectRemoved:Delete':
-            if check_supported_type(file_type) and size > 0 and size < max_object_size:
+            if check_supported_type(file_type, size):
                 objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
                 print('objectName: ', objectName)
                 
@@ -404,7 +406,7 @@ def lambda_handler(event, context):
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
             
-            if check_supported_type(file_type) and size<max_object_size:
+            if check_supported_type(file_type, size): 
                 for type in capabilities:                
                     if type=='kendra':         
                         print('upload to kendra: ', key)                                                
