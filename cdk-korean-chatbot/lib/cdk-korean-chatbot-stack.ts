@@ -724,7 +724,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
 
     // SQS for S3 event
     const queueS3event = new sqs.Queue(this, `queue-s3-event-for-${projectName}`, {
-      visibilityTimeout: cdk.Duration.seconds(120),
+      visibilityTimeout: cdk.Duration.seconds(300),
       queueName: `queue-s3-event-for-${projectName}.fifo`,
       fifo: true,
       contentBasedDeduplication: false,
@@ -739,7 +739,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       handler: 'lambda_function.lambda_handler',
       runtime: lambda.Runtime.PYTHON_3_11,
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event')),
-      timeout: cdk.Duration.seconds(300),      
+      timeout: cdk.Duration.seconds(120),      
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
         queueS3event: queueS3event.queueUrl
