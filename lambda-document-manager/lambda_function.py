@@ -106,7 +106,6 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
             is_aoss = False,
             #engine="faiss",  # default: nmslib
             embedding_function = bedrock_embeddings,
-            # bulk_size = 2000,
             opensearch_url = opensearch_url,
             http_auth=(opensearch_account, opensearch_passwd),
         )
