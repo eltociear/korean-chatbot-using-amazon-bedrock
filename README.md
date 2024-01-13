@@ -563,7 +563,7 @@ opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_except
 
 ### OpenSearch Embedding 에
 
-아래와 같이 OpenSearch에서 Embedding의 길이는 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 
+아래와 같이 OpenSearch Embedding의 bulk_size의 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 아래의 1840은 Document의 전체 갯수입니다.
 
 ```text
 RuntimeError: The embeddings count, 1840 is more than the [bulk_size], 500. Increase the value of [bulk_size].
