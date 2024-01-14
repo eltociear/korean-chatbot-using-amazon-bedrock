@@ -1825,8 +1825,9 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
 
-                sendErrorMessage(connectionId, requestId, "Not able to use Google API.")    
-                # raise Exception ("Not able to search using google api")   
+                sendErrorMessage(connectionId, requestId, "Not able to use Google API. Check the credentials")    
+                #sendErrorMessage(connectionId, requestId, err_msg)    
+                #raise Exception ("Not able to search using google api") 
             
             if len(relevant_docs)>=1:
                 selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
