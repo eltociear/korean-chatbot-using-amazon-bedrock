@@ -584,7 +584,7 @@ def load_document(file_type, s3_file_name):
             texts.append(text)
         contents = '\n'.join(texts)
         
-    elif file_type == 'txt':        
+    elif file_type == 'txt' or file_type == 'py':        
         contents = doc.get()['Body'].read().decode('utf-8')
 
     elif file_type == 'docx':
@@ -2378,6 +2378,7 @@ def getResponse(connectionId, jsonBody):
                 msg = get_summary(llm, contexts)
             
             elif file_type == 'py':
+                texts = load_document(file_type, object)
                 msg = summarize_code(llm, msg)
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
