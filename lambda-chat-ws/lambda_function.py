@@ -2140,6 +2140,27 @@ def traslation_to_english(llm, msg):
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
+def summarize_code(llm, msg):
+    PROMPT = """\n\nHuman: 다음의 <article>의 code를 500자 이내로 요약해서 설명하세오. 결과는 <result> tag를 붙여주세요.
+            
+    <article>
+    {input}
+    </article>
+                        
+    Assistant:"""
+
+    try: 
+        translated_msg = llm(PROMPT.format(input=msg))
+        #print('translated_msg: ', translated_msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to translate the message")
+    
+    msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
+    
+    return msg.replace("\n"," ")
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2355,6 +2376,9 @@ def getResponse(connectionId, jsonBody):
                 print('contexts: ', contexts)
 
                 msg = get_summary(llm, contexts)
+            
+            elif file_type == 'py':
+                msg = summarize_code(llm, msg)
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
