@@ -541,6 +541,9 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'xls') {
                 contentType = 'application/vnd.ms-excel'
             }
+            else if(ext == 'py') {
+                contentType = 'application/x-python-code'
+            }
             console.log('contentType: ', contentType)
 
             let current = new Date();
