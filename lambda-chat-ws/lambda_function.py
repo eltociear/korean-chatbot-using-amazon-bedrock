@@ -2379,9 +2379,9 @@ def getResponse(connectionId, jsonBody):
             
             elif file_type == 'py':
                 texts = load_document(file_type, object)                
-                print('code: ', contexts)
+                print('code: ', texts)
                 
-                msg = summarize_code(llm, msg)
+                msg = summarize_code(llm, texts)
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
