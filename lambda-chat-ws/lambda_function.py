@@ -2141,7 +2141,7 @@ def traslation_to_english(llm, msg):
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
 def summarize_code(llm, msg):
-    PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 1000자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+    PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
             
     <article>
     {input}
