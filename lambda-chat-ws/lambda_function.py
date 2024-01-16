@@ -2117,9 +2117,7 @@ def traslation_to_korean(llm, msg):
         print('error message: ', err_msg)        
         raise Exception ("Not able to translate the message")
     
-    msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
-    
-    return msg.replace("\n"," ")
+    return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
 def traslation_to_english(llm, msg):
     PROMPT = """\n\nHuman: 다음의 <article>를 English로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
