@@ -2159,7 +2159,7 @@ def summarize_code(llm, msg):
     
     msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
     
-    return msg.replace("\n"," ")
+    return msg
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
