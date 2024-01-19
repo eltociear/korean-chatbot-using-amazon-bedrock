@@ -436,6 +436,8 @@ def lambda_handler(event, context):
         size = 0
         try:
             result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=['ObjectSize'])  
+            print('result: ', result)
+            
             size = int(result['ObjectSize'])
             print('object size: ', size)
         except Exception:
