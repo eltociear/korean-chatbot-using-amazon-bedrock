@@ -29,6 +29,7 @@ from langchain.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
+from opensearchpy import OpenSearch
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -531,7 +532,6 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
 
-from opensearchpy import OpenSearch
 def delete_index_if_exist(index_name):
     client = OpenSearch(
         hosts = [{

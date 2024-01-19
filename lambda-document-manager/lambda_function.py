@@ -14,6 +14,7 @@ from langchain_community.embeddings import BedrockEmbeddings
 from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from opensearchpy import OpenSearch
 from pptx import Presentation
 
 s3 = boto3.client('s3')
