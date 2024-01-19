@@ -423,8 +423,7 @@ def lambda_handler(event, context):
         jsonbody = json.loads(body)        
         bucket = jsonbody['bucket']        
         # translate utf8
-        #key = unquote_plus(jsonbody['key']) # url decoding
-        key = jsonbody['key'] # url decoding
+        key = unquote_plus(jsonbody['key']) # url decoding
         print('bucket: ', bucket)
         print('key: ', key)        
         eventName = jsonbody['type']
