@@ -36,24 +36,24 @@ max_object_size = int(os.environ.get('max_object_size'))
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 
-from opensearchpy import OpenSearch
-def delete_index_if_exist(index_name):
-    client = OpenSearch(
-        hosts = [{
-            'host': opensearch_url.replace("https://", ""), 
-            'port': 443
-        }],
-        http_compress = True,
-        http_auth=(opensearch_account, opensearch_passwd),
-        use_ssl = True,
-        verify_certs = True,
-        ssl_assert_hostname = False,
-        ssl_show_warn = False,
-    )
+os_client = OpenSearch(
+    hosts = [{
+        'host': opensearch_url.replace("https://", ""), 
+        'port': 443
+    }],
+    http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
+    use_ssl = True,
+    verify_certs = True,
+    ssl_assert_hostname = False,
+    ssl_show_warn = False,
+)
 
-    if client.indices.exists(index_name):
+from opensearchpy import OpenSearch
+def delete_index_if_exist(index_name):    
+    if os_client.indices.exists(index_name):
         print('delete opensearch document index: ', index_name)
-        response = client.indices.delete(
+        response = os_client.indices.delete(
             index=index_name
         )
         print('removed index: ', response)    
@@ -117,6 +117,105 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
         #raise Exception ("Not able to request to LLM")
 
     print('uploaded into opensearch')
+    
+def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
+    index_name = "rag-index-"+documentId
+    print('index_name: ', index_name)
+    
+    if len(index_name)>=255:
+        index_name = index_name[1:255]
+        print('index_name: ', index_name)
+    
+    delete_index_if_exist(index_name)
+    
+    index_body = {
+        'settings': {
+            'analysis': {
+                'analyzer': {
+                    'my_analyzer': {
+                        'char_filter': ['html_strip'], 
+                        'tokenizer': 'nori',
+                        'filter': ['nori_number','lowercase','trim','my_nori_part_of_speech'],
+                        'type': 'custom'
+                    }
+                },
+                'tokenizer': {
+                    'nori': {
+                        'decompound_mode': 'mixed',
+                        'discard_punctuation': 'true',
+                        'type': 'nori_tokenizer'}
+                },
+                "filter": {
+                    "my_nori_part_of_speech": {
+                        "type": "nori_part_of_speech",
+                        "stoptags": [
+                                "E", "IC", "J", "MAG", "MAJ",
+                                "MM", "SP", "SSC", "SSO", "SC",
+                                "SE", "XPN", "XSA", "XSN", "XSV",
+                                "UNA", "NA", "VSV"
+                        ]
+                    }
+                }
+            },
+            'index': {
+                'knn': True,
+                'knn.space_type': 'cosinesimil'  # Example space type
+            }
+        },
+        'mappings': {
+            'properties': {
+                'metadata': {
+                    'properties': {
+                        'source' : {'type': 'keyword'},                    
+                        'last_updated': {'type': 'date'},
+                        'project': {'type': 'keyword'},
+                        'seq_num': {'type': 'long'},
+                        'title': {'type': 'text'},  # For full-text search
+                        'url': {'type': 'text'},  # For full-text search
+                    }
+                },            
+                'text': {
+                    'analyzer': 'my_analyzer',
+                    'search_analyzer': 'my_analyzer',
+                    'type': 'text'
+                },
+                'vector_field': {
+                    'type': 'knn_vector',
+                    'dimension': 1536  # Replace with your vector dimension
+                }
+            }
+        }
+    }
+    
+    try: # create index
+        response = os_client.indices.create(
+            index_name,
+            body=index_body
+        )
+        print('\nCreating index:')
+        print(response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to create the index")
+
+    try: # 
+        vectorstore = OpenSearchVectorSearch(
+            index_name=index_name,  
+            is_aoss = False,
+            #engine="faiss",  # default: nmslib
+            embedding_function = bedrock_embeddings,
+            opensearch_url = opensearch_url,
+            http_auth=(opensearch_account, opensearch_passwd),
+        )
+        response = vectorstore.add_documents(docs, bulk_size = 2000)
+        print('response of adding documents: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to request to LLM")
+
+    print('uploaded into opensearch')    
  
 # store document into Kendra
 def store_document_for_kendra(path, key, documentId):
@@ -434,7 +533,8 @@ def lambda_handler(event, context):
                             print('docs size: ', len(docs))
                             if len(docs)>0:
                                 print('docs[0]: ', docs[0])                            
-                                store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                                # store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                                store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
                     
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
             else: # delete if the object is unsupported one for format or size
