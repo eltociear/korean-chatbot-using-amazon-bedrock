@@ -50,7 +50,6 @@ os_client = OpenSearch(
     ssl_show_warn = False,
 )
 
-from opensearchpy import OpenSearch
 def delete_index_if_exist(index_name):    
     if os_client.indices.exists(index_name):
         print('delete opensearch document index: ', index_name)
