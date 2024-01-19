@@ -423,7 +423,8 @@ def lambda_handler(event, context):
         jsonbody = json.loads(body)        
         bucket = jsonbody['bucket']        
         # translate utf8
-        key = unquote_plus(jsonbody['key']) # url decoding
+        #key = unquote_plus(jsonbody['key']) # url decoding
+        key = jsonbody['key'] # url decoding
         print('bucket: ', bucket)
         print('key: ', key)        
         eventName = jsonbody['type']
@@ -443,7 +444,7 @@ def lambda_handler(event, context):
         except Exception:
             err_msg = traceback.format_exc()
             print('err_msg: ', err_msg)
-            # raise Exception ("Not able to delete unsupported file") 
+            # raise Exception ("Not able to get object info") 
         
         if eventName == 'ObjectRemoved:Delete':
             if check_supported_type(file_type, size):
