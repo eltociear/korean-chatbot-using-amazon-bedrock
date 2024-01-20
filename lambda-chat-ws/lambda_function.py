@@ -1259,6 +1259,9 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                 excerpt = str(doc['metadata']['excerpt']+'  [번역]'+doc['metadata']['translated_excerpt']).replace('"'," ") 
             else:
                 excerpt = str(doc['metadata']['excerpt']).replace('"'," ")
+                
+                
+            print('reg_type: ', doc['rag_type'][:10])
 
             if doc['rag_type'] == 'kendra':                
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
@@ -1290,7 +1293,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                             reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name} ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                         elif uri:
                             reference = reference + f"{i+1}. <a href={uri} target=_blank>{name} ({confidence})</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
-            elif doc['rag_type'] == 'opensearch':
+            elif doc['rag_type'][:10] == 'opensearch':
                 print(f'## Document(get_reference) {i+1}: {doc}')
                 
                 page = ""
