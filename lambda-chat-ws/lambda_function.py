@@ -1521,22 +1521,22 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 index="rag-index-*", # all
                 #index='rag-index-upload-docs_amazon_lex.txt'
             )
-            print('lexical query result: ', response)
+            print('lexical query result: ', json.dumps(response))
             
             for i, document in enumerate(response['hits']['hits']):
                 excerpt = document['_source']['text']
                 print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
 
-                name = document['_source']['metadaa']['name']
+                name = document['_source']['metadata']['name']
                 print('name: ', name)
 
                 page = ""
-                if "page" in document['_source']['metadaa']:
-                    page = document['_source']['metadaa']['page']
+                if "page" in document['_source']['metadata']:
+                    page = document['_source']['metadata']['page']
                 
                 uri = ""
-                if "uri" in document['_source']['metadaa']:
-                    uri = document['_source']['metadaa']['uri']
+                if "uri" in document['_source']['metadata']:
+                    uri = document['_source']['metadata']['uri']
                 print('uri: ', uri)
 
                 confidence = str(document['_score'])
