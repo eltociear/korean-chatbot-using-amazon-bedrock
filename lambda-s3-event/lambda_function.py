@@ -28,14 +28,21 @@ def lambda_handler(event, context):
         }
         
         # push to SQS
-        try:
-            sqs_client.send_message(
-                QueueUrl=sqsUrl, 
+        try:            
+            sqs_client.send_message(  # standard 
+                DelaySeconds=0,
                 MessageAttributes={},
-                MessageDeduplicationId=eventId,
-                MessageGroupId="putEvent",
-                MessageBody=json.dumps(s3EventInfo)
+                MessageBody=json.dumps(s3EventInfo),
+                QueueUrl=sqsUrl
             )
+            
+            #sqs_client.send_message(  # fofo
+            #    QueueUrl=sqsUrl, 
+            #    MessageAttributes={},
+            #    MessageDeduplicationId=eventId,
+            #    MessageGroupId="putEvent",
+            #    MessageBody=json.dumps(s3EventInfo)
+            #)
             print('Successfully push the queue message: ', json.dumps(s3EventInfo))
 
         except Exception as e:        
