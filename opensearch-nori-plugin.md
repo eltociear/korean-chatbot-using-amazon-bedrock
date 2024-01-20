@@ -4,16 +4,138 @@
 
 여기서 구현하는 코드 [01_2_load_json_kr_docs_opensearch.ipynb](https://github.com/aws-samples/aws-ai-ml-workshop-kr/blob/master/genai/aws-gen-ai-kr/20_applications/02_qa_chatbot/01_preprocess_docs/01_2_load_json_kr_docs_opensearch.ipynb)을 주로 참조합니다.
 
-### Nori Plug-in 설치
+## Nori Plug-in의 활용
 
-[OpenSearch Console](https://us-west-2.console.aws.amazon.com/aos/home?region=us-west-2#opensearch/domains)에서 "korean-chatbot-with-rag"로 들어가서 [Packages] - [Associate package]을 선택한 후에, 아래와 같이 "analysis-nori"을 설치합니다. 
+OpenSearch의 index 생성시에 tokenizer로 nori를 지정합니다. 이때 vector의 embedding은 Bedrock을 이용하고, OpenSearch에 vector로 문서를 추가합니다. 
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b91c91a1-b13c-4f5d-bd58-1c8298b2f128)
+```python
+def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
+    index_name = "idx-"+documentId    
+    delete_index_if_exist(index_name)
+    
+    index_body = {
+        'settings': {
+            'analysis': {
+                'analyzer': {
+                    'my_analyzer': {
+                        'char_filter': ['html_strip'], 
+                        'tokenizer': 'nori',
+                        'filter': ['nori_number','lowercase','trim','my_nori_part_of_speech'],
+                        'type': 'custom'
+                    }
+                },
+                'tokenizer': {
+                    'nori': {
+                        'decompound_mode': 'mixed',
+                        'discard_punctuation': 'true',
+                        'type': 'nori_tokenizer'
+                    }
+                },
+                "filter": {
+                    "my_nori_part_of_speech": {
+                        "type": "nori_part_of_speech",
+                        "stoptags": [
+                                "E", "IC", "J", "MAG", "MAJ",
+                                "MM", "SP", "SSC", "SSO", "SC",
+                                "SE", "XPN", "XSA", "XSN", "XSV",
+                                "UNA", "NA", "VSV"
+                        ]
+                    }
+                }
+            },
+            'index': {
+                'knn': True,
+                'knn.space_type': 'cosinesimil'  # Example space type
+            }
+        },
+        'mappings': {
+            'properties': {
+                'metadata': {
+                    'properties': {
+                        'source' : {'type': 'keyword'},                    
+                        'last_updated': {'type': 'date'},
+                        'project': {'type': 'keyword'},
+                        'seq_num': {'type': 'long'},
+                        'title': {'type': 'text'},  # For full-text search
+                        'url': {'type': 'text'},  # For full-text search
+                    }
+                },            
+                'text': {
+                    'analyzer': 'my_analyzer',
+                    'search_analyzer': 'my_analyzer',
+                    'type': 'text'
+                },
+                'vector_field': {
+                    'type': 'knn_vector',
+                    'dimension': 1536  # Replace with your vector dimension
+                }
+            }
+        }
+    }
+    
+    try:
+        response = os_client.indices.create(
+            index_name,
+            body=index_body
+        )
+        print('index was created with nori plugin:', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to create the index")
 
+    try: 
+        vectorstore = OpenSearchVectorSearch(
+            index_name=index_name,  
+            is_aoss = False,
+            embedding_function = bedrock_embeddings,
+            opensearch_url = opensearch_url,
+            http_auth=(opensearch_account, opensearch_passwd),
+        )
+        response = vectorstore.add_documents(docs, bulk_size = 2000)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+```
 
-### 실행결과
+아래와 같이 query 문을 생성한 후에 전체 index를 검색합니다.
+```python
+query = {
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "match": {
+                        "text": {
+                            "query": query,
+                            "minimum_should_match": f'{min_shoud_match}%',
+                            "operator":  "or",
+                            # "fuzziness": "AUTO",
+                            # "fuzzy_transpositions": True,
+                            # "zero_terms_query": "none",
+                            # "lenient": False,
+                            # "prefix_length": 0,
+                            # "max_expansions": 50,
+                            # "boost": 1
+                        }
+                    }
+                },
+            ],
+            "filter": [
+            ]
+        }
+    }
+}
 
-검색 결과는 포맷은 아래와 같습니다. 
+response = os_client.search(
+    body=query,
+    index="idx-*"
+)
+```
+
+### 검색결과의 활용
+
+OpenSearch로 Lexical 검색시 얻어진 포맷은 아래와 같습니다. 
 ```java
 {
 "hits":{
@@ -38,6 +160,48 @@
       },
 }
 ```
+
+이것을 다른 RAG와 함께 활용하기 위하여 아래와 같이 포맷을 변환하여 관련된 문서(Relevent Documents)로 활용합니다.
+
+```python
+for i, document in enumerate(response['hits']['hits']):
+    if i>top_k: 
+        break
+                
+    excerpt = document['_source']['text']
+    print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
+
+    name = document['_source']['metadata']['name']
+
+    uri = ""
+    if "uri" in document['_source']['metadata']:
+        uri = document['_source']['metadata']['uri']
+
+    confidence = str(document['_score'])
+    assessed_score = ""
+                    
+    doc_info = {
+        "rag_type": 'opensearch-keyward',
+        "confidence": confidence,
+            "metadata": {
+                "source": uri,
+                "title": name,
+                "excerpt": excerpt,
+                "translated_excerpt": ""
+            },
+            "assessed_score": assessed_score,
+        }
+relevant_docs.append(doc_info)
+```
+
+
+### Nori Plug-in 설치
+
+[OpenSearch Console](https://us-west-2.console.aws.amazon.com/aos/home?region=us-west-2#opensearch/domains)에서 "korean-chatbot-with-rag"로 들어가서 [Packages] - [Associate package]을 선택한 후에, 아래와 같이 "analysis-nori"을 설치합니다. 
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b91c91a1-b13c-4f5d-bd58-1c8298b2f128)
+
+
 
 ## Reference
 
