@@ -1260,9 +1260,6 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
             else:
                 excerpt = str(doc['metadata']['excerpt']).replace('"'," ")
                 
-                
-            print('reg_type: ', doc['rag_type'][:10])
-
             if doc['rag_type'] == 'kendra':                
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
                     name = doc['metadata']['title']
