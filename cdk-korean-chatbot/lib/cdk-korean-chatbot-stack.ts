@@ -746,9 +746,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(120),      
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
-        queueS3event: queueS3event.queueUrl,
-        max_object_size: String(max_object_size),
-        supportedFormat: supportedFormat
+        queueS3event: queueS3event.queueUrl
       }
     });
     queueS3event.grantSendMessages(lambdaS3event); // permision for SQS putItem
