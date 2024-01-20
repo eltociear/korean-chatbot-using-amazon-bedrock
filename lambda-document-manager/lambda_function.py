@@ -205,7 +205,7 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
         print('error message: ', err_msg)                
         #raise Exception ("Not able to create the index")
 
-    try: # 
+    try: # put the doucment
         vectorstore = OpenSearchVectorSearch(
             index_name=index_name,  
             is_aoss = False,

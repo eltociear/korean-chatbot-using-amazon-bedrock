@@ -1518,8 +1518,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
             response = os_client.search(
                 body=query,
-                index="rag-index-*", # all
-                #index='rag-index-upload-docs_amazon_lex.txt'
+                index="idx-*", # all
+                #index='idx-upload-docs_amazon_lex.txt'
             )
             # print('lexical query result: ', json.dumps(response))
             
@@ -1583,7 +1583,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                         #"feedback_token": feedback_token
                         "assessed_score": assessed_score,
                     }
-            relevant_docs.append(doc_info)
+                relevant_docs.append(doc_info)
     return relevant_docs
 
 from langchain.schema import BaseMessage
@@ -2329,8 +2329,8 @@ def getResponse(connectionId, jsonBody):
     # rag sources
     if conv_type == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
         vectorstore_opensearch = OpenSearchVectorSearch(
-            index_name = "rag-index-*", # all
-            #index_name=f"rag-index-{userId}',
+            index_name = "idx-*", # all
+            #index_name=f"idx-{userId}',
             is_aoss = False,
             ef_search = 1024, # 512(default)
             m=48,
