@@ -38,6 +38,9 @@ max_object_size = int(os.environ.get('max_object_size'))
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 
+supportedFormat = json.loads(os.environ.get('supportedFormat'))
+print('supportedFormat: ', supportedFormat)
+
 enableNoriPlugin = os.environ.get('enableNoriPlugin')
 
 os_client = OpenSearch(
@@ -403,8 +406,15 @@ def load_document(file_type, key):
                         
     return texts
 
+def isSupported(type):
+    for format in supportedFormat:
+        if type == format:
+            return True
+    
+    return False
+    
 def check_supported_type(file_type, size):
-    if size > 5000 and size<max_object_size and (file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'ppt' or file_type == 'docx' or file_type == 'doc' or file_type == 'xlsx'):
+    if size > 5000 and size<max_object_size and isSupported(file_type):
         return True
     if size > 0 and file_type == 'txt':
         return True

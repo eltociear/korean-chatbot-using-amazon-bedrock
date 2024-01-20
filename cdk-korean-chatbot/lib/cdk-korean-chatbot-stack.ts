@@ -38,6 +38,8 @@ const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearch = 'false';
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
+const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "docx", "doc", "xlsx"]);  
+
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableNoriPlugin = 'true';
 
@@ -744,7 +746,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(120),      
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
-        queueS3event: queueS3event.queueUrl
+        queueS3event: queueS3event.queueUrl,
+        max_object_size: String(max_object_size),
+        supportedFormat: supportedFormat
       }
     });
     queueS3event.grantSendMessages(lambdaS3event); // permision for SQS putItem
@@ -770,7 +774,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         capabilities: capabilities,
         sqsUrl: queueS3event.queueUrl,
         max_object_size: String(max_object_size),
-        enableNoriPlugin: enableNoriPlugin
+        enableNoriPlugin: enableNoriPlugin,
+        supportedFormat: supportedFormat
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
