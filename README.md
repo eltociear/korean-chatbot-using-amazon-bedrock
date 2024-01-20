@@ -253,6 +253,10 @@ try:
         relevant_docs.append(doc_info)
 ```
 
+### OpenSearch에서 Nori Plugin을 이용한 Lexical 검색
+
+[OpenSearch에서 Lexical 검색](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/opensearch-nori-plugin.md)에 대해 이해하고 구현합니다.
+
 ### S3를 데이터 소스로 하기 위한 퍼미션
 
 Log에 대한 퍼미션이 필요합니다.
