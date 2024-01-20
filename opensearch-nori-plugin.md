@@ -215,6 +215,10 @@ relevant_docs.append(doc_info)
 
 ## Reference
 
+[Blog - Amazon OpenSearch Service Hybrid Query를 통한 검색 기능 강화](https://aws.amazon.com/ko/blogs/tech/amazon-opensearch-service-hybrid-query-korean/)
+
+[Blog - Amazon OpenSearch Service, 한국어 분석을 위한 ‘노리(Nori)’ 플러그인 활용](https://aws.amazon.com/ko/blogs/tech/amazon-opensearch-service-korean-nori-plugin-for-analysis/)
+
 [Korean (nori) Analysis Plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/7.10/analysis-nori.html)
 
 [Plugins by engine version in Amazon OpenSearch Service](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-plugins.html)
