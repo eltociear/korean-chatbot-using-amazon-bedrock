@@ -440,7 +440,7 @@ def lambda_handler(event, context):
         try:
             s3obj = s3.get_object(Bucket=bucket, Key=key)
             print(f"Got object: {s3obj}")        
-            ize = int(s3obj['ContentLength'])    
+            size = int(s3obj['ResponseMetadata']['ContentLength'])    
             
             #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
             #result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
