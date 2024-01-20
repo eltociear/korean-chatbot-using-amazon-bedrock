@@ -439,13 +439,13 @@ def lambda_handler(event, context):
         size = 0
         try:
             s3obj = s3.get_object(Bucket=bucket, Key=key)
-            print(f"Got object: {s3obj}")            
+            print(f"Got object: {s3obj}")        
+            ize = int(s3obj['ContentLength'])    
             
-            attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
-            result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
-            print('result: ', result)
-            
-            size = int(result['ObjectSize'])
+            #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
+            #result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
+            #print('result: ', result)            
+            #size = int(result['ObjectSize'])
             print('object size: ', size)
         except Exception:
             err_msg = traceback.format_exc()
