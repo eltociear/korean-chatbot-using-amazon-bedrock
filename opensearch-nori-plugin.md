@@ -1,4 +1,4 @@
-# RAG를 이용하여 Nori 언어 분석기를 이용한 OpenSearch 성능향상
+# OpenSearch에서 Nori 언어 분석기를 이용한 Lexical 검색
 
 [2023년 10월에 한국어, 일본어, 중국어에 대한 새로운 언어 분석기 플러그인이 OpenSearch에 추가](https://aws.amazon.com/ko/about-aws/whats-new/2023/10/amazon-opensearch-four-language-analyzers/) 되었습니다. 이제 OpenSearch에서 한국어를 Nori 분석기를 이용하여 Lexical 검색을 이용하고 이를 이용해 RAG를 구현할 수 있습니다. 여기서는 OpenSearch에서 [Nori 플러그인을 이용한 한국어 분석](https://aws.amazon.com/ko/blogs/tech/amazon-opensearch-service-korean-nori-plugin-for-analysis/) 블로그를 참조하여 OpenSearch의 한국어 분석기능을 향상시키고자 합니다. 
 
