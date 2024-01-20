@@ -1515,8 +1515,8 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
 
             response = os_client.search(
                 body=query,
-                # index_name="rag-index-*", # all
-                index_name='rag-index-upload-docs_amazon_lex.txt'
+                index="rag-index-*", # all
+                #index='rag-index-upload-docs_amazon_lex.txt'
             )
             print('lexical query result: ', response)
 
