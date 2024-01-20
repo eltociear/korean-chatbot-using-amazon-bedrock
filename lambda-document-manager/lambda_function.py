@@ -37,6 +37,8 @@ max_object_size = int(os.environ.get('max_object_size'))
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 
+enableNoriPlugin = os.environ.get('enableNoriPlugin')
+
 os_client = OpenSearch(
     hosts = [{
         'host': opensearch_url.replace("https://", ""), 
@@ -143,7 +145,8 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
                     'nori': {
                         'decompound_mode': 'mixed',
                         'discard_punctuation': 'true',
-                        'type': 'nori_tokenizer'}
+                        'type': 'nori_tokenizer'
+                    }
                 },
                 "filter": {
                     "my_nori_part_of_speech": {
@@ -192,8 +195,7 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
             index_name,
             body=index_body
         )
-        print('\nCreating index:')
-        print(response)
+        print('index was created with nori plugin:', response)
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
@@ -535,10 +537,14 @@ def lambda_handler(event, context):
                             print('docs size: ', len(docs))
                             if len(docs)>0:
                                 print('docs[0]: ', docs[0])                            
-                                # store_document_for_opensearch(bedrock_embeddings, docs, documentId)
-                                store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
+                                
+                                if enableNoriPlugin == 'true':
+                                    store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
+                                else:
+                                    store_document_for_opensearch(bedrock_embeddings, docs, documentId)                                
                     
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
+            """
             else: # delete if the object is unsupported one for format or size
                 try:
                     print('delete unsupported file: ', key)                                
@@ -549,6 +555,7 @@ def lambda_handler(event, context):
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
                     # raise Exception ("Not able to delete unsupported file")
+            """
 
         print('processing time: ', str(time.time() - start_time))
         

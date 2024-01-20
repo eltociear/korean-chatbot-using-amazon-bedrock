@@ -39,6 +39,7 @@ const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearch = 'false';
 const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
+const enableNoriPlugin = 'true';
 
 const claude_instance = JSON.stringify([
   {
@@ -661,7 +662,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         profile_of_LLMs:profile_of_LLMs,
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
-        allowDualSearch: allowDualSearch
+        allowDualSearch: allowDualSearch,
+        enableNoriPlugin: enableNoriPlugin
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -767,7 +769,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         path: 'https://'+distribution.domainName+'/', 
         capabilities: capabilities,
         sqsUrl: queueS3event.queueUrl,
-        max_object_size: String(max_object_size)
+        max_object_size: String(max_object_size),
+        enableNoriPlugin: enableNoriPlugin
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3

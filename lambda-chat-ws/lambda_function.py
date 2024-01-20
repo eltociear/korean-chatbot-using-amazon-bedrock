@@ -64,6 +64,7 @@ history_length = 0
 token_counter_history = 0
 allowDualSearch = os.environ.get('allowDualSearch')
 allowDualSearchWithMulipleProcessing = True
+enableNoriPlugin = os.environ.get('enableNoriPlugin')
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -531,29 +532,6 @@ def store_document_for_faiss(docs, vectorstore_faiss):
     print('store document into faiss')    
     vectorstore_faiss.add_documents(docs)       
     print('uploaded into faiss')
-
-def delete_index_if_exist(index_name):
-    client = OpenSearch(
-        hosts = [{
-            'host': opensearch_url.replace("https://", ""), 
-            'port': 443
-        }],
-        http_compress = True,
-        http_auth=(opensearch_account, opensearch_passwd),
-        use_ssl = True,
-        verify_certs = True,
-        ssl_assert_hostname = False,
-        ssl_show_warn = False,
-    )
-
-    if client.indices.exists(index_name):
-        print('remove index: ', index_name)
-        response = client.indices.delete(
-            index=index_name
-        )
-        print('response(remove): ', response)    
-    else:
-        print('no index: ', index_name)
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
@@ -1353,6 +1331,19 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         
     return reference
 
+os_client = OpenSearch(
+    hosts = [{
+        'host': opensearch_url.replace("https://", ""), 
+        'port': 443
+    }],
+    http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
+    use_ssl = True,
+    verify_certs = True,
+    ssl_assert_hostname = False,
+    ssl_show_warn = False,
+)
+
 def retrieve_from_vectorstore(query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
@@ -1429,11 +1420,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             relevant_docs.append(doc_info)
             
     elif rag_type == 'opensearch':
-        #relevant_documents = vectorstore_opensearch.similarity_search(
-        #    query = query,
-        #    k = top_k,
-        #)
-
+        # vector search (semantic) 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
             k = top_k,
@@ -1498,6 +1485,41 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                     "assessed_score": assessed_score,
                 }
             relevant_docs.append(doc_info)
+        
+        # rexical search (keyword)
+        if enableNoriPlugin == 'true':
+            query = {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "match": {
+                                    "text": {
+                                        "query": query,
+                                        "minimum_should_match": '70%',
+                                        "operator":  "or",
+                                        # "fuzziness": "AUTO",
+                                        # "fuzzy_transpositions": True,
+                                        # "zero_terms_query": "none",
+                                        # "lenient": False,
+                                        # "prefix_length": 0,
+                                        # "max_expansions": 50,
+                                        # "boost": 1
+                                    }
+                                }
+                            },
+                        ],
+                        "filter": [
+                        ]
+                    }
+                }
+            }
+
+            response = os_client.search(
+                body=query,
+                index_name = "rag-index-*", # all
+            )
+            print('lexical query result: ', response)
 
     return relevant_docs
 
