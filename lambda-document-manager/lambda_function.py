@@ -501,7 +501,7 @@ def lambda_handler(event, context):
             else: 
                 print('This file format is not supported: ', file_type)                
                     
-        elif eventName == "ObjectCreated:Put":
+        elif eventName == "ObjectCreated:Put":            
             category = "upload"
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces
@@ -509,6 +509,22 @@ def lambda_handler(event, context):
             documentId = documentId.replace('/', '_') # remove slash
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
+            
+            size = 0
+            try:
+                s3obj = s3.get_object(Bucket=bucket, Key=key)
+                print(f"Got object: {s3obj}")        
+                size = int(s3obj['ContentLength'])    
+                
+                #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
+                #result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
+                #print('result: ', result)            
+                #size = int(result['ObjectSize'])
+                print('object size: ', size)
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)
+                # raise Exception ("Not able to get object info") 
             
             if check_supported_type(file_type, size): 
                 for type in capabilities:                
