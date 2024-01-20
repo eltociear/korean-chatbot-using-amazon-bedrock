@@ -437,7 +437,8 @@ def lambda_handler(event, context):
             
         size = 0
         try:
-            result = s3.get_object_attributes(Bucket=bucket, Key=jsonbody['key'], ObjectAttributes=['ObjectSize'])  
+            attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
+            result = s3.get_object_attributes(Bucket=bucket, Key=jsonbody['key'], ObjectAttributes=attributes)  
             print('result: ', result)
             
             size = int(result['ObjectSize'])
