@@ -1489,27 +1489,29 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         # rexical search (keyword)
         if enableNoriPlugin == 'true':
             query = {
-                "bool": {
-                    "must": [
-                        {
-                            "match": {
-                                "text": {
-                                    "query": query,
-                                    "minimum_should_match": '70%',
-                                    "operator":  "or",
-                                    # "fuzziness": "AUTO",
-                                    # "fuzzy_transpositions": True,
-                                    # "zero_terms_query": "none",
-                                    # "lenient": False,
-                                    # "prefix_length": 0,
-                                    # "max_expansions": 50,
-                                    # "boost": 1
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "match": {
+                                    "text": {
+                                        "query": query,
+                                        "minimum_should_match": '70%',
+                                        "operator":  "or",
+                                        # "fuzziness": "AUTO",
+                                        # "fuzzy_transpositions": True,
+                                        # "zero_terms_query": "none",
+                                        # "lenient": False,
+                                        # "prefix_length": 0,
+                                        # "max_expansions": 50,
+                                        # "boost": 1
+                                    }
                                 }
-                            }
-                        },
-                    ],
-                    "filter": [
-                    ]
+                            },
+                        ],
+                        "filter": [
+                        ]
+                    }
                 }
             }
 
