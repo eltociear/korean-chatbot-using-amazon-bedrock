@@ -1489,35 +1489,33 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         # rexical search (keyword)
         if enableNoriPlugin == 'true':
             query = {
-                "query": {
-                    "bool": {
-                        "must": [
-                            {
-                                "match": {
-                                    "text": {
-                                        "query": query,
-                                        "minimum_should_match": '70%',
-                                        "operator":  "or",
-                                        # "fuzziness": "AUTO",
-                                        # "fuzzy_transpositions": True,
-                                        # "zero_terms_query": "none",
-                                        # "lenient": False,
-                                        # "prefix_length": 0,
-                                        # "max_expansions": 50,
-                                        # "boost": 1
-                                    }
+                "bool": {
+                    "must": [
+                        {
+                            "match": {
+                                "text": {
+                                    "query": query,
+                                    "minimum_should_match": '70%',
+                                    "operator":  "or",
+                                    # "fuzziness": "AUTO",
+                                    # "fuzzy_transpositions": True,
+                                    # "zero_terms_query": "none",
+                                    # "lenient": False,
+                                    # "prefix_length": 0,
+                                    # "max_expansions": 50,
+                                    # "boost": 1
                                 }
-                            },
-                        ],
-                        "filter": [
-                        ]
-                    }
+                            }
+                        },
+                    ],
+                    "filter": [
+                    ]
                 }
             }
 
             response = os_client.search(
                 body=query,
-                index_name = "rag-index-*", # all
+                index_name="rag-index-*", # all
             )
             print('lexical query result: ', response)
 
