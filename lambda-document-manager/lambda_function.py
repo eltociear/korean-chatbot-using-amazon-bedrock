@@ -97,7 +97,7 @@ bedrock_embeddings = BedrockEmbeddings(
 )   
 
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
-    index_name = "rag-index-"+documentId
+    index_name = "idx-"+documentId
     print('index_name: ', index_name)
     
     if len(index_name)>=255:
@@ -125,11 +125,11 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     print('uploaded into opensearch')
     
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
-    index_name = "rag-index-"+documentId
+    index_name = "idx-"+documentId
     print('index_name: ', index_name)
     
-    if len(index_name)>=255:
-        index_name = index_name[1:255]
+    if len(index_name)>=250:  # To-DO: if korean, it can over the length
+        index_name = index_name[1:250]
         print('index_name: ', index_name)
     
     delete_index_if_exist(index_name)
@@ -476,7 +476,7 @@ def lambda_handler(event, context):
                         # print('result of metadata deletion: ', result)
                         
                         # delete document index of opensearch
-                        index_name = "rag-index-"+documentId
+                        index_name = "idx-"+documentId
                         # print('index_name: ', index_name)
                         delete_index_if_exist(index_name)                    
                     except Exception:
@@ -563,7 +563,7 @@ def lambda_handler(event, context):
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
             else: # delete if the object is unsupported one for format or size
                 try:
-                    print('delete unsupported file: ', key)                                
+                    print('delete the unsupported file: ', key)                                
                     result = s3.delete_object(Bucket=bucket, Key=key)
                     print('result of deletion of the unsupported file: ', result)
                             

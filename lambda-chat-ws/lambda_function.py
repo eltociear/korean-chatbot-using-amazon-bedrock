@@ -1430,7 +1430,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
-            print(f'## Document(retrieve_from_vectorstore) {i+1}: {document}')
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
 
             name = document[0].metadata['name']
             print('metadata: ', document[0].metadata)
@@ -1449,7 +1449,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             if page:
                 print('page: ', page)
                 doc_info = {
-                    "rag_type": rag_type,
+                    "rag_type": 'opensearch-vector',
                     #"api_type": api_type,
                     "confidence": confidence,
                     "metadata": {
@@ -1522,7 +1522,65 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 #index='rag-index-upload-docs_amazon_lex.txt'
             )
             print('lexical query result: ', response)
+            
+            for i, document in enumerate(response['hits']['hits']):
+                excerpt = document['_source']['text']
+                print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
 
+                name = document['_source']['metadaa']['name']
+                print('name: ', name)
+
+                page = ""
+                if "page" in document['_source']['metadaa']:
+                    page = document['_source']['metadaa']['page']
+                
+                uri = ""
+                if "uri" in document['_source']['metadaa']:
+                    uri = document['_source']['metadaa']['uri']
+                print('uri: ', uri)
+
+                confidence = str(document['_score'])
+                assessed_score = ""
+
+                if page:
+                    print('page: ', page)
+                    doc_info = {
+                        "rag_type": 'opensearch-keyward',
+                        #"api_type": api_type,
+                        "confidence": confidence,
+                        "metadata": {
+                            #"type": query_result_type,
+                            #"document_id": document_id,
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "translated_excerpt": "",
+                            "document_attributes": {
+                                "_excerpt_page_number": page
+                            }
+                        },
+                        #"query_id": query_id,
+                        #"feedback_token": feedback_token
+                        "assessed_score": assessed_score,
+                    }
+                else: 
+                    doc_info = {
+                        "rag_type": 'opensearch-keyward',
+                        #"api_type": api_type,
+                        "confidence": confidence,
+                        "metadata": {
+                            #"type": query_result_type,
+                            #"document_id": document_id,
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "translated_excerpt": ""
+                        },
+                        #"query_id": query_id,
+                        #"feedback_token": feedback_token
+                        "assessed_score": assessed_score,
+                    }
+            relevant_docs.append(doc_info)
     return relevant_docs
 
 from langchain.schema import BaseMessage
