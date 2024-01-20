@@ -729,9 +729,10 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // SQS for S3 event
     const queueS3event = new sqs.Queue(this, `queue-s3-event-for-${projectName}`, {
       visibilityTimeout: cdk.Duration.seconds(600),
-      queueName: `queue-s3-event-for-${projectName}.fifo`,
-      fifo: true,
-      contentBasedDeduplication: false,
+      //queueName: `queue-s3-event-for-${projectName}.fifo`,  # fifo
+      //fifo: true,
+      //contentBasedDeduplication: false,
+      queueName: `queue-s3-event-for-${projectName}`,      
       deliveryDelay: cdk.Duration.millis(0),
       retentionPeriod: cdk.Duration.days(2),
     });
