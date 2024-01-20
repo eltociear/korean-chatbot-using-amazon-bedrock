@@ -1487,6 +1487,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             relevant_docs.append(doc_info)
         
         # rexical search (keyword)
+        min_shoud_match = 0
         if enableNoriPlugin == 'true':
             query = {
                 "query": {
@@ -1496,7 +1497,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                                 "match": {
                                     "text": {
                                         "query": query,
-                                        "minimum_should_match": '70%',
+                                        "minimum_should_match": f'{min_shoud_match}%',
                                         "operator":  "or",
                                         # "fuzziness": "AUTO",
                                         # "fuzzy_transpositions": True,
