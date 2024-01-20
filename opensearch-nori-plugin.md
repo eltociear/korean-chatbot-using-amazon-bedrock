@@ -133,6 +133,8 @@ response = os_client.search(
 )
 ```
 
+
+
 ### 검색결과의 활용
 
 OpenSearch로 Lexical 검색시 얻어진 포맷은 아래와 같습니다. 
@@ -194,8 +196,16 @@ for i, document in enumerate(response['hits']['hits']):
 relevant_docs.append(doc_info)
 ```
 
+### 참고자료
 
-### Nori Plug-in 설치
+[OpenSearcj boolean query](https://opensearch.org/docs/latest/query-dsl/compound/bool/)
+
+[OpenSearch match qeury](https://opensearch.org/docs/latest/query-dsl/full-text/index/#match-boolean-prefix)
+
+[OpenSearch Query Description (한글)](https://esbook.kimjmin.net/05-search)
+
+
+## Nori Plug-in 설치
 
 [OpenSearch Console](https://us-west-2.console.aws.amazon.com/aos/home?region=us-west-2#opensearch/domains)에서 "korean-chatbot-with-rag"로 들어가서 [Packages] - [Associate package]을 선택한 후에, 아래와 같이 "analysis-nori"을 설치합니다. 
 
