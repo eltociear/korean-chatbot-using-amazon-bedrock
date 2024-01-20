@@ -514,6 +514,8 @@ def lambda_handler(event, context):
                         err_msg = traceback.format_exc()
                         print('err_msg: ', err_msg)
                         # raise Exception ("Not able to delete documents in Kendra")
+            else: 
+                print('This file format is not supported: ', file_type)                
                     
         elif eventName == "ObjectCreated:Put":
             category = "upload"
@@ -559,7 +561,6 @@ def lambda_handler(event, context):
                                     store_document_for_opensearch(bedrock_embeddings, docs, documentId)                                
                     
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
-            """
             else: # delete if the object is unsupported one for format or size
                 try:
                     print('delete unsupported file: ', key)                                
@@ -570,8 +571,7 @@ def lambda_handler(event, context):
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
                     # raise Exception ("Not able to delete unsupported file")
-            """
-
+                    
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
