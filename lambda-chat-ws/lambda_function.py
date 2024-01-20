@@ -1521,7 +1521,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 index="rag-index-*", # all
                 #index='rag-index-upload-docs_amazon_lex.txt'
             )
-            print('lexical query result: ', json.dumps(response))
+            # print('lexical query result: ', json.dumps(response))
             
             for i, document in enumerate(response['hits']['hits']):
                 if i>top_k: 
