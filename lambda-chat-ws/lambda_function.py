@@ -1365,7 +1365,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
         for i, document in enumerate(relevant_documents):
             #print('document.page_content:', document.page_content)
             #print('document.metadata:', document.metadata)
-            print(f'## Document(retrieve_from_vectorstore) {i+1}: {document}')
+            print(f'## Document(faiss-vector) {i+1}: {document}')
 
             name = document[0].metadata['name']
             page = ""
@@ -1469,7 +1469,7 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
                 }
             else:
                 doc_info = {
-                    "rag_type": rag_type,
+                    "rag_type": 'opensearch-vector',
                     #"api_type": api_type,
                     "confidence": confidence,
                     "metadata": {
@@ -1524,6 +1524,9 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             print('lexical query result: ', json.dumps(response))
             
             for i, document in enumerate(response['hits']['hits']):
+                if i>top_k: 
+                    break
+                
                 excerpt = document['_source']['text']
                 print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
 
