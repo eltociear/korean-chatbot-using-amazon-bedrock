@@ -37,7 +37,8 @@
 
 파일 업로드 또는 삭제시는 아래와 같이 동작합니다.
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/c2bdbda5-6537-4b4b-9b47-ebcb72ca0bea)
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/89d233cf-36df-4e5d-944d-03dce064c130)
 
 
 ## 주요 구성
