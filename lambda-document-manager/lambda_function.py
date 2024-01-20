@@ -18,6 +18,7 @@ from opensearchpy import OpenSearch
 from pptx import Presentation
 
 s3 = boto3.client('s3')
+
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
@@ -437,8 +438,11 @@ def lambda_handler(event, context):
             
         size = 0
         try:
+            s3obj = s3.get_object(Bucket=bucket, Key=key)
+            print(f"Got object: {s3obj}")            
+            
             attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
-            result = s3.get_object_attributes(Bucket=bucket, Key=jsonbody['key'], ObjectAttributes=attributes)  
+            result = s3.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
             print('result: ', result)
             
             size = int(result['ObjectSize'])
