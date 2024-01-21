@@ -45,10 +45,11 @@
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/251d2666-8837-4e8b-8521-534cbd3ced53" width="1000">
 
-파일 업로드 또는 삭제시는 아래와 같이 동작합니다.
+대량으로 파일 업로드 또는 삭제시는 아래와 같은 Event driven구조를 활용할 수 있습니다.
+
+<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/89d233cf-36df-4e5d-944d-03dce064c130" width="600">
 
 
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/89d233cf-36df-4e5d-944d-03dce064c130)
 
 ## 향상된 RAG 구현하기
 
