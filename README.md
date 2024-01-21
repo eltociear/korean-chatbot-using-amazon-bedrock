@@ -1,6 +1,16 @@
-# Multi-RAG와 Claude LLM으로 한국어 Chatbot 만들기 
+# RAG의 성능을 향상시켜 Chatbot 만들기
 
-[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 여러개의 [Knowledge Database](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)를 가지는 Multi-RAG를 이용하여 구현합니다. 또한, RAG에 질문과 관련된 문서(Relevant Document)가 없는 경우에는 Google Search API를 통해 검색하여 얻은 결과를 RAG의 지식저장소처럼 사용하여 사용자 경험을 개선합니다.
+여기에서는 RAG의 성능을 향상시키는 여러가지 방법들에 대해 설명하고 이를 이용하여 기업 또는 개인의 데이터를 쉽게 활용할 수 있는 Chatbot을 만들고자 합니다. RAG는 기업 또는 개인의 중요한 데이터를 LLM에서 활용할 수 있는 기술입니다. LLM 활용에 빠지지 않는 중요한 기술이지만 제대로 활용하기 위해서는 아래와 같은 것을을 검토할 수 있습니다. 
+
+- Multi-RAG: RAG에 반드시 필요한 [지식 저장소(Knowledge Store)](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)는 별도로 구축할수도 있고, 기존의 RDB를 활용할 수 있습니다. 다양한 지식저장소를 활용하여 RAG의 활용도를 높입니다.
+- Multi-Region LLM: 여러 리전에 있는 LLM을 동시에 활용함으로써 질문후 답변까지의 동작시간을 단축하고, On-Demand 방식의 동시 실행 수의 제한을 완화할 수 있습니다.
+- 한영 동시 검색: RAG에 한국어와 영어 문서들이 혼재할 경우에 한국어로 영어 문서를 검색할 수 없습니다. 한국어로 한국어, 영어 문서를 모두 검색하여 RAG의 성능을 향상 시킬 수 있습니다.
+- 인터넷 검색: RAG의 지식저장소에 관련된 문서가 없는 경우에 인터넷 검색을 통해 활용도를 높입니다.
+- 관련도 기준으로 검색된 문서 활용: RAG는 LLM에 Context로 관련된 문서를 제공합니다. Context에 들어가는 문서의 순서에 따라 RAG의 성능이 달라집니다.
+
+여기서는 [Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 구성하지만, [LangChain](https://aws.amazon.com/ko/what-is/langchain/)을 기반으로 구성하므로 Llama2와 같은 다른 LLM을 활용할때에도 쉽게 응용할 수 있습니다. 
+
+
 
 
 ## 아키텍처 개요
