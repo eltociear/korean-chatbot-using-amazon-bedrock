@@ -19,8 +19,6 @@
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/1636dcbb-611f-41fb-9051-e9fe0e4f6b29" width="800">
 
-
-
 상세하게 단계별로 설명하면 아래와 같습니다.
 
 단계 1: 사용자의 질문(question)은 API Gateway를 통해 Lambda에 Web Socket 방식으로 전달됩니다. Lambda는 JSON body에서 질문을 읽어옵니다. 이때 사용자의 이전 대화이력이 필요하므로 [Amazon DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html)에서 읽어옵니다. DynamoDB에서 대화이력을 로딩하는 작업은 처음 1회만 수행합니다.
@@ -49,6 +47,262 @@
 
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/89d233cf-36df-4e5d-944d-03dce064c130)
+
+## 향상된 RAG 구현하기
+
+### Multi-RAG
+
+여러개의 RAG를 활용할 경우에 요청후 응답까지의 지연시간이 증가합니다. 따라서 병렬 프로세싱을 이용하여 동시에 지식 저장소에 대한 질문을 수행하여야 합니다. 상세한 내용은 관련된 Blog인 [Multi-RAG와 Multi-Region LLM로 한국어 Chatbot 만들기](https://aws.amazon.com/ko/blogs/tech/multi-rag-and-multi-region-llm-for-chatbot/)를 참조합니다. 
+
+```python
+from multiprocessing import Process, Pipe
+
+processes = []
+parent_connections = []
+for rag in capabilities:
+    parent_conn, child_conn = Pipe()
+    parent_connections.append(parent_conn)
+
+    process = Process(target = retrieve_process_from_RAG, args = (child_conn, revised_question, top_k, rag))
+    processes.append(process)
+
+for process in processes:
+    process.start()
+
+for parent_conn in parent_connections:
+    rel_docs = parent_conn.recv()
+
+    if (len(rel_docs) >= 1):
+        for doc in rel_docs:
+            relevant_docs.append(doc)
+
+for process in processes:
+    process.join()
+
+def retrieve_process_from_RAG(conn, query, top_k, rag_type):
+    relevant_docs = []
+    if rag_type == 'kendra':
+        rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
+    else:
+        rel_docs = retrieve_from_vectorstore(query=query, top_k=top_k, rag_type=rag_type)
+    
+    if(len(rel_docs)>=1):
+        for doc in rel_docs:
+            relevant_docs.append(doc)    
+    
+    conn.send(relevant_docs)
+    conn.close()
+```
+
+### Multi-Region LLM
+
+여러 리전의 LLM에 대한 profile을 정의합니다. 
+
+```typescript
+const profile_of_LLMs = JSON.stringify([
+  {
+    "bedrock_region": "us-west-2",
+    "model_type": "claude",
+    "model_id": "anthropic.claude-v2:1", 
+  },
+  {
+    "bedrock_region": "us-east-1",
+    "model_type": "claude",
+    "model_id": "anthropic.claude-v2:1",
+    "maxOutputTokens": "8196"
+  },
+]);
+```
+
+Bedrock에서 client를 지정할때 bedrock_region을 지정할 수 있습니다. 아래와 같이 LLM을 선택하면 Lambda에 event가 올때마다 다른 리전의 LLM을 활용할 수 있습니다. 
+
+```python
+profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
+selected_LLM = 0
+
+profile = profile_of_LLMs[selected_LLM]
+bedrock_region = profile['bedrock_region']
+modelId = profile['model_id']
+
+boto3_bedrock = boto3.client(
+    service_name = 'bedrock-runtime',
+    region_name = bedrock_region,
+    config = Config(
+        retries = {
+            'max_attempts': 30
+        }
+    )
+)
+parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+
+llm = Bedrock(
+    model_id = modelId,
+    client = boto3_bedrock,
+    streaming = True,
+    callbacks = [StreamingStdOutCallbackHandler()],
+    model_kwargs = parameters)
+
+bedrock_embeddings = BedrockEmbeddings(
+    client = boto3_bedrock,
+    region_name = bedrock_region,
+    model_id = 'amazon.titan-embed-text-v1'
+)
+```
+
+lambda(chat)와 같이 문서를 번역할 때에서 병렬로 조회하기 위하여, [Lambda의 Multi thread](https://aws.amazon.com/ko/blogs/compute/parallel-processing-in-python-with-aws-lambda/)를 이용합니다. 이때, 병렬 처리된 데이터를 연동 할 때에는 [Pipe()](https://docs.python.org/3/library/multiprocessing.html)을 이용합니다. 
+
+```python
+def translate_relevant_documents_using_parallel_processing(docs):
+    selected_LLM = 0
+    relevant_docs = []    
+    processes = []
+    parent_connections = []
+    for doc in docs:
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        llm = get_llm(profile_of_LLMs, selected_LLM)
+        bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
+
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc, bedrock_region))
+        processes.append(process)
+
+        selected_LLM = selected_LLM + 1
+        if selected_LLM == len(profile_of_LLMs):
+            selected_LLM = 0
+
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        doc = parent_conn.recv()
+        relevant_docs.append(doc)    
+
+    for process in processes:
+        process.join()
+    
+    #print('relevant_docs: ', relevant_docs)
+    return relevant_docs
+```
+
+### 한영 동시 검색
+
+한영 검색을 위해 먼저 한국어로 RAG를 조회하고, 영어로 번역한 후에 각각의 관련된 문서들(Relevant Documents)를 번역합니다. 관련된 문서들에 대해 질문에 따라 관련성을 비교하여 관련도가 높은 문서순서로 Context를 만들어서 활용합니다. 상세한 내용은 관련된 Blog인 [
+한영 동시 검색 및 인터넷 검색을 활용하여 RAG를 편리하게 활용하기](https://aws.amazon.com/ko/blogs/tech/rag-enhanced-searching/)을 참조합니다. 
+
+```python
+translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+
+relevant_docs_using_translated_question = retrieve_from_vectorstore(query=translated_revised_question, top_k=4, rag_type=rag_type)
+            
+docs_translation_required = []
+if len(relevant_docs_using_translated_question)>=1:
+    for i, doc in enumerate(relevant_docs_using_translated_question):
+        if isKorean(doc)==False:
+            docs_translation_required.append(doc)
+        else:
+            relevant_docs.append(doc)
+                                   
+    translated_docs = translate_relevant_documents_using_parallel_processing(docs_translation_required)
+    for i, doc in enumerate(translated_docs):
+        relevant_docs.append(doc)
+```
+
+### 인터넷 검색
+
+Multi-RAG를 이용하여 여러개의 지식 저장소에 관련된 문서를 조회하였음에도 문서가 없다면, 구글 인터넷 검색을 통해 얻어진 결과를 활용합니다. 상세한 내용은 관련된 Blog인 [
+한영 동시 검색 및 인터넷 검색을 활용하여 RAG를 편리하게 활용하기](https://aws.amazon.com/ko/blogs/tech/rag-enhanced-searching/)을 참조합니다. 
+
+```python
+from googleapiclient.discovery import build
+
+google_api_key = os.environ.get('google_api_key')
+google_cse_id = os.environ.get('google_cse_id')
+
+api_key = google_api_key
+cse_id = google_cse_id
+
+relevant_docs = []
+try:
+    service = build("customsearch", "v1", developerKey = api_key)
+    result = service.cse().list(q = revised_question, cx = cse_id).execute()
+    print('google search result: ', result)
+
+    if "items" in result:
+        for item in result['items']:
+            api_type = "google api"
+            excerpt = item['snippet']
+            uri = item['link']
+            title = item['title']
+            confidence = ""
+            assessed_score = ""
+
+            doc_info = {
+                "rag_type": 'search',
+                "api_type": api_type,
+                "confidence": confidence,
+                "metadata": {
+                    "source": uri,
+                    "title": title,
+                    "excerpt": excerpt,                                
+                },
+                "assessed_score": assessed_score,
+            }
+        relevant_docs.append(doc_info)
+```
+
+### 관련도 기준 문서 선택
+
+Multi-RAG, 한영 동시 검색, 인터넷 검색등을 활용하여 다수의 관련된 문서가 나오면, 관련도가 높은 순서대로 일부 문서만을 RAG에서 활용합니다. 이를 위해 Faiss의 similarity search를 이용합니다. 이것은 정량된 값의 관련도를 얻을 수 있어서, 관련되지 않은 문서를 Context로 활용하지 않도록 해줍니다.
+
+```python
+selected_relevant_docs = []
+if len(relevant_docs)>=1:
+    selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+
+def priority_search(query, relevant_docs, bedrock_embeddings):
+    excerpts = []
+    for i, doc in enumerate(relevant_docs):
+        if doc['metadata']['translated_excerpt']:
+            content = doc['metadata']['translated_excerpt']
+        else:
+            content = doc['metadata']['excerpt']
+        
+        excerpts.append(
+            Document(
+                page_content=content,
+                metadata={
+                    'name': doc['metadata']['title'],
+                    'order':i,
+                }
+            )
+        )  
+
+    embeddings = bedrock_embeddings
+    vectorstore_confidence = FAISS.from_documents(
+        excerpts,  # documents
+        embeddings  # embeddings
+    )            
+    rel_documents = vectorstore_confidence.similarity_search_with_score(
+        query=query,
+        k=top_k
+    )
+
+    docs = []
+    for i, document in enumerate(rel_documents):
+
+        order = document[0].metadata['order']
+        name = document[0].metadata['name']
+        assessed_score = document[1]
+
+        relevant_docs[order]['assessed_score'] = int(assessed_score)
+
+        if assessed_score < 200:
+            docs.append(relevant_docs[order])    
+
+    return docs
+```
+
 
 
 ## 주요 구성
