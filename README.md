@@ -210,7 +210,7 @@ if len(relevant_docs_using_translated_question)>=1:
 
 ### 인터넷 검색
 
-Multi-RAG를 이용하여 여러개의 지식 저장소에 관련된 문서를 조회하였음에도 문서가 없다면, 구글 인터넷 검색을 통해 얻어진 결과를 활용합니다. 상세한 내용은 관련된 Blog인 [
+Multi-RAG를 이용하여 여러개의 지식 저장소에 관련된 문서를 조회하였음에도 문서가 없다면, 구글 인터넷 검색을 통해 얻어진 결과를 활용합니다. 여기서, assessed_score는 priority search시 FAISS의 Score로 업데이트 됩니다. 상세한 내용은 [Google Search API](./GoogleSearchAPI.md). 관련된 Blog인 [
 한영 동시 검색 및 인터넷 검색을 활용하여 RAG를 편리하게 활용하기](https://aws.amazon.com/ko/blogs/tech/rag-enhanced-searching/)을 참조합니다. 
 
 ```python
@@ -253,44 +253,54 @@ try:
 
 ### 관련도 기준 문서 선택
 
-Multi-RAG, 한영 동시 검색, 인터넷 검색등을 활용하여 다수의 관련된 문서가 나오면, 관련도가 높은 순서대로 일부 문서만을 RAG에서 활용합니다. 이를 위해 Faiss의 similarity search를 이용합니다. 이것은 정량된 값의 관련도를 얻을 수 있어서, 관련되지 않은 문서를 Context로 활용하지 않도록 해줍니다. 상세한 내용은 [Google Search API](./GoogleSearchAPI.md)에서 확인합니다. 여기서, assessed_score는 priority search시 FAISS의 Score로 업데이트 됩니다.
+Multi-RAG, 한영 동시 검색, 인터넷 검색등을 활용하여 다수의 관련된 문서가 나오면, 관련도가 높은 순서대로 일부 문서만을 RAG에서 활용합니다. 이를 위해 Faiss의 similarity search를 이용합니다. 이것은 정량된 값의 관련도를 얻을 수 있어서, 관련되지 않은 문서를 Context로 활용하지 않도록 해줍니다. 
 
 ```python
-from googleapiclient.discovery import build
+selected_relevant_docs = []
+if len(relevant_docs)>=1:
+    selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
 
-google_api_key = os.environ.get('google_api_key')
-google_cse_id = os.environ.get('google_cse_id')
+def priority_search(query, relevant_docs, bedrock_embeddings):
+    excerpts = []
+    for i, doc in enumerate(relevant_docs):
+        if doc['metadata']['translated_excerpt']:
+            content = doc['metadata']['translated_excerpt']
+        else:
+            content = doc['metadata']['excerpt']
+        
+        excerpts.append(
+            Document(
+                page_content=content,
+                metadata={
+                    'name': doc['metadata']['title'],
+                    'order':i,
+                }
+            )
+        )  
 
-api_key = google_api_key
-cse_id = google_cse_id
+    embeddings = bedrock_embeddings
+    vectorstore_confidence = FAISS.from_documents(
+        excerpts,  # documents
+        embeddings  # embeddings
+    )            
+    rel_documents = vectorstore_confidence.similarity_search_with_score(
+        query=query,
+        k=top_k
+    )
 
-relevant_docs = []
-try:
-    service = build("customsearch", "v1", developerKey = api_key)
-    result = service.cse().list(q = revised_question, cx = cse_id).execute()
-    print('google search result: ', result)
+    docs = []
+    for i, document in enumerate(rel_documents):
 
-    if "items" in result:
-        for item in result['items']:
-            api_type = "google api"
-            excerpt = item['snippet']
-            uri = item['link']
-            title = item['title']
-            confidence = ""
-            assessed_score = ""
+        order = document[0].metadata['order']
+        name = document[0].metadata['name']
+        assessed_score = document[1]
 
-            doc_info = {
-                "rag_type": 'search',
-                "api_type": api_type,
-                "confidence": confidence,
-                "metadata": {
-                    "source": uri,
-                    "title": title,
-                    "excerpt": excerpt,                                
-                },
-                "assessed_score": assessed_score,
-            }
-        relevant_docs.append(doc_info)
+        relevant_docs[order]['assessed_score'] = int(assessed_score)
+
+        if assessed_score < 200:
+            docs.append(relevant_docs[order])    
+
+    return docs
 ```
 
 
