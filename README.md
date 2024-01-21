@@ -454,7 +454,7 @@ msg = readStreamMsg(connectionId, requestId, stream)
 
 ### Stream 처리
 
-여기서 stream은 아래와 같은 방식으로 WebSocket을 사용하는 client에 메시지를 전달할 수 있습니다.
+여기서 stream은 아래와 같은 방식으로 WebSocket을 사용하는 client에 메시지를 전달할 수 있습니다. 상세한 내용은 관련된 Blog인 [Amazon Bedrock을 이용하여 Stream 방식의 한국어 Chatbot 구현하기](https://aws.amazon.com/ko/blogs/tech/stream-chatbot-for-amazon-bedrock/)을 참고합니다.
 
 ```python
 def readStreamMsg(connectionId, requestId, stream):
