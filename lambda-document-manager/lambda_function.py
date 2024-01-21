@@ -504,7 +504,7 @@ def lambda_handler(event, context):
                 print('This file format is not supported: ', file_type)                
                     
         elif eventName == "ObjectCreated:Put":            
-            category = "rag"
+            category = "upload"
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces
             documentId = documentId.replace(',', '_') # remove commas
