@@ -97,13 +97,7 @@ bedrock_embeddings = BedrockEmbeddings(
 )   
 
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
-    index_name = "idx-"+documentId
-    print('index_name: ', index_name)
-    print('length of index_name: ', len(index_name))
-        
-    if len(index_name)>=100:
-        index_name = 'idx-'+index_name[len(index_name)-100:]
-        print('modified index_name: ', index_name)
+    index_name = get_index_name(documentId)
     
     delete_index_if_exist(index_name)
 
@@ -126,13 +120,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     print('uploaded into opensearch')
     
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
-    index_name = "idx-"+documentId
-    print('index_name: ', index_name)
-    print('length of index_name: ', len(index_name))
-        
-    if len(index_name)>=80:
-        index_name = 'idx-'+index_name[len(index_name)-80:]
-        print('modified index_name: ', index_name)
+    index_name = get_index_name(documentId)
     
     delete_index_if_exist(index_name)
     
@@ -224,6 +212,19 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
         #raise Exception ("Not able to request to LLM")
 
     print('uploaded into opensearch')    
+ 
+def get_index_name(documentId):
+    index_name = "idx-"+documentId
+    # print('index_name: ', index_name)
+                        
+    print('index_name: ', index_name)
+    print('length of index_name: ', len(index_name))
+                            
+    if len(index_name)>=100: # reduce index size
+        index_name = 'idx-'+index_name[len(index_name)-100:]
+        print('modified index_name: ', index_name)
+    
+    return index_name
  
 # store document into Kendra
 def store_document_for_kendra(path, key, documentId):
@@ -478,8 +479,8 @@ def lambda_handler(event, context):
                         # print('result of metadata deletion: ', result)
                         
                         # delete document index of opensearch
-                        index_name = "idx-"+documentId
-                        # print('index_name: ', index_name)
+                        index_name = get_index_name(documentId)
+                                                
                         delete_index_if_exist(index_name)                    
                     except Exception:
                         err_msg = traceback.format_exc()
