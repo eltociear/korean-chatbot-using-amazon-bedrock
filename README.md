@@ -7,7 +7,7 @@
 - 한영 동시 검색: RAG에 한국어와 영어 문서들이 혼재할 경우에 한국어로 영어 문서를 검색할 수 없습니다. 한국어로 한국어, 영어 문서를 모두 검색하여 RAG의 성능을 향상 시킬 수 있습니다.
 - 인터넷 검색: RAG의 지식저장소에 관련된 문서가 없는 경우에 인터넷 검색을 통해 활용도를 높입니다.
 - 관련도 기준으로 검색된 문서 활용: RAG는 LLM에 Context로 관련된 문서를 제공합니다. Context에 들어가는 문서의 순서에 따라 RAG의 성능이 달라집니다.
-- Kendra 성능향상 방법: 완전관리형 검색서비스인 Kendra는 다양한 connector를 통해 RAG를 쉽게 구성할 수 있도록 돕습니다. Kendra의 성능 향상을 위해 FAQ를 활용하고 관련도 기반으로 관련 문서를 선택합니다.
+- Kendra 성능 향상 방법: 완전관리형 검색서비스인 Kendra는 다양한 connector를 통해 RAG를 쉽게 구성할 수 있도록 돕습니다. Kendra의 성능 향상을 위해 FAQ를 활용하고 관련도 기반으로 관련 문서를 선택합니다.
 - OpenSearch의 성능 향상 방법: Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 관련된 문서를 찾을 확율을 높입니다.
 
 여기서는 [Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 구성하지만, [LangChain](https://aws.amazon.com/ko/what-is/langchain/)을 기반으로 구성하므로 Llama2와 같은 다른 LLM을 활용할때에도 쉽게 응용할 수 있습니다. 
