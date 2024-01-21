@@ -101,8 +101,8 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     print('index_name: ', index_name)
     print('length of index_name: ', len(index_name))
         
-    if len(index_name)>=80:
-        index_name = 'idx-'+index_name[len(index_name)-80:]
+    if len(index_name)>=100:
+        index_name = 'idx-'+index_name[len(index_name)-100:]
         print('modified index_name: ', index_name)
     
     delete_index_if_exist(index_name)
