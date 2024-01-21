@@ -305,7 +305,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
     return docs
 ```
 
-### Kendr의 성능 향상
+### Kendra의 성능 향상
 
 FAQ와 같이 정리된 문서를 활용하고, 관련도 기반으로 관련 문서를 선택하여 Context로 확인 합니다. 관련된 Blog인 [Amazon Bedrock의 Claude와 Amazon Kendra로 향상된 RAG 사용하기](https://aws.amazon.com/ko/blogs/tech/bedrock-claude-kendra-rag/)을 참고합니다. 
 
