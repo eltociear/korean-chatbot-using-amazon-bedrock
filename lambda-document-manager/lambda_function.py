@@ -99,10 +99,11 @@ bedrock_embeddings = BedrockEmbeddings(
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     index_name = "idx-"+documentId
     print('index_name: ', index_name)
-    
-    if len(index_name)>=255:
-        index_name = index_name[1:255]
-        print('index_name: ', index_name)
+    print('length of index_name: ', len(index_name))
+        
+    if len(index_name)>=80:
+        index_name = 'idx-'+index_name[len(index_name)-80:]
+        print('modified index_name: ', index_name)
     
     delete_index_if_exist(index_name)
 
@@ -127,10 +128,11 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
     index_name = "idx-"+documentId
     print('index_name: ', index_name)
-    
-    if len(index_name)>=250:  # To-DO: if korean, it can over the length
-        index_name = index_name[1:250]
-        print('index_name: ', index_name)
+    print('length of index_name: ', len(index_name))
+        
+    if len(index_name)>=80:
+        index_name = 'idx-'+index_name[len(index_name)-80:]
+        print('modified index_name: ', index_name)
     
     delete_index_if_exist(index_name)
     
@@ -502,7 +504,7 @@ def lambda_handler(event, context):
                 print('This file format is not supported: ', file_type)                
                     
         elif eventName == "ObjectCreated:Put":            
-            category = "upload"
+            category = "rag"
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces
             documentId = documentId.replace(',', '_') # remove commas

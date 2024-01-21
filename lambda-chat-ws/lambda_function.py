@@ -1519,7 +1519,6 @@ def retrieve_from_vectorstore(query, top_k, rag_type):
             response = os_client.search(
                 body=query,
                 index="idx-*", # all
-                #index='idx-upload-docs_amazon_lex.txt'
             )
             # print('lexical query result: ', json.dumps(response))
             
