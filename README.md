@@ -308,8 +308,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
 
 ### Kendra의 성능 향상
 
-[Kendra의 FAQ](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-faq.md)와 같이 정리된 문서를 활용하고, 관련도 기반으로 관련 문서를 선택하여 Context로 확인 합니다. 관련된 Blog인 [Amazon Bedrock의 Claude와 Amazon Kendra로 향상된 RAG 사용하기](https://aws.amazon.com/ko/blogs/tech/bedrock-claude-kendra-rag/)을 참고합니다. Kendra에서 문서 등록에 필요한 내용은 [kendra-document.md](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-document.md)을 참조합니다.
-
+[Kendra 를 이용한 RAG의 구현](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra.md)에 따라 Kendra의 RAG 성능을 향상 시킬 수 있습니다. [Kendra의 FAQ](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-faq.md)와 같이 정리된 문서를 활용하고, 관련도 기반으로 관련 문서를 선택하여 Context로 확인 합니다. Kendra에서 문서 등록에 필요한 내용은 [kendra-document.md](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-document.md)을 참조합니다. 또한, 상세한 내용은 관련된 Blog인 [Amazon Bedrock의 Claude와 Amazon Kendra로 향상된 RAG 사용하기](https://aws.amazon.com/ko/blogs/tech/bedrock-claude-kendra-rag/)을 참고합니다. 
 
 ### OpenSearch의 성능 향상 방법
 
