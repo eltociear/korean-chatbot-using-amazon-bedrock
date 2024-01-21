@@ -583,6 +583,92 @@ def get_text_speech(path, speech_prefix, bucket, msg):
     return path+speech_prefix+parse.quote(object)
 ```
 
+### 데이터 소스 추가
+
+S3를 데이터 소스르 추가할때 아래와 같이 수행하면 되나, languageCode가 미지원되어서 CLI로 대체합니다.
+
+```typescript
+const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
+    description: 'S3 source',
+    indexId: kendraIndex,
+    name: 'data-source-for-upload-file',
+    type: 'S3',
+    // languageCode: 'ko',
+    roleArn: roleKendra.roleArn,
+    // schedule: 'schedule',
+
+    dataSourceConfiguration: {
+        s3Configuration: {
+            bucketName: s3Bucket.bucketName,
+            documentsMetadataConfiguration: {
+                s3Prefix: 'metadata/',
+            },
+            inclusionPrefixes: ['documents/'],
+        },
+    },
+});
+```
+
+CLI 명령어 예제입니다.
+
+```text
+aws kendra create-data-source
+--index-id azfbd936-4929-45c5-83eb-bb9d458e8348
+--name data-source-for-upload-file
+--type S3
+--role-arn arn:aws:iam::123456789012:role/role-lambda-chat-ws-for-korean-chatbot-us-west-2
+--configuration '{"S3Configuration":{"BucketName":"storage-for-korean-chatbot-us-west-2", "DocumentsMetadataConfiguration": {"S3Prefix":"metadata/"},"InclusionPrefixes": ["documents/"]}}'
+--language-code ko
+--region us-west-2
+```
+
+### OpenSearch
+
+[Python client](https://opensearch.org/docs/latest/clients/python-low-level/)에 따라 OpenSearch를 활용합니다.
+
+opensearch-py를 설치합니다.
+
+```text
+pip install opensearch-py
+```
+
+[Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
+
+### OpenSearch의 add_documents시 에러
+
+문서를 충분히 많이 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
+
+```text
+opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
+```
+
+실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 이때에는 cluster.max_shards_per_node를 올리거나(default 1000), node수를 늘려서 해당 문제를 해결할 수 있습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
+
+### OpenSearch Embedding 에
+
+아래와 같이 OpenSearch Embedding의 bulk_size의 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 아래의 1840은 PDF의 Text가 1540631자이므로 embedding을 해야하는 chunk의 숫자를 의미힙나다. 
+
+```text
+RuntimeError: The embeddings count, 1840 is more than the [bulk_size], 500. Increase the value of [bulk_size].
+```
+
+수정 코드는 아래와 같습니다.
+
+```python
+new_vectorstore = OpenSearchVectorSearch(
+    index_name=index_name,  
+    is_aoss = False,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
+    opensearch_url = opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd),
+)
+response = new_vectorstore.add_documents(docs, bulk_size = 2000)
+```
+
+
 ### AWS CDK로 인프라 구현하기
 
 [CDK 구현 코드](./cdk-qa-with-rag/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
@@ -729,92 +815,6 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 ```text
 cdk destroy --all
-```
-
-
-### 데이터 소스 추가
-
-S3를 데이터 소스르 추가할때 아래와 같이 수행하면 되나, languageCode가 미지원되어서 CLI로 대체합니다.
-
-```typescript
-const cfnDataSource = new kendra.CfnDataSource(this, `s3-data-source-${projectName}`, {
-    description: 'S3 source',
-    indexId: kendraIndex,
-    name: 'data-source-for-upload-file',
-    type: 'S3',
-    // languageCode: 'ko',
-    roleArn: roleKendra.roleArn,
-    // schedule: 'schedule',
-
-    dataSourceConfiguration: {
-        s3Configuration: {
-            bucketName: s3Bucket.bucketName,
-            documentsMetadataConfiguration: {
-                s3Prefix: 'metadata/',
-            },
-            inclusionPrefixes: ['documents/'],
-        },
-    },
-});
-```
-
-CLI 명령어 예제입니다.
-
-```text
-aws kendra create-data-source
---index-id azfbd936-4929-45c5-83eb-bb9d458e8348
---name data-source-for-upload-file
---type S3
---role-arn arn:aws:iam::123456789012:role/role-lambda-chat-ws-for-korean-chatbot-us-west-2
---configuration '{"S3Configuration":{"BucketName":"storage-for-korean-chatbot-us-west-2", "DocumentsMetadataConfiguration": {"S3Prefix":"metadata/"},"InclusionPrefixes": ["documents/"]}}'
---language-code ko
---region us-west-2
-```
-
-### OpenSearch
-
-[Python client](https://opensearch.org/docs/latest/clients/python-low-level/)에 따라 OpenSearch를 활용합니다.
-
-opensearch-py를 설치합니다.
-
-```text
-pip install opensearch-py
-```
-
-[Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
-
-### OpenSearch의 add_documents시 에러
-
-문서를 충분히 많이 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
-
-```text
-opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
-```
-
-실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 이때에는 cluster.max_shards_per_node를 올리거나(default 1000), node수를 늘려서 해당 문제를 해결할 수 있습니다.
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
-
-### OpenSearch Embedding 에
-
-아래와 같이 OpenSearch Embedding의 bulk_size의 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 아래의 1840은 PDF의 Text가 1540631자이므로 embedding을 해야하는 chunk의 숫자를 의미힙나다. 
-
-```text
-RuntimeError: The embeddings count, 1840 is more than the [bulk_size], 500. Increase the value of [bulk_size].
-```
-
-수정 코드는 아래와 같습니다.
-
-```python
-new_vectorstore = OpenSearchVectorSearch(
-    index_name=index_name,  
-    is_aoss = False,
-    #engine="faiss",  # default: nmslib
-    embedding_function = bedrock_embeddings,
-    opensearch_url = opensearch_url,
-    http_auth=(opensearch_account, opensearch_passwd),
-)
-response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 ```
 
 ## Reference 
