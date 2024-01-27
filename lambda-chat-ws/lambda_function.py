@@ -730,6 +730,7 @@ def readStreamMsg(connectionId, requestId, stream):
         for event in stream:
             #print('event: ', event)
             msg = msg + event
+            msg = msg.replace(" ","&nbsp;")  
 
             result = {
                 'request_id': requestId,
@@ -1256,9 +1257,11 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         reference = "\n\nFrom\n"
         for i, doc in enumerate(docs):
             if doc['metadata']['translated_excerpt']:
-                excerpt = str(doc['metadata']['excerpt']+'  [번역]'+doc['metadata']['translated_excerpt']).replace('"'," ") 
+                excerpt = str(doc['metadata']['excerpt']+'  [번역]'+doc['metadata']['translated_excerpt']).replace('"',"") 
             else:
                 excerpt = str(doc['metadata']['excerpt']).replace('"'," ")
+            
+            excerpt = excerpt.replace('\n','\\n')            
                 
             if doc['rag_type'] == 'kendra':                
                 if doc['api_type'] == 'kendraRetriever': # provided by kendraRetriever from langchain
