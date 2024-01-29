@@ -508,7 +508,7 @@ def lambda_handler(event, context):
             category = "upload"
             documentId = category + "-" + key
             documentId = documentId.replace(' ', '_') # remove spaces  
-            documentId = documentId.replace(',', '_') # remove commas # not allowee: [ " * \\ < | , > / ? ]
+            documentId = documentId.replace(',', '_') # remove commas # not allowed: [ " * \\ < | , > / ? ]
             documentId = documentId.replace('/', '_') # remove slash
             documentId = documentId.lower() # change to lowercase
             print('documentId: ', documentId)
