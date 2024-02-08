@@ -1939,7 +1939,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             isTyping(connectionId, requestId)
             stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
             msg = readStreamMsg(connectionId, requestId, stream)      
-            msg = msg.replace(" ","&nbsp;")        
+            # msg = msg.replace(" ","&nbsp;")        
         except Exception:
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)       
@@ -1999,7 +1999,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('result: ', result)
 
             msg = readStreamMsg(connectionId, requestId, result['result'])
-            msg = msg.replace(" ","&nbsp;")  
+            # msg = msg.replace(" ","&nbsp;")  
 
             source_documents = result['source_documents']
             print('source_documents: ', source_documents)
@@ -2090,7 +2090,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 isTyping(connectionId, requestId)
                 stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
                 msg = readStreamMsg(connectionId, requestId, stream)
-                msg = msg.replace(" ","&nbsp;")  
+                # msg = msg.replace(" ","&nbsp;")  
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)       
@@ -2131,7 +2131,7 @@ def get_answer_using_ConversationChain(text, conversation, conv_type, connection
         stream = conversation.predict(input=text)
         #print('stream: ', stream)                    
         msg = readStreamMsg(connectionId, requestId, stream)
-        msg = msg.replace(" ","&nbsp;")  
+        # msg = msg.replace(" ","&nbsp;")  
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
@@ -2156,7 +2156,7 @@ def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
         isTyping(connectionId, requestId)
         stream = llm(PROMPT.format(input=text))
         msg = readStreamMsg(connectionId, requestId, stream)
-        msg = msg.replace(" ","&nbsp;")  
+        # msg = msg.replace(" ","&nbsp;")  
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
