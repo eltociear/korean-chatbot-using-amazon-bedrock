@@ -2353,6 +2353,8 @@ def getResponse(connectionId, jsonBody):
     msg = ""
     reference = ""
     speech_uri = ""
+    token_counter_input = 0
+    
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
             service_name='bedrock',
