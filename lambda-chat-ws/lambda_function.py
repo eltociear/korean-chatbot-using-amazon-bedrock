@@ -2589,8 +2589,9 @@ def getResponse(connectionId, jsonBody):
 
             sendResultMessage(connectionId, requestId, msg+reference+speech+statusMsg)
         elif debugMessageMode=='true': # other cases
+            statusMsg = f"\n[통계]\nRegion: {bedrock_region}\n"
             if token_counter_input:
-                statusMsg = f"\n[통계]\nRegion: {bedrock_region}\nQuestion: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
+                statusMsg = statusMsg + f"Question: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
             
             if history_length:
                 statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
