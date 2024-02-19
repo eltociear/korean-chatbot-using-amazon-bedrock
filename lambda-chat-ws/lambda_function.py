@@ -2354,6 +2354,7 @@ def getResponse(connectionId, jsonBody):
     reference = ""
     speech_uri = ""
     token_counter_input = 0
+    time_for_inference = 0
     
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
