@@ -2355,6 +2355,7 @@ def getResponse(connectionId, jsonBody):
     speech_uri = ""
     token_counter_input = 0
     time_for_inference = 0
+    history_length = 0
     
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
@@ -2593,6 +2594,9 @@ def getResponse(connectionId, jsonBody):
             statusMsg = f"\n[통계]\nRegion: {bedrock_region}\n"
             if token_counter_input:
                 statusMsg = statusMsg + f"Question: {str(len(text))}자 / {token_counter_input}토큰\nAnswer: {str(len(msg))}자 / {token_counter_output}토큰\n"
+            
+            if history_length:
+                statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             
             if history_length:
                 statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
