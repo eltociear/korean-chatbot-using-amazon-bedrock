@@ -2356,6 +2356,7 @@ def getResponse(connectionId, jsonBody):
     token_counter_input = 0
     time_for_inference = 0
     history_length = 0
+    isControlMsg = False
     
     if type == 'text' and body[:11] == 'list models':
         bedrock_client = boto3.client(
@@ -2386,29 +2387,38 @@ def getResponse(connectionId, jsonBody):
 
             if text == 'enableReference':
                 enableReference = 'true'
+                isControlMsg = True
                 msg  = "Referece is enabled"
             elif text == 'disableReference':
                 enableReference = 'false'
+                isControlMsg = True
                 msg  = "Reference is disabled"
             elif text == 'useOpenSearch':
                 rag_type = 'opensearch'
+                isControlMsg = True
                 msg  = "OpenSearch is selected for Knowledge Database"
             elif text == 'useFaiss':
                 rag_type = 'faiss'
+                isControlMsg = True
                 msg  = "Faiss is selected for Knowledge Database"
             elif text == 'useKendra':
+                isControlMsg = True
                 rag_type = 'kendra'
                 msg  = "Kendra is selected for Knowledge Database"
             elif text == 'enableDebug':
+                isControlMsg = True
                 debugMessageMode = 'true'
                 msg  = "Debug messages will be delivered to the client."
             elif text == 'disableDebug':
+                isControlMsg = True
                 debugMessageMode = 'false'
                 msg  = "Debug messages will not be delivered to the client."
             elif text == 'enableDualSearch':
+                isControlMsg = True
                 allowDualSearch = 'true'
                 msg  = "Dual Search is enabled"
             elif text == 'disableDualSearch':
+                isControlMsg = True
                 allowDualSearch = 'false'
                 msg  = "Dual Search is disabled"
 
@@ -2525,7 +2535,7 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
-        if isKorean(msg)==False and (conv_type=='qa' or  conv_type == "normal"):
+        if isKorean(msg)==False and isControlMsg==False and (conv_type=='qa' or  conv_type == "normal"):
             translated_msg = traslation_to_korean(llm, msg)
             print('translated_msg: ', translated_msg)
             
@@ -2533,7 +2543,7 @@ def getResponse(connectionId, jsonBody):
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
                 print('speech_uri: ', speech_uri)  
             msg = msg+'\n[한국어]\n'+translated_msg
-        else:
+        elif isControlMsg==False:
             if speech_generation: # generate mp3 file
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
                 print('speech_uri: ', speech_uri)  
