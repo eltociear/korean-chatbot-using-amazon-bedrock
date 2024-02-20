@@ -319,6 +319,16 @@ function onSend(e) {
             rag_type = 'all',
             function_type = 'dual-search'
         }
+        else if(conversationType=='code-generation-python') {
+            conv_type = 'qa',
+            rag_type = 'opensearch',
+            function_type = 'code-generation-python'
+        }
+        else if(conversationType=='code-generation-nodejs') {
+            conv_type = 'qa',
+            rag_type = 'opensearch',
+            function_type = 'code-generation-nodejs'
+        }
         else {
             conv_type = conversationType,
             rag_type = ''

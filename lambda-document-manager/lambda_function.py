@@ -78,7 +78,7 @@ kendra_client = boto3.client(
 )
 
 # embedding for RAG
-bedrock_region = "us-west-2"
+bedrock_region = "ap-northeast-1"  # "us-west-2"
     
 boto3_bedrock = boto3.client(
     service_name='bedrock-runtime',

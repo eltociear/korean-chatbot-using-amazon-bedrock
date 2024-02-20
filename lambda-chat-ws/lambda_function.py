@@ -2266,9 +2266,6 @@ def getResponse(connectionId, jsonBody):
     function_type = jsonBody['function_type']  # conversation type
     print('Function Type: ', function_type)
     
-    if function_type == 'dual-search':
-        allowDualSearch = True
-
     rag_type = ""
     if 'rag_type' in jsonBody:
         if jsonBody['rag_type']:
@@ -2277,6 +2274,9 @@ def getResponse(connectionId, jsonBody):
 
     global vectorstore_opensearch, vectorstore_faiss, enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
+    
+    if function_type == 'dual-search':
+        allowDualSearch = True
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
