@@ -2263,6 +2263,11 @@ def getResponse(connectionId, jsonBody):
     # print('body: ', body)
     conv_type = jsonBody['conv_type']  # conversation type
     print('Conversation Type: ', conv_type)
+    function_type = jsonBody['function_type']  # conversation type
+    print('Function Type: ', function_type)
+    
+    if function_type == 'dual-search':
+        allowDualSearch = True
 
     rag_type = ""
     if 'rag_type' in jsonBody:
