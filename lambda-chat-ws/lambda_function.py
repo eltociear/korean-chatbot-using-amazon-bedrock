@@ -2364,6 +2364,7 @@ def getResponse(connectionId, jsonBody):
     isControlMsg = False
     
     if type == 'text' and body[:11] == 'list models':
+        isControlMsg = True
         bedrock_client = boto3.client(
             service_name='bedrock',
             region_name=bedrock_region,

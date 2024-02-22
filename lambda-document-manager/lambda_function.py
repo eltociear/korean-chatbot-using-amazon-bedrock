@@ -16,6 +16,8 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from opensearchpy import OpenSearch
 from pptx import Presentation
+from langchain.llms.bedrock import Bedrock
+from multiprocessing import Process, Pipe
 
 s3 = boto3.client('s3')
 
@@ -23,12 +25,16 @@ s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
+profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
+enableParallelSummay = os.environ.get('enableParallelSummay')
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
 kendraIndex = os.environ.get('kendraIndex')
 sqsUrl = os.environ.get('sqsUrl')
+doc_prefix = s3_prefix+'/'
+
 sqs = boto3.client('sqs')
 
 roleArn = os.environ.get('roleArn') 
@@ -409,6 +415,33 @@ def load_document(file_type, key):
                         
     return texts
 
+# load a code file from s3
+def load_code(file_type, key):
+    s3r = boto3.resource("s3")
+    doc = s3r.Object(s3_bucket, key)
+    
+    if file_type == 'py':        
+        contents = doc.get()['Body'].read().decode('utf-8')
+        # print('contents: ', contents)
+    
+    #new_contents = str(contents).replace("\n"," ") 
+    #print('length: ', len(new_contents))
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=50,
+        chunk_overlap=0,
+        #separators=["def ", "\n\n", "\n", ".", " ", ""],
+        separators=["\ndef "],
+        length_function = len,
+    ) 
+
+    texts = text_splitter.split_text(contents) 
+    
+    #for i, text in enumerate(texts):
+    #    print(f"Chunk #{i}: {text}")
+                
+    return texts
+
 def isSupported(type):
     for format in supportedFormat:
         if type == format:
@@ -423,10 +456,188 @@ def check_supported_type(file_type, size):
         return True
     else:
         return False
+
+HUMAN_PROMPT = "\n\nHuman:"
+AI_PROMPT = "\n\nAssistant:"
+def get_parameter(model_type, maxOutputTokens):
+    if model_type=='titan': 
+        return {
+            "maxTokenCount":1024,
+            "stopSequences":[],
+            "temperature":0,
+            "topP":0.9
+        }
+    elif model_type=='claude':
+        return {
+            "max_tokens_to_sample":maxOutputTokens, # 8k    
+            "temperature":0.1,
+            "top_k":250,
+            "top_p":0.9,
+            "stop_sequences": [HUMAN_PROMPT]            
+        }
+        
+# Multi-LLM
+def get_llm(profile_of_LLMs, selected_LLM):
+    profile = profile_of_LLMs[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+        
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
+    )
+    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    # print('parameters: ', parameters)
+
+    # langchain for bedrock
+    llm = Bedrock(
+        model_id=modelId, 
+        client=boto3_bedrock, 
+        model_kwargs=parameters)
+    return llm
+
+def summary_of_code(llm, code):
+    PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+           
+    <article>
+    {input}
+    </article>
+                        
+    Assistant:"""
+ 
+    try:
+        summary = llm(PROMPT.format(input=code))
+        #print('summary: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to summary the message")
+   
+    summary = summary[summary.find('<result>')+9:len(summary)-10] # remove <result> tag
+    
+    summary = summary.replace('\n\n', '\n') 
+    if summary[0] == '\n':
+        summary = summary[1:len(summary)]
+   
+    return summary
+
+def summarize_process_for_relevent_code(conn, llm, code, key, bedrock_region):
+    try: 
+        start = code.find('\ndef ')
+        end = code.find(':')                    
+        # print(f'start: {start}, end: {end}')
+                    
+        doc = ""    
+        if start != -1:      
+            function_name = code[start+1:end]
+            # print('function_name: ', function_name)
+                            
+            summary = summary_of_code(llm, code)
+            print(f"summary ({bedrock_region}): {summary}")
+            
+            #print('first line summary: ', summary[:len(function_name)])
+            #print('function name: ', function_name)            
+            if summary[:len(function_name)]==function_name:
+                summary = summary[summary.find('\n')+1:len(summary)]
+
+            doc = Document(
+                page_content=summary,
+                metadata={
+                    'name': key,
+                    # 'uri': path+doc_prefix+parse.quote(key),
+                    'uri': path+key,
+                    'code': code,
+                    'function_name': function_name
+                }
+            )           
+                        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)       
+        # raise Exception (f"Not able to summarize: {doc}")               
+    
+    conn.send(doc)    
+    conn.close()
+
+def summarize_relevant_codes_using_parallel_processing(codes, key):
+    selected_LLM = 0
+    relevant_codes = []    
+    processes = []
+    parent_connections = []
+    for code in codes:
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        llm = get_llm(profile_of_LLMs, selected_LLM)
+        bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
+
+        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, llm, code, key, bedrock_region))
+        processes.append(process)
+
+        selected_LLM = selected_LLM + 1
+        if selected_LLM == len(profile_of_LLMs):
+            selected_LLM = 0
+
+    for process in processes:
+        process.start()
+            
+    for parent_conn in parent_connections:
+        doc = parent_conn.recv()
+        
+        if doc:
+            relevant_codes.append(doc)    
+
+    for process in processes:
+        process.join()
+    
+    return relevant_codes
+
+def get_documentId(key, category):
+    documentId = category + "-" + key
+    documentId = documentId.replace(' ', '_') # remove spaces  
+    documentId = documentId.replace(',', '_') # remove commas # not allowed: [ " * \\ < | , > / ? ]
+    documentId = documentId.replace('/', '_') # remove slash
+    documentId = documentId.lower() # change to lowercase
+                
+    return documentId
     
 # load csv documents from s3
 def lambda_handler(event, context):
     print('event: ', event)    
+    
+    global selected_LLM
+    
+    # Multi-LLM
+    profile = profile_of_LLMs[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    # print('profile: ', profile)
+    
+    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    print('parameters: ', parameters)
+    
+    # langchain for bedrock
+    llm = Bedrock(
+        model_id=modelId, 
+        client=boto3_bedrock, 
+        #streaming=True,
+        #callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters)
+
+    # embedding for RAG
+    bedrock_embeddings = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = 'amazon.titan-embed-text-v1' 
+    )    
     
     documentIds = []
     for record in event['Records']:
@@ -505,14 +716,6 @@ def lambda_handler(event, context):
                 print('This file format is not supported: ', file_type)                
                     
         elif eventName == "ObjectCreated:Put":            
-            category = "upload"
-            documentId = category + "-" + key
-            documentId = documentId.replace(' ', '_') # remove spaces  
-            documentId = documentId.replace(',', '_') # remove commas # not allowed: [ " * \\ < | , > / ? ]
-            documentId = documentId.replace('/', '_') # remove slash
-            documentId = documentId.lower() # change to lowercase
-            print('documentId: ', documentId)
-            
             size = 0
             try:
                 s3obj = s3.get_object(Bucket=bucket, Key=key)
@@ -530,8 +733,15 @@ def lambda_handler(event, context):
                 # raise Exception ("Not able to get object info") 
             
             if check_supported_type(file_type, size): 
+                if file_type == 'py' or file_type == 'js':  # for code
+                    category = file_type
+                else:
+                    category = "upload" # for document
+                documentId = get_documentId(key, category)                                
+                print('documentId: ', documentId)
+                
                 for type in capabilities:                
-                    if type=='kendra':         
+                    if type=='kendra' and category=='upload':         
                         print('upload to kendra: ', key)                                                
                         # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL                    
                         store_document_for_kendra(path, key, documentId)  # store the object into kendra
@@ -554,15 +764,52 @@ def lambda_handler(event, context):
                                             }
                                         )
                                     )
-                            print('docs size: ', len(docs))
-                            if len(docs)>0:
-                                print('docs[0]: ', docs[0])                            
+                                    
+                        elif type == 'py':
+                            codes = load_code(file_type, key)  # number of functions in the code
+                
+                            docs = []
+                            if enableParallelSummay=='true':
+                                docs = summarize_relevant_codes_using_parallel_processing(codes, key)
                                 
-                                if enableNoriPlugin == 'true':
-                                    store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
-                                else:
-                                    store_document_for_opensearch(bedrock_embeddings, docs, documentId)                                
-                    
+                            else:
+                                for code in codes:
+                                    start = code.find('\ndef ')
+                                    end = code.find(':')                    
+                                    # print(f'start: {start}, end: {end}')
+                                    
+                                    if start != -1:      
+                                        function_name = code[start+1:end]
+                                        # print('function_name: ', function_name)
+                                                        
+                                        summary = summary_of_code(llm, code)                        
+                                            
+                                        if summary[:len(function_name)]==function_name:
+                                            summary = summary[summary.find('\n')+1:len(summary)]
+                                                                                        
+                                        docs.append(
+                                            Document(
+                                                page_content=summary,
+                                                metadata={
+                                                    'name': key,
+                                                    # 'page':i+1,
+                                                    #'uri': path+doc_prefix+parse.quote(key),
+                                                    'uri': path+key,
+                                                    'code': code,
+                                                    'function_name': function_name
+                                                }
+                                            )
+                                        )                 
+                                                                                 
+                        print('docs size: ', len(docs))
+                        if len(docs)>0:
+                            print('docs[0]: ', docs[0])
+                                
+                            if enableNoriPlugin == 'true':
+                                store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
+                            else:
+                                store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
             else: # delete if the object is unsupported one for format or size
                 try:
@@ -582,6 +829,12 @@ def lambda_handler(event, context):
             sqs.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
         except Exception as e:        
             print('Fail to delete the queue message: ', e)
+            
+    if selected_LLM >= len(profile_of_LLMs)-1:
+        selected_LLM = 0
+    else:
+        selected_LLM = selected_LLM + 1
+        
     return {
         'statusCode': 200
     }

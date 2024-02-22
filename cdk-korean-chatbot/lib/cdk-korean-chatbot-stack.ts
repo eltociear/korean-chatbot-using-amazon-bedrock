@@ -42,6 +42,7 @@ const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "doc
 
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableNoriPlugin = 'true';
+const enableParallelSummay = 'true';
 
 const claude_instance = JSON.stringify([
   {
@@ -774,7 +775,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         sqsUrl: queueS3event.queueUrl,
         max_object_size: String(max_object_size),
         enableNoriPlugin: enableNoriPlugin,
-        supportedFormat: supportedFormat
+        supportedFormat: supportedFormat,
+        profile_of_LLMs: profile_of_LLMs,
+        enableParallelSummay: enableParallelSummay
       }
     });         
     s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
