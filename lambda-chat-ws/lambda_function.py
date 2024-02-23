@@ -1333,6 +1333,34 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
         
     return reference
 
+def get_code_reference(docs):
+    reference = "\n\nFrom\n"
+    for i, doc in enumerate(docs):
+        excerpt = doc['metadata']['excerpt'].replace('"','')
+        code = doc['metadata']['code'].replace('"','')
+        
+        excerpt = excerpt.replace('\n','\\n')
+        code = code.replace('\n','\\n')
+        print('reference_doc: ', json.dumps(doc))
+        
+        if doc['rag_type'][:10] == 'opensearch':
+            print(f'## Document(get_reference) {i+1}: {doc}')
+                
+            page = ""
+            if "document_attributes" in doc['metadata']:
+                if "_excerpt_page_number" in doc['metadata']['document_attributes']:
+                    page = doc['metadata']['document_attributes']['_excerpt_page_number']
+            uri = doc['metadata']['source']
+            name = doc['metadata']['title']
+            name = name[name.rfind('/')+1:len(name)]
+
+            if page:                
+                reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">코드설명</a>, <a href=\"#\" onClick=\"alert(`{code}`)\">관련코드</a>\n"
+            else:
+                reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">코드설명</a>, <a href=\"#\" onClick=\"alert(`{code}`)\">관련코드</a>\n"
+                            
+    return reference
+
 os_client = OpenSearch(
     hosts = [{
         'host': opensearch_url.replace("https://", ""), 
@@ -2124,6 +2152,88 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     return msg, reference
 
+def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings):
+    global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
+    time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
+    
+    reference = ""
+    start_time_for_rag = time.time()
+
+    PROMPT = get_prompt_template(text, conv_type)
+    print('PROMPT: ', PROMPT)        
+
+    relevant_codes = [] 
+    print('start RAG for question')
+
+    rag_type = 'opensearch'
+    relevant_codes = retrieve_from_vectorstore(query=text, top_k=top_k, rag_type=rag_type)
+    print(f'relevant_codes ({rag_type}): '+json.dumps(relevant_codes))
+    
+    end_time_for_rag = time.time()
+    time_for_rag = end_time_for_rag - start_time_for_rag
+    print('processing time for RAG: ', time_for_rag)
+
+    selected_relevant_codes = []
+    if len(relevant_codes)>=1:
+        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embeddings)
+        print('selected_relevant_codes: ', json.dumps(selected_relevant_codes))
+    
+    end_time_for_priority_search = time.time() 
+    time_for_priority_search = end_time_for_priority_search - end_time_for_rag
+    print('processing time for priority search: ', time_for_priority_search)
+    number_of_relevant_codes = len(selected_relevant_codes)
+
+    relevant_code = ""
+    for document in selected_relevant_codes:
+        if document['metadata']['code']:
+            code = document['metadata']['code']
+            relevant_code = relevant_code + code + "\n\n"            
+    print('relevant_code: ', relevant_code)
+
+    try: 
+        isTyping(connectionId, requestId)
+        stream = llm(PROMPT.format(context=relevant_code, question=text))
+        msg = readStreamMsg(connectionId, requestId, stream)                    
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)       
+        sendErrorMessage(connectionId, requestId, err_msg)    
+        raise Exception ("Not able to request to LLM")    
+
+    if len(selected_relevant_codes)>=1 and enableReference=='true':
+        reference = get_code_reference(selected_relevant_codes)  
+
+    end_time_for_inference = time.time()
+    time_for_inference = end_time_for_inference - end_time_for_priority_search
+    print('processing time for inference: ', time_for_inference)
+    
+    return msg, reference
+
+def summary_of_code(llm, code):
+    PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+           
+    <article>
+    {input}
+    </article>
+                        
+    Assistant:"""
+ 
+    try:
+        summary = llm(PROMPT.format(input=code))
+        #print('summary: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to summary the message")
+   
+    summary = summary[summary.find('<result>')+9:len(summary)-10] # remove <result> tag
+    
+    summary = summary.replace('\n\n', '\n') 
+    if summary[0] == '\n':
+        summary = summary[1:len(summary)]
+   
+    return summary
+
 def get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type):
     conversation.prompt = get_prompt_template(text, conv_type, rag_type)
     try: 
@@ -2446,6 +2556,9 @@ def getResponse(connectionId, jsonBody):
 
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
+                    elif function_type == 'code-generation-python':
+                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings)     
+                        
                     else: 
                         msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
                 
@@ -2549,10 +2662,19 @@ def getResponse(connectionId, jsonBody):
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
                 print('speech_uri: ', speech_uri)  
             msg = msg+'\n[한국어]\n'+translated_msg
-        elif isControlMsg==False:
+        elif isControlMsg==False and function_type!='code-generation-python':
             if speech_generation: # generate mp3 file
                 speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
                 print('speech_uri: ', speech_uri)  
+                
+        if function_type=='code-generation-python':
+            if reference: # Summarize the generated code 
+                generated_code = msg[msg.find('<result>')+9:len(msg)-10]
+                generated_code_summary = summary_of_code(llm, generated_code)    
+                msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
+                msg = msg.replace('\n\n\n', '\n\n') 
+                
+                sendResultMessage(connectionId, requestId, msg+reference)
 
         item = {    # save dialog
             'user_id': {'S':userId},
