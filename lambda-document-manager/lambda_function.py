@@ -319,7 +319,8 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
     }
     print('metadata: ', metadata)
     
-    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+    #objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
     print('objectName: ', objectName)
 
     client = boto3.client('s3')
@@ -422,10 +423,10 @@ def load_code(file_type, key):
     
     if file_type == 'py':        
         contents = doc.get()['Body'].read().decode('utf-8')
-        # print('contents: ', contents)
+        print('contents: ', contents)
     
-    #new_contents = str(contents).replace("\n"," ") 
-    #print('length: ', len(new_contents))
+    new_contents = str(contents).replace("\n"," ") 
+    print('length: ', len(new_contents))
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=50,
@@ -437,8 +438,8 @@ def load_code(file_type, key):
 
     texts = text_splitter.split_text(contents) 
     
-    #for i, text in enumerate(texts):
-    #    print(f"Chunk #{i}: {text}")
+    for i, text in enumerate(texts):
+        print(f"Chunk #{i}: {text}")
                 
     return texts
 
