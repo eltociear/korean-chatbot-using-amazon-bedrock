@@ -332,6 +332,7 @@ function onSend(e) {
         else {
             conv_type = conversationType,
             rag_type = ''
+            function_type = ''
         }
         
         sendMessage({
