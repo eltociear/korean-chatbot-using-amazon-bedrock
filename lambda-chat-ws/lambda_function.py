@@ -1374,7 +1374,7 @@ os_client = OpenSearch(
     ssl_show_warn = False,
 )
 
-def retrieve_from_vectorstore(query, top_k, rag_type):
+def retrieve_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
     relevant_docs = []
@@ -1667,13 +1667,13 @@ def create_ConversationalRetrievalChain(llm, PROMPT, retriever):
 
     return qa
 
-def retrieve_process_from_RAG(conn, query, top_k, rag_type):
+def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
         print('rel_docs (kendra): '+json.dumps(rel_docs))
     else:
-        rel_docs = retrieve_from_vectorstore(query=query, top_k=top_k, rag_type=rag_type)
+        rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=query, top_k=top_k, rag_type=rag_type)
         print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
 
     if(len(rel_docs)>=1):
@@ -1699,7 +1699,7 @@ def debug_msg_for_revised_question(llm, revised_question, chat_history, connecti
 
     sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
-def get_relevant_documents_using_parallel_processing(question, top_k):
+def get_relevant_documents_using_parallel_processing(vectorstore_opensearch, question, top_k):
     relevant_docs = []    
 
     processes = []
@@ -1708,7 +1708,7 @@ def get_relevant_documents_using_parallel_processing(question, top_k):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        process = Process(target=retrieve_process_from_RAG, args=(child_conn, question, top_k, rag))
+        process = Process(target=retrieve_process_from_RAG, args=(child_conn, vectorstore_opensearch, question, top_k, rag))
         processes.append(process)
 
     for process in processes:
@@ -1781,6 +1781,18 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
     time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
     
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = "idx-*", # all
+        #index_name=f"idx-{userId}',
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embeddings,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    ) 
+    
     reference = ""
     if rag_type == 'all': # kendra, opensearch, faiss
         start_time_for_revise = time.time()
@@ -1796,7 +1808,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         relevant_docs = [] 
         if useParallelRAG == 'true':  # parallel processing
             print('start RAG for revised question')
-            relevant_docs = get_relevant_documents_using_parallel_processing(question=revised_question, top_k=top_k)
+            relevant_docs = get_relevant_documents_using_parallel_processing(vectorstore_opensearch=vectorstore_opensearch, question=revised_question, top_k=top_k)
 
             end_time_for_rag_inference = time.time()
             time_for_rag_inference = end_time_for_rag_inference - end_time_for_revise
@@ -1815,7 +1827,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 print('processing time for RAG (Question Translation): ', time_for_rag_question_translation)
 
                 if allowDualSearchWithMulipleProcessing == True:
-                    relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(question=translated_revised_question, top_k=4)
+                    relevant_docs_using_translated_question = get_relevant_documents_using_parallel_processing(vectorstore_opensearch=vectorstore_opensearch, question=translated_revised_question, top_k=4)
 
                     end_time_for_rag_2nd_inference = time.time()
                     time_for_rag_2nd_inference = end_time_for_rag_2nd_inference - end_time_for_rag_question_translation
@@ -1847,7 +1859,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                             rel_docs = retrieve_from_kendra(query=translated_revised_question, top_k=top_k)      
                             print('rel_docs (kendra): '+json.dumps(rel_docs))
                         else:
-                            rel_docs = retrieve_from_vectorstore(query=translated_revised_question, top_k=top_k, rag_type=reg)
+                            rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=translated_revised_question, top_k=top_k, rag_type=reg)
                             print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
                     
                         if(len(rel_docs)>=1):
@@ -1874,7 +1886,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
                     print('rel_docs (kendra): '+json.dumps(rel_docs))
                 else:
-                    rel_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=reg)
+                    rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=reg)
                     print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
                 
                 if(len(rel_docs)>=1):
@@ -2096,7 +2108,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 if len(relevant_docs) >= 1:
                     relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
             else:
-                relevant_docs = retrieve_from_vectorstore(query=revised_question, top_k=top_k, rag_type=rag_type)
+                relevant_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
 
             end_time_for_rag = time.time()
@@ -2152,9 +2164,19 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     return msg, reference
 
-def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings):
+def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
+        
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = f"idx-${category}-*", # all
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        embedding_function = bedrock_embeddings,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )
     
     reference = ""
     start_time_for_rag = time.time()
@@ -2166,7 +2188,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     relevant_codes = [] 
     print('start RAG for question')
     
-    relevant_codes = retrieve_from_vectorstore(query=text, top_k=top_k, rag_type=rag_type)
+    relevant_codes = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=text, top_k=top_k, rag_type=rag_type)
     print(f'relevant_codes ({rag_type}): '+json.dumps(relevant_codes))
     
     end_time_for_rag = time.time()
@@ -2382,7 +2404,7 @@ def getResponse(connectionId, jsonBody):
             rag_type = jsonBody['rag_type']  # RAG type
             print('rag_type: ', rag_type)
 
-    global vectorstore_opensearch, vectorstore_faiss, enableReference
+    global vectorstore_faiss, enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
@@ -2446,23 +2468,7 @@ def getResponse(connectionId, jsonBody):
         allowTime = getAllowTime()
         load_chat_history(userId, allowTime, conv_type, rag_type)
         conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
-
-    # rag sources
-    if conv_type == 'qa' and (rag_type == 'opensearch' or rag_type == 'all'):
-        vectorstore_opensearch = OpenSearchVectorSearch(
-            index_name = "idx-*", # all
-            #index_name=f"idx-{userId}',
-            is_aoss = False,
-            ef_search = 1024, # 512(default)
-            m=48,
-            #engine="faiss",  # default: nmslib
-            embedding_function = bedrock_embeddings,
-            opensearch_url=opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
-        )
-    elif conv_type == 'qa' and rag_type == 'faiss':
-        print('isReady = ', isReady)
-
+ 
     start = int(time.time())    
 
     msg = ""
@@ -2557,7 +2563,7 @@ def getResponse(connectionId, jsonBody):
                         memory_chain.chat_memory.add_user_message(text)  # append new diaglog
                         memory_chain.chat_memory.add_ai_message(msg)
                     elif function_type == 'code-generation-python':
-                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings)     
+                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')     
                         
                     else: 
                         msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
