@@ -720,11 +720,12 @@ def lambda_handler(event, context):
                         store_document_for_kendra(path, key, documentId)  # store the object into kendra
                         
                     elif type=='opensearch':
+                        docs = []
+                        
                         if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                             print('upload to opensearch: ', key) 
                             texts = load_document(file_type, key)
                             
-                            docs = []
                             for i in range(len(texts)):
                                 if texts[i]:
                                     docs.append(
@@ -740,8 +741,7 @@ def lambda_handler(event, context):
                                     
                         elif type == 'py':
                             codes = load_code(file_type, key)  # number of functions in the code
-                
-                            docs = []
+                                            
                             if enableParallelSummay=='true':
                                 docs = summarize_relevant_codes_using_parallel_processing(codes, key)
                                 
