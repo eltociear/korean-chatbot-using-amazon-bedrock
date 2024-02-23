@@ -2159,13 +2159,13 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     reference = ""
     start_time_for_rag = time.time()
 
-    PROMPT = get_prompt_template(text, conv_type)
+    rag_type = 'opensearch'
+    PROMPT = get_prompt_template(text, conv_type, rag_type)
     print('PROMPT: ', PROMPT)        
 
     relevant_codes = [] 
     print('start RAG for question')
-
-    rag_type = 'opensearch'
+    
     relevant_codes = retrieve_from_vectorstore(query=text, top_k=top_k, rag_type=rag_type)
     print(f'relevant_codes ({rag_type}): '+json.dumps(relevant_codes))
     
