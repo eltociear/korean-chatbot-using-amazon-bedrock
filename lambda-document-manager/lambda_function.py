@@ -612,33 +612,6 @@ def get_documentId(key, category):
 def lambda_handler(event, context):
     print('event: ', event)    
     
-    global selected_LLM
-    
-    # Multi-LLM
-    profile = profile_of_LLMs[selected_LLM]
-    bedrock_region =  profile['bedrock_region']
-    modelId = profile['model_id']
-    print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
-    # print('profile: ', profile)
-    
-    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
-    print('parameters: ', parameters)
-    
-    # langchain for bedrock
-    llm = Bedrock(
-        model_id=modelId, 
-        client=boto3_bedrock, 
-        #streaming=True,
-        #callbacks=[StreamingStdOutCallbackHandler()],
-        model_kwargs=parameters)
-
-    # embedding for RAG
-    bedrock_embeddings = BedrockEmbeddings(
-        client=boto3_bedrock,
-        region_name = bedrock_region,
-        model_id = 'amazon.titan-embed-text-v1' 
-    )    
-    
     documentIds = []
     for record in event['Records']:
         receiptHandle = record['receiptHandle']
@@ -830,11 +803,6 @@ def lambda_handler(event, context):
         except Exception as e:        
             print('Fail to delete the queue message: ', e)
             
-    if selected_LLM >= len(profile_of_LLMs)-1:
-        selected_LLM = 0
-    else:
-        selected_LLM = selected_LLM + 1
-        
     return {
         'statusCode': 200
     }
