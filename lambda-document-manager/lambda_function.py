@@ -423,10 +423,10 @@ def load_code(file_type, key):
     
     if file_type == 'py':        
         contents = doc.get()['Body'].read().decode('utf-8')
-        print('contents: ', contents)
+        #print('contents: ', contents)
     
     new_contents = str(contents).replace("\n"," ") 
-    print('length: ', len(new_contents))
+    #print('length: ', len(new_contents))
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=50,
@@ -438,8 +438,8 @@ def load_code(file_type, key):
 
     texts = text_splitter.split_text(contents) 
     
-    for i, text in enumerate(texts):
-        print(f"Chunk #{i}: {text}")
+    #for i, text in enumerate(texts):
+    #    print(f"Chunk #{i}: {text}")
                 
     return texts
 
@@ -740,7 +740,7 @@ def lambda_handler(event, context):
                                         )
                                     )
                                     
-                        elif type == 'py':
+                        elif file_type == 'py':
                             codes = load_code(file_type, key)  # number of functions in the code
                                             
                             if enableParallelSummay=='true':
