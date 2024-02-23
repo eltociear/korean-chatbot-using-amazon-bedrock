@@ -25,7 +25,7 @@ from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSear
 from langchain_community.embeddings import BedrockEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
-from langchain.retrievers import AmazonKendraRetriever
+from langchain_community.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
