@@ -10,23 +10,23 @@ import traceback
 import re
 from urllib import parse
 
+from botocore.config import Config
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
 from langchain.chains.summarize import load_summarize_chain
-from langchain.llms.bedrock import Bedrock
 from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from botocore.config import Config
-
-from langchain.vectorstores.faiss import FAISS
-from langchain.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
-from langchain_community.embeddings import BedrockEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.chains import LLMChain
-from langchain_community.retrievers import AmazonKendraRetriever
 from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+from langchain_community.llms.bedrock import Bedrock
+from langchain_community.docstore.document import Document
+from langchain_community.vectorstores.faiss import FAISS
+from langchain_community.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
+from langchain_community.embeddings import BedrockEmbeddings
+from langchain_community.retrievers import AmazonKendraRetriever
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
 from opensearchpy import OpenSearch
@@ -1099,7 +1099,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
                 }
             )
         )  
-    # print('excerpts: ', excerpts)
+    print('excerpts: ', excerpts)
 
     embeddings = bedrock_embeddings
     vectorstore_confidence = FAISS.from_documents(
@@ -1903,6 +1903,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
+            print('start priority search')
             selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
             print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
