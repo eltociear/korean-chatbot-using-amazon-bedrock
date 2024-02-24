@@ -719,7 +719,7 @@ def extract_chat_history_from_memory():
     chat_history = []
     chats = memory_chain.load_memory_variables({})    
     # print('chats: ', chats)
-
+        
     for dialogue_turn in chats['chat_history']:
         role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
         history = f"{role_prefix[2:]}{dialogue_turn.content}"
@@ -796,8 +796,14 @@ def get_revised_question(llm, connectionId, requestId, query):
     condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
 
     chat_history = extract_chat_history_from_memory()
+    
+    chat_history_str = ""
+    for dialog in chat_history:
+        chat_history_str += dialog + '\n'
+    print('chat_history_str: ', chat_history_str)
+    
     try:         
-        revised_question = condense_prompt_chain.invoke({"chat_history": str(chat_history), "question": query})
+        revised_question = condense_prompt_chain.invoke({"chat_history": chat_history_str, "question": query})
         print('revised_question: '+revised_question)
         
     except Exception:
