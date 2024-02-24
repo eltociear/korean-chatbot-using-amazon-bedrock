@@ -1970,6 +1970,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         time_for_rag = end_time_for_rag - end_time_for_revise
         print('processing time for RAG: ', time_for_rag)
 
+        print('------> relevant_docs: ', relevant_docs)
+        
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             print('start priority search')
