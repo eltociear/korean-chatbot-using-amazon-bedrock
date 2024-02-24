@@ -2409,7 +2409,7 @@ def getResponse(connectionId, jsonBody):
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
-        allowDualSearch = True
+        allowDualSearch = 'true'
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
