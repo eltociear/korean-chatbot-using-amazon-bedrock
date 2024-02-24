@@ -810,7 +810,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           roleArn: roleLambdaWebsocket.roleArn,
           path: 'https://'+distribution.domainName+'/', 
           capabilities: capabilities,
-          sqsUrl: queueS3event.queueUrl,
+          sqsUrl: queueUrl[i],
           max_object_size: String(max_object_size),
           enableNoriPlugin: enableNoriPlugin,
           supportedFormat: supportedFormat,
