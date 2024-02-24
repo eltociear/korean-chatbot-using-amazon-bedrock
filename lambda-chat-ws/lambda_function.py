@@ -66,6 +66,9 @@ allowDualSearch = os.environ.get('allowDualSearch')
 allowDualSearchWithMulipleProcessing = True
 enableNoriPlugin = os.environ.get('enableNoriPlugin')
 
+minDocSimilarity = 200
+minCodeSimilarity = 300
+
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
@@ -1051,7 +1054,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 
     return relevant_docs
 
-def priority_search(query, relevant_docs, bedrock_embeddings):
+def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
@@ -1092,7 +1095,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
 
         relevant_docs[order]['assessed_score'] = int(assessed_score)
 
-        if assessed_score < 200:
+        if assessed_score < minSimilarity:
             docs.append(relevant_docs[order])    
     # print('selected docs: ', docs)
 
@@ -1521,59 +1524,60 @@ def retrieve_codes_from_vectorstore(vectorstore_opensearch, query, top_k, rag_ty
         for i, document in enumerate(relevant_documents):
             print(f'## Document(opensearch-vector) {i+1}: {document}')
 
-            name = document[0].metadata['name']
-            print('metadata: ', document[0].metadata)
-
-            page = ""
-            if "page" in document[0].metadata:
-                page = document[0].metadata['page']
-            uri = ""
-            if "uri" in document[0].metadata:
-                uri = document[0].metadata['uri']
-
-            excerpt = document[0].page_content
-            confidence = str(document[1])
-            assessed_score = str(document[1])
-            
-            code = ""
             if "code" in document[0].metadata:
                 code = document[0].metadata['code']
                 
-            function_name = ""
-            if "function_name" in document[0].metadata:
-                function_name = document[0].metadata['function_name']
+                name = document[0].metadata['name']
+                print('metadata: ', document[0].metadata)
 
-            if page:
-                print('page: ', page)
-                doc_info = {
-                    "rag_type": 'opensearch-vector',
-                    "confidence": confidence,
-                    "metadata": {
-                        "source": uri,
-                        "title": name,
-                        "excerpt": excerpt,
-                        "document_attributes": {
-                            "_excerpt_page_number": page
+                page = ""
+                if "page" in document[0].metadata:
+                    page = document[0].metadata['page']
+                uri = ""
+                if "uri" in document[0].metadata:
+                    uri = document[0].metadata['uri']
+
+                excerpt = document[0].page_content
+                confidence = str(document[1])
+                assessed_score = str(document[1])
+                                    
+                function_name = ""
+                if "function_name" in document[0].metadata:
+                    function_name = document[0].metadata['function_name']
+
+                if page:
+                    print('page: ', page)
+                    doc_info = {
+                        "rag_type": 'opensearch-vector',
+                        "confidence": confidence,
+                        "metadata": {
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "document_attributes": {
+                                "_excerpt_page_number": page
+                            },
+                            "code": code,
+                            "function_name": function_name
                         },
-                        "code": code,
-                        "function_name": function_name
-                    },
-                    "assessed_score": assessed_score,
-                }
+                        "assessed_score": assessed_score,
+                    }
+                else:
+                    doc_info = {
+                        "rag_type": 'opensearch-vector',
+                        "confidence": confidence,
+                        "metadata": {
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "code": code,
+                            "function_name": function_name
+                        },
+                        "assessed_score": assessed_score,
+                    }
+                relevant_codes.append(doc_info)
             else:
-                doc_info = {
-                    "rag_type": 'opensearch-vector',
-                    "confidence": confidence,
-                    "metadata": {
-                        "source": uri,
-                        "title": name,
-                        "excerpt": excerpt,
-                        "code": code,
-                        "function_name": function_name
-                    },
-                    "assessed_score": assessed_score,
-                }
-            relevant_codes.append(doc_info)
+                print("No code in metadata")
     
         # Lexical Search (keyword)
         min_match = 0
@@ -1968,7 +1972,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             print('start priority search')
-            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
             print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
         if len(selected_relevant_docs)==0:
@@ -2021,7 +2025,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 #raise Exception ("Not able to search using google api") 
             
             if len(relevant_docs)>=1:
-                selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+                selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             # print('selected_relevant_docs (google): ', selected_relevant_docs)
 
@@ -2154,7 +2158,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             if rag_type == 'kendra':
                 relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
                 if len(relevant_docs) >= 1:
-                    relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
+                    relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
             else:
                 relevant_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
@@ -2247,7 +2251,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
 
     selected_relevant_codes = []
     if len(relevant_codes)>=1:
-        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embeddings)
+        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embeddings, minCodeSimilarity)
         print('selected_relevant_codes: ', json.dumps(selected_relevant_codes))
     
     end_time_for_priority_search = time.time() 
