@@ -1351,7 +1351,7 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             print(f'## Document(opensearch-vector) {i+1}: {document}')
 
             name = document[0].metadata['name']
-            print('metadata: ', document[0].metadata)
+            # print('metadata: ', document[0].metadata)
 
             page = ""
             if "page" in document[0].metadata:
@@ -1528,7 +1528,7 @@ def retrieve_codes_from_vectorstore(vectorstore_opensearch, index_name, query, t
                 code = document[0].metadata['code']
                 
                 name = document[0].metadata['name']
-                print('metadata: ', document[0].metadata)
+                # print('metadata: ', document[0].metadata)
 
                 page = ""
                 if "page" in document[0].metadata:
@@ -2217,6 +2217,22 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     return msg, reference
 
+def get_code_prompt_template():    
+    #prompt_template = """\n\nHuman: 다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+    prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 python code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+            
+    <context>
+    {context}
+    </context>
+
+    <question>            
+    {question}
+    </question>
+
+    Assistant:"""
+                    
+    return PromptTemplate.from_template(prompt_template)
+
 def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
@@ -2238,7 +2254,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     start_time_for_rag = time.time()
 
     rag_type = 'opensearch'
-    PROMPT = get_prompt_template(text, conv_type, rag_type)
+    PROMPT = get_code_prompt_template()
     print('PROMPT: ', PROMPT)        
 
     relevant_codes = [] 
