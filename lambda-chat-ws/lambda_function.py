@@ -1057,8 +1057,8 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
-        print('doc: ', doc)
-        if 'translated_excerpt' in doc['metadata']:
+        # print('doc: ', doc)
+        if doc['metadata']['translated_excerpt']:
             content = doc['metadata']['translated_excerpt']
         else:
             content = doc['metadata']['excerpt']
