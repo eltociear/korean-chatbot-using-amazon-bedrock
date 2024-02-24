@@ -2109,7 +2109,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
-                global number_of_relevant_docs
                 number_of_relevant_docs = len(source_documents)                    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
@@ -2142,7 +2141,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
-                global number_of_relevant_docs
                 number_of_relevant_docs = len(result['source_documents'])
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
@@ -2170,7 +2168,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
-                global number_of_relevant_docs
                 number_of_relevant_docs = len(relevant_docs)
 
             relevant_context = ""
@@ -2304,8 +2301,6 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     print('processing time for inference: ', time_for_inference)
            
     if debugMessageMode=='true':   # extract chat history for debug
-        global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
-        
         relevant_length = len(relevant_code)
         token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
         number_of_relevant_docs = len(relevant_code)
@@ -2463,6 +2458,11 @@ def summarize_code(llm, msg):
     
     return msg
 
+history_length = token_counter_history = 0
+relevant_length = token_counter_relevant_docs = number_of_relevant_docs = 0
+time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = time_for_revise = 0
+time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
+    
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2489,11 +2489,9 @@ def getResponse(connectionId, jsonBody):
     global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
     
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes, time_for_revise  # for debug
-    time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = time_for_revise = 0
-    global history_length, token_counter_history 
-    history_length = token_counter_history = 0
+    global history_length, token_counter_history     
     global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
-    time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
+    global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
