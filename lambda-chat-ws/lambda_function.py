@@ -797,7 +797,7 @@ def get_revised_question(llm, connectionId, requestId, query):
 
     chat_history = extract_chat_history_from_memory()
     try:         
-        revised_question = condense_prompt_chain.invoke({"chat_history": chat_history, "question": query})
+        revised_question = condense_prompt_chain.invoke({"chat_history": str(chat_history), "question": query})
         print('revised_question: '+revised_question)
         
     except Exception:
