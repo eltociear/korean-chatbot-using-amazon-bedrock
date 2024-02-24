@@ -2233,10 +2233,10 @@ def get_code_prompt_template():
                     
     return PromptTemplate.from_template(prompt_template)
 
-def get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, category):
+def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
-        
+    
     index_name =  f"idx-{category}-*"
     print('index: ', index_name)
         
@@ -2284,11 +2284,12 @@ def get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, c
             relevant_code = relevant_code + code + "\n\n"            
     print('relevant_code: ', relevant_code)
 
+    msg = ""
     try: 
         isTyping(connectionId, requestId)
         stream = llm(PROMPT.format(context=relevant_code, question=text))
-        msg = readStreamMsg(connectionId, requestId, stream)      
-        msg = msg.replace(" ","&nbsp;")                
+        msg = readStreamMsg(connectionId, requestId, stream)        
+        msg = msg.replace(" ","&nbsp;")                    
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)       
@@ -2301,13 +2302,6 @@ def get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, c
     end_time_for_inference = time.time()
     time_for_inference = end_time_for_inference - end_time_for_priority_search
     print('processing time for inference: ', time_for_inference)
-    
-    global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
-    
-    if debugMessageMode=='true':   # extract chat history for debug
-        relevant_length = len(relevant_code)
-        token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
-        number_of_relevant_docs = len(relevant_code)
     
     return msg, reference
 
@@ -2636,7 +2630,7 @@ def getResponse(connectionId, jsonBody):
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
                     if function_type == 'code-generation-python':
-                        msg, reference = get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, 'py')     
+                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')     
                         
                     else: 
                         msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
@@ -2808,6 +2802,7 @@ def getResponse(connectionId, jsonBody):
             statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
             
             sendResultMessage(connectionId, requestId, msg+speech+statusMsg)
+
 
     return msg, reference
 
