@@ -2025,7 +2025,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         end_time_for_priority_search = time.time() 
         time_for_priority_search = end_time_for_priority_search - end_time_for_rag
         print('processing time for priority search: ', time_for_priority_search)
-        number_of_relevant_docs = len(selected_relevant_docs)
+        
+        if debugMessageMode=='true':  
+            global number_of_relevant_docs
+            number_of_relevant_docs = len(selected_relevant_docs)
 
         relevant_context = ""
         for document in selected_relevant_docs:
@@ -2104,7 +2107,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(source_documents)
+            
+            if debugMessageMode=='true':  
+                global number_of_relevant_docs
+                number_of_relevant_docs = len(source_documents)                    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
             start_time_for_rag = time.time()
@@ -2134,7 +2140,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - start_time_for_rag
             print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(result['source_documents'])
+            
+            if debugMessageMode=='true':  
+                global number_of_relevant_docs
+                number_of_relevant_docs = len(result['source_documents'])
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             start_time_for_revise = time.time()
@@ -2159,7 +2168,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(relevant_docs)
+            
+            if debugMessageMode=='true':  
+                global number_of_relevant_docs
+                number_of_relevant_docs = len(relevant_docs)
 
             relevant_context = ""
             for document in relevant_docs:
@@ -2199,8 +2211,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             history_length.append(len(history))
         print('chat_history length: ', history_length)
 
-        relevant_length = len(relevant_context)
-        token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
+        if debugMessageMode=='true':  
+            global relevant_length, token_counter_relevant_docs
+            relevant_length = len(relevant_context)
+            token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -2288,8 +2302,10 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     end_time_for_inference = time.time()
     time_for_inference = end_time_for_inference - end_time_for_priority_search
     print('processing time for inference: ', time_for_inference)
-        
+           
     if debugMessageMode=='true':   # extract chat history for debug
+        global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
+        
         relevant_length = len(relevant_code)
         token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
         number_of_relevant_docs = len(relevant_code)
@@ -2478,8 +2494,6 @@ def getResponse(connectionId, jsonBody):
     history_length = token_counter_history = 0
     global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
     time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
-    global relevant_length, token_counter_relevant_docs
-    relevant_length = token_counter_relevant_docs = 0
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
@@ -2802,7 +2816,6 @@ def getResponse(connectionId, jsonBody):
             statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
             
             sendResultMessage(connectionId, requestId, msg+speech+statusMsg)
-
 
     return msg, reference
 
