@@ -1055,7 +1055,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
-        if doc['metadata']['translated_excerpt']:
+        if 'translated_excerpt' in doc['metadata']:
             content = doc['metadata']['translated_excerpt']
         else:
             content = doc['metadata']['excerpt']
