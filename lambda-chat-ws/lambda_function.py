@@ -2302,7 +2302,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     time_for_inference = end_time_for_inference - end_time_for_priority_search
     print('processing time for inference: ', time_for_inference)
     
-    global relevant_length, token_counter_relevant_docs
+    global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
     
     if debugMessageMode=='true':   # extract chat history for debug
         relevant_length = len(relevant_code)
