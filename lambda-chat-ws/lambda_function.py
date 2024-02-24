@@ -2305,14 +2305,15 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     
     return msg, reference
 
-def summary_of_code(llm, code):
-    PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-           
-    <article>
-    {input}
-    </article>
-                        
-    Assistant:"""
+def summary_of_code(llm, code, code_type):
+    if code_type == 'python':
+        PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+            
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
  
     try:
         summary = llm(PROMPT.format(input=code))
@@ -2625,19 +2626,14 @@ def getResponse(connectionId, jsonBody):
                     
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
-            else:          
+            else:       
                 if conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
-                          
-                    if function_type == 'code-generation-python':
-                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')     
-                        
-                    else: 
-                        msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
-                
+                    msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
+                    
                 elif conv_type == 'normal' or conv_type == 'funny':      # normal
-                    msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
-                
+                        msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
+                    
                 elif conv_type == 'none':   # no prompt
                     try: 
                         msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
@@ -2655,6 +2651,16 @@ def getResponse(connectionId, jsonBody):
                     token_counter_input = llm.get_num_tokens(text)
                     token_counter_output = llm.get_num_tokens(msg)
                     print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
+        
+        elif type == 'code':
+            if function_type == 'code-generation-python':
+                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')    
+            
+            # token counter
+            if debugMessageMode=='true':
+                token_counter_input = llm.get_num_tokens(text)
+                token_counter_output = llm.get_num_tokens(msg)
+                print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
                 
         elif type == 'document':
             isTyping(connectionId, requestId)
@@ -2711,30 +2717,31 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
-        # translation and text to speech
-        if (conv_type=='qa' or  conv_type == "normal") and isControlMsg==False:
-            if isKorean(msg)==False :
-                translated_msg = traslation_to_korean(llm, msg)
-                print('translated_msg: ', translated_msg)
-                msg = msg+'\n[한국어]\n'+translated_msg
-                
-                if speech_generation: # generate mp3 file
-                    speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
-                    print('speech_uri: ', speech_uri)  
-                
-            elif function_type!='code-generation-python':
-                if speech_generation: # generate mp3 file
-                    speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
-                    print('speech_uri: ', speech_uri)  
+        # translation and tts(text to speech)
+        if type=='text' and isControlMsg==False:        
+            if (conv_type=='qa' or  conv_type == "normal"):
+                if isKorean(msg)==False :
+                    translated_msg = traslation_to_korean(llm, msg)
+                    print('translated_msg: ', translated_msg)
+                    msg = msg+'\n[한국어]\n'+translated_msg
                     
-        if function_type=='code-generation-python':
-            if reference: # Summarize the generated code 
-                generated_code = msg[msg.find('<result>')+9:len(msg)-10]
-                generated_code_summary = summary_of_code(llm, generated_code)    
-                msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
-                msg = msg.replace('\n\n\n', '\n\n') 
-                
-                sendResultMessage(connectionId, requestId, msg+reference)
+                    if speech_generation: # generate mp3 file
+                        speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
+                        print('speech_uri: ', speech_uri)                      
+                else:
+                    if speech_generation: # generate mp3 file
+                        speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
+                        print('speech_uri: ', speech_uri)  
+           
+        if type == 'code':  # code summary
+            if function_type=='code-generation-python':
+                if reference: # Summarize the generated code 
+                    generated_code = msg[msg.find('<result>')+9:len(msg)-10]
+                    generated_code_summary = summary_of_code(llm, generated_code, 'python')    
+                    msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
+                    msg = msg.replace('\n\n\n', '\n\n') 
+                    
+                    sendResultMessage(connectionId, requestId, msg+reference)
 
         item = {    # save dialog
             'user_id': {'S':userId},

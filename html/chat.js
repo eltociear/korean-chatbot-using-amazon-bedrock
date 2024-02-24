@@ -295,41 +295,49 @@ function onSend(e) {
         addSentMessage(requestId, timestr, message.value);
         
         if(conversationType=='qa-all') {
+            type = "text",
             conv_type = 'qa',
             rag_type = 'all',
             function_type = 'rag'
         }
         else if(conversationType=='qa-kendra') {
+            type = "text",
             conv_type = 'qa',
             rag_type = 'kendra',
             function_type = 'rag'
         }
         else if(conversationType=='qa-opensearch') {
+            type = "text",
             conv_type = 'qa',
             rag_type = 'opensearch',
             function_type = 'rag'
         }
         else if(conversationType=='qa-faiss') {
+            type = "text",
             conv_type = 'qa',
             rag_type = 'faiss',
             function_type = 'rag'
         }
         else if(conversationType=='dual-search') {
+            type = "text",
             conv_type = 'qa',
             rag_type = 'all',
             function_type = 'dual-search'
         }
         else if(conversationType=='code-generation-python') {
+            type = "code",
             conv_type = 'qa',
             rag_type = 'opensearch',
             function_type = 'code-generation-python'
         }
         else if(conversationType=='code-generation-nodejs') {
+            type = "code",
             conv_type = 'qa',
             rag_type = 'opensearch',
             function_type = 'code-generation-nodejs'
         }
         else {
+            type = "text",
             conv_type = conversationType,
             rag_type = ''
             function_type = ''
@@ -339,7 +347,7 @@ function onSend(e) {
             "user_id": userId,
             "request_id": requestId,
             "request_time": requestTime,        
-            "type": "text",
+            "type": type,
             "body": message.value,
             "conv_type": conv_type,
             "rag_type": rag_type,
