@@ -2287,13 +2287,14 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     try: 
         isTyping(connectionId, requestId)
         stream = llm(PROMPT.format(context=relevant_code, question=text))
-        msg = readStreamMsg(connectionId, requestId, stream)                    
+        msg = readStreamMsg(connectionId, requestId, stream)      
+        msg = msg.replace(" ","&nbsp;")                
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)       
         sendErrorMessage(connectionId, requestId, err_msg)    
         raise Exception ("Not able to request to LLM")    
-
+     
     if len(selected_relevant_codes)>=1 and enableReference=='true':
         reference = get_code_reference(selected_relevant_codes)  
 
