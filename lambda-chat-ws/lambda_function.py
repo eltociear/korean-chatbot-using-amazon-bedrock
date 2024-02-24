@@ -2575,15 +2575,14 @@ def getResponse(connectionId, jsonBody):
         print('model lists: ', msg)          
 
         sendResultMessage(connectionId, requestId, msg)  
-    else:             
+    else:           
+        text = body
+        print('query: ', text)  
+        querySize = len(text)
+        textCount = len(text.split())
+        print(f"query size: {querySize}, words: {textCount}")
+        
         if type == 'text':
-            text = body
-            print('query: ', text)
-
-            querySize = len(text)
-            textCount = len(text.split())
-            print(f"query size: {querySize}, words: {textCount}")
-
             if text == 'enableReference':
                 enableReference = 'true'
                 isControlMsg = True
@@ -2812,7 +2811,6 @@ def getResponse(connectionId, jsonBody):
             statusMsg = statusMsg + f"{elapsed_time:.2f}(전체)"
             
             sendResultMessage(connectionId, requestId, msg+speech+statusMsg)
-
 
     return msg, reference
 
