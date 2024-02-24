@@ -205,20 +205,8 @@ def get_prompt_template(query, conv_type, rag_type):
             </question>
             
             Assistant:"""
-        elif conv_type=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
-            prompt_template = """\n\nHuman: 다음의 <history>는 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
 
-            <history>
-            {history}
-            </history>
-
-            <question>            
-            {input}
-            </question>
-                    
-            Assistant:"""
-
-        elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  
+        elif conv_type=='qa':  
             # for RAG, context and question
             #prompt_template = """\n\nHuman: 다음의 참고자료(<context>)를 참조하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
             #prompt_template = """\n\nHuman: 참고자료로 부터 구체적인 세부 정보를 충분히 제공합니다. 참고자료는 <context></context> XML tags안에 있습니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
@@ -398,20 +386,7 @@ def get_prompt_template(query, conv_type, rag_type):
 
             Assistant:"""
 
-        elif conv_type=='qa' and rag_type=='faiss' and isReady==False: # for General Conversation
-            prompt_template = """\n\nHuman: Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor.
-
-            <history>
-            {history}
-            </history>
-            
-            <question>            
-            {input}
-            </question>
-
-            Assistant:"""           
-
-        elif (conv_type=='qa' and rag_type=='all') or (conv_type=='qa' and rag_type=='opensearch') or (conv_type=='qa' and rag_type=='kendra') or (conv_type=='qa' and rag_type=='faiss' and isReady):  # for RAG
+        elif conv_type=='qa':  # for RAG
             prompt_template = """\n\nHuman: Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. 
             
             <context>
@@ -527,11 +502,6 @@ def get_prompt_template(query, conv_type, rag_type):
             # The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
     
     return PromptTemplate.from_template(prompt_template)
-
-def store_document_for_faiss(docs, vectorstore_faiss):
-    print('store document into faiss')    
-    vectorstore_faiss.add_documents(docs)       
-    print('uploaded into faiss')
 
 # load documents from s3 for pdf and txt
 def load_document(file_type, s3_file_name):
@@ -1308,22 +1278,7 @@ def get_reference(docs, rag_method, rag_type, path, doc_prefix):
                     reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']})\n"
                 else:
                     reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
-        
-            elif doc['rag_type'] == 'faiss':
-                print(f'## Document(get_reference) {i+1}: {doc}')
-                
-                page = ""
-                if "document_attributes" in doc['metadata']:
-                    if "_excerpt_page_number" in doc['metadata']['document_attributes']:
-                        page = doc['metadata']['document_attributes']['_excerpt_page_number']
-                uri = doc['metadata']['source']
-                name = doc['metadata']['title']
-
-                if page: 
-                    reference = reference + f"{i+1}. {page}page in <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
-                elif uri:
-                    reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
-            
+                    
             elif doc['rag_type'] == 'search': # google search
                 print(f'## Document(get_reference) {i+1}: {doc}')
                 
@@ -1378,78 +1333,8 @@ def retrieve_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
     relevant_docs = []
-    if rag_type == 'faiss' and isReady:
-        #relevant_documents = vectorstore_faiss.similarity_search(query)
-        #query_embedding = bedrock_embeddings.embed_query(query)
-        #print('query_embedding: ', query_embedding)
-        #relevant_documents = vectorstore_faiss.similarity_search_by_vector(query_embedding)
-
-        relevant_documents = vectorstore_faiss.similarity_search_with_score(
-            query = query,
-            k = top_k,
-        )
-        
-        #relevant_documents1 = vectorstore_faiss.similarity_search_with_relevance_scores(query)
-        #print('relevant_documents1: ',relevant_documents1)
-        
-        for i, document in enumerate(relevant_documents):
-            #print('document.page_content:', document.page_content)
-            #print('document.metadata:', document.metadata)
-            print(f'## Document(faiss-vector) {i+1}: {document}')
-
-            name = document[0].metadata['name']
-            page = ""
-            if "page" in document[0].metadata:
-                page = document[0].metadata['page']
-            uri = ""
-            if "uri" in document[0].metadata:
-                uri = document[0].metadata['uri']
-
-            confidence = int(document[1])
-            assessed_score = int(document[1])
             
-            if page:
-                doc_info = {
-                    "rag_type": rag_type,
-                    #"api_type": api_type,
-                    "confidence": confidence,
-                    "metadata": {
-                        #"type": query_result_type,
-                        #"document_id": document_id,
-                        "source": uri,
-                        "title": name,
-                        "excerpt": document[0].page_content,
-                        "translated_excerpt": "",
-                        "document_attributes": {
-                            "_excerpt_page_number": page
-                        }
-                    },
-                    #"query_id": query_id,
-                    #"feedback_token": feedback_token
-                    "assessed_score": assessed_score,
-                }
-
-            else: 
-                doc_info = {
-                    "rag_type": rag_type,
-                    #"api_type": api_type,
-                    "confidence": confidence,
-                    "metadata": {
-                        #"type": query_result_type,
-                        #"document_id": document_id,
-                        "source": uri,
-                        "title": name,
-                        "excerpt": document[0].page_content,
-                        "translated_excerpt": ""
-                    },
-                    #"query_id": query_id,
-                    #"feedback_token": feedback_token
-                    "assessed_score": assessed_score,
-                }
-            
-            relevant_docs.append(doc_info)
-            
-    elif rag_type == 'opensearch':
+    if rag_type == 'opensearch':
         # vector search (semantic) 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
@@ -1794,7 +1679,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     ) 
     
     reference = ""
-    if rag_type == 'all': # kendra, opensearch, faiss
+    if rag_type == 'all': # kendra, opensearch
         start_time_for_revise = time.time()
 
         revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history                    
@@ -2018,14 +1903,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                         "k": top_k
                     }
                 )
-            elif rag_type=='faiss' and isReady:
-                retriever = vectorstore_faiss.as_retriever(
-                    search_type="similarity", 
-                    search_kwargs={
-                        #"k": 3, 'score_threshold': 0.8
-                        "k": top_k
-                    }
-                )
 
             qa = RetrievalQA.from_chain_type(
                 llm=llm,
@@ -2067,15 +1944,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     }
                 )
                 qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
-            elif rag_type == 'faiss' and isReady: # faiss
-                vectorstoreRetriever = vectorstore_faiss.as_retriever(
-                    search_type="similarity", 
-                    search_kwargs={
-                        "k": 5
-                    }
-                )
-                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
-            
             result = qa({"question": text})
             
             msg = result['answer']
@@ -2405,11 +2273,13 @@ def getResponse(connectionId, jsonBody):
             rag_type = jsonBody['rag_type']  # RAG type
             print('rag_type: ', rag_type)
 
-    global vectorstore_faiss, enableReference
+    global enableReference
     global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
+    #elif function_type == 'code-generation-python':
+    #    allowDualSearch = 'false'
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2520,10 +2390,6 @@ def getResponse(connectionId, jsonBody):
                 rag_type = 'opensearch'
                 isControlMsg = True
                 msg  = "OpenSearch is selected for Knowledge Database"
-            elif text == 'useFaiss':
-                rag_type = 'faiss'
-                isControlMsg = True
-                msg  = "Faiss is selected for Knowledge Database"
             elif text == 'useKendra':
                 isControlMsg = True
                 rag_type = 'kendra'
@@ -2558,12 +2424,7 @@ def getResponse(connectionId, jsonBody):
                 if conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
-                    if rag_type == 'faiss' and isReady==False:                               
-                        msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)      
-
-                        memory_chain.chat_memory.add_user_message(text)  # append new diaglog
-                        memory_chain.chat_memory.add_ai_message(msg)
-                    elif function_type == 'code-generation-python':
+                    if function_type == 'code-generation-python':
                         msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')     
                         
                     else: 
@@ -2638,23 +2499,7 @@ def getResponse(connectionId, jsonBody):
                 msg = get_summary(llm, contexts)
             else:
                 msg = "uploaded file: "+object
-                                
-            if conv_type == 'qa': # for Faiss 
-                for type in capabilities:
-                    print('rag_type: ', type)
-                                                
-                    if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                        if type == 'faiss':
-                            if isReady == False:   
-                                embeddings = bedrock_embeddings
-                                vectorstore_faiss = FAISS.from_documents( # create vectorstore from a document
-                                    docs,  # documents
-                                    embeddings  # embeddings
-                                )
-                                isReady = True
-                            else:
-                                store_document_for_faiss(docs, vectorstore_faiss)
-                        
+                                                        
         sendResultMessage(connectionId, requestId, msg+reference)
         # print('msg+reference: ', msg+reference)
 
