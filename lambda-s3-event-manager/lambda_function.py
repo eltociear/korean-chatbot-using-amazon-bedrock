@@ -1,7 +1,6 @@
 import json
 import boto3
 import os
-import datetime
 import uuid
 
 sqs_client = boto3.client('sqs')
@@ -14,10 +13,11 @@ def lambda_handler(event, context):
     print('event: ', json.dumps(event))
 
     for i, record in enumerate(event['Records']):
-        bucket = record['s3']['bucket']['name']
-        key = record['s3']['object']['key']
-        print('bucket: ', bucket)
-        print('key: ', key)
+        receiptHandle = record['receiptHandle']
+        print("receiptHandle: ", receiptHandle)
+        
+        body = record['body']
+        print("body: ", json.loads(body))
         
         idx = i % int(nqueue)
         print('idx: ', idx)
@@ -25,22 +25,14 @@ def lambda_handler(event, context):
         eventId = str(uuid.uuid1())
         print('eventId: ', eventId)
         
-        s3EventInfo = {
-            'event_id': eventId,
-            'event_timestamp': record['eventTime'],
-            'bucket': bucket,
-            'key': key,
-            'type': record['eventName']
-        }
-        
         # push to SQS
         try:
             print('sqsUrl: ', sqsUrl[idx])            
             #sqs_client.send_message(  # standard 
             #    DelaySeconds=0,
             #    MessageAttributes={},
-            #    MessageBody=json.dumps(s3EventInfo),
-            #    QueueUrl=sqsUrl
+            #    MessageBody=body,
+            #    QueueUrl=sqsUrl[idx])
             #)
             
             sqs_client.send_message(  # fifo
@@ -48,9 +40,9 @@ def lambda_handler(event, context):
                 MessageAttributes={},
                 MessageDeduplicationId=eventId,
                 MessageGroupId="putEvent",
-                MessageBody=json.dumps(s3EventInfo)
+                MessageBody=body
             )
-            print('Successfully push the queue message: ', json.dumps(s3EventInfo))
+            print('Successfully push the queue message: ', body)
 
         except Exception as e:        
             print('Fail to push the queue message: ', e)
