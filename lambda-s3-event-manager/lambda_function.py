@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 import uuid
+import random
 
 sqs_client = boto3.client('sqs')
 sqsUrl = os.environ.get('sqsUrl')
@@ -20,7 +21,8 @@ def lambda_handler(event, context):
         body = record['body']
         print("body: ", json.loads(body))
         
-        idx = i % int(nqueue)
+        # idx = i % int(nqueue)
+        idx = random.randrange(0,nqueue-1)
         print('idx: ', idx)
         
         eventId = str(uuid.uuid1())
