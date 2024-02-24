@@ -603,6 +603,7 @@ attachFile.addEventListener('click', function(){
                         if (xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status == 200 ) {
                             console.log(xmlHttp.responseText);
 
+                            function_type = 'upload'
                             if(conversationType=='qa-all') {
                                 conv_type = 'qa',
                                 rag_type = 'all'
@@ -633,7 +634,7 @@ attachFile.addEventListener('click', function(){
                                 "body": filename,
                                 "conv_type": conv_type,
                                 "rag_type": rag_type,
-                                "function_type": 'upload'
+                                "function_type": function_type
                             })
                         }
                         else if(xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status != 200) {

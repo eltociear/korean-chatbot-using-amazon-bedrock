@@ -2036,10 +2036,10 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
     
-    print('index: ', f"idx-${category}-*")
+    print('index: ', f"idx-{category}-*")
         
     vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name = f"idx-${category}-*", # all
+        index_name = f"idx-{category}-*", # all
         is_aoss = False,
         ef_search = 1024, # 512(default)
         m=48,
