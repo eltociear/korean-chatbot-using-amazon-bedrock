@@ -2711,19 +2711,22 @@ def getResponse(connectionId, jsonBody):
         elapsed_time = time.time() - start
         print("total run time(sec): ", elapsed_time)
 
-        if isKorean(msg)==False and isControlMsg==False and (conv_type=='qa' or  conv_type == "normal"):
-            translated_msg = traslation_to_korean(llm, msg)
-            print('translated_msg: ', translated_msg)
-            
-            if speech_generation: # generate mp3 file
-                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
-                print('speech_uri: ', speech_uri)  
-            msg = msg+'\n[한국어]\n'+translated_msg
-        elif isControlMsg==False and function_type!='code-generation-python':
-            if speech_generation: # generate mp3 file
-                speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
-                print('speech_uri: ', speech_uri)  
+        # translation and text to speech
+        if (conv_type=='qa' or  conv_type == "normal") and isControlMsg==False:
+            if isKorean(msg)==False :
+                translated_msg = traslation_to_korean(llm, msg)
+                print('translated_msg: ', translated_msg)
+                msg = msg+'\n[한국어]\n'+translated_msg
                 
+                if speech_generation: # generate mp3 file
+                    speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=translated_msg)
+                    print('speech_uri: ', speech_uri)  
+                
+            elif function_type!='code-generation-python':
+                if speech_generation: # generate mp3 file
+                    speech_uri = get_text_speech(path=path, speech_prefix=speech_prefix, bucket=s3_bucket, msg=msg)
+                    print('speech_uri: ', speech_uri)  
+                    
         if function_type=='code-generation-python':
             if reference: # Summarize the generated code 
                 generated_code = msg[msg.find('<result>')+9:len(msg)-10]
