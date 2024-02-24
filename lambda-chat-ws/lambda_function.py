@@ -69,10 +69,6 @@ enableNoriPlugin = os.environ.get('enableNoriPlugin')
 minDocSimilarity = 200
 minCodeSimilarity = 300
 
-history_length = token_counter_history = 0  # for debug
-time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = time_for_revise = 0
-time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
-
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
 secretsmanager = boto3.client('secretsmanager')
@@ -1757,6 +1753,8 @@ def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_ty
     conn.close()
 
 def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
+    global history_length, token_counter_history # debugMessageMode 
+
     history_context = ""
     token_counter_history = 0
     for history in chat_history:
@@ -1846,6 +1844,12 @@ def translate_relevant_documents_using_parallel_processing(docs):
     return relevant_docs
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
+    global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
+    time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
+
+    global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
+    time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
+    
     vectorstore_opensearch = OpenSearchVectorSearch(
         index_name = "idx-*", # all
         #index_name=f"idx-{userId}',
@@ -2029,10 +2033,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         end_time_for_priority_search = time.time() 
         time_for_priority_search = end_time_for_priority_search - end_time_for_rag
         print('processing time for priority search: ', time_for_priority_search)
-        
-        if debugMessageMode=='true':  
-            global number_of_relevant_docs
-            number_of_relevant_docs = len(selected_relevant_docs)
+        number_of_relevant_docs = len(selected_relevant_docs)
 
         relevant_context = ""
         for document in selected_relevant_docs:
@@ -2111,10 +2112,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
-            
-            if debugMessageMode=='true':  
-                global number_of_relevant_docs
-                number_of_relevant_docs = len(source_documents)                    
+            number_of_relevant_docs = len(source_documents)
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
             start_time_for_rag = time.time()
@@ -2144,10 +2142,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - start_time_for_rag
             print('processing time for RAG: ', time_for_rag)
-            
-            if debugMessageMode=='true':  
-                global number_of_relevant_docs
-                number_of_relevant_docs = len(result['source_documents'])
+            number_of_relevant_docs = len(result['source_documents'])
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
             start_time_for_revise = time.time()
@@ -2172,10 +2167,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_rag = time.time()
             time_for_rag = end_time_for_rag - end_time_for_revise
             print('processing time for RAG: ', time_for_rag)
-            
-            if debugMessageMode=='true':  
-                global number_of_relevant_docs
-                number_of_relevant_docs = len(relevant_docs)
+            number_of_relevant_docs = len(relevant_docs)
 
             relevant_context = ""
             for document in relevant_docs:
@@ -2205,6 +2197,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_inference = time.time()
             time_for_inference = end_time_for_inference - end_time_for_rag
             print('processing time for inference: ', time_for_inference)
+
+    global relevant_length, token_counter_relevant_docs
     
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -2215,10 +2209,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             history_length.append(len(history))
         print('chat_history length: ', history_length)
 
-        if debugMessageMode=='true':  
-            global relevant_length, token_counter_relevant_docs
-            relevant_length = len(relevant_context)
-            token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
+        relevant_length = len(relevant_context)
+        token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
 
     memory_chain.chat_memory.add_user_message(text)  # append new diaglog
     memory_chain.chat_memory.add_ai_message(msg)
@@ -2241,7 +2233,10 @@ def get_code_prompt_template():
                     
     return PromptTemplate.from_template(prompt_template)
 
-def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
+def get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, category):
+    global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
+    time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
+        
     index_name =  f"idx-{category}-*"
     print('index: ', index_name)
         
@@ -2306,9 +2301,10 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     end_time_for_inference = time.time()
     time_for_inference = end_time_for_inference - end_time_for_priority_search
     print('processing time for inference: ', time_for_inference)
-           
+    
+    global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
+    
     if debugMessageMode=='true':   # extract chat history for debug
-        global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
         relevant_length = len(relevant_code)
         token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
         number_of_relevant_docs = len(relevant_code)
@@ -2465,7 +2461,7 @@ def summarize_code(llm, msg):
     msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
     
     return msg
-    
+
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
     # print('userId: ', userId)
@@ -2490,10 +2486,6 @@ def getResponse(connectionId, jsonBody):
 
     global enableReference
     global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
-    
-    global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes, time_for_revise  # for debug
-    global history_length, token_counter_history     
-    global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
@@ -2644,7 +2636,7 @@ def getResponse(connectionId, jsonBody):
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
                           
                     if function_type == 'code-generation-python':
-                        msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')     
+                        msg, reference = get_code_using_RAG(llm, text, connectionId, requestId, bedrock_embeddings, 'py')     
                         
                     else: 
                         msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
