@@ -1509,7 +1509,7 @@ def checkDupulication(relevant_codes, doc_info):
             return True
     return False
 
-def retrieve_codes_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
+def retrieve_codes_from_vectorstore(vectorstore_opensearch, index_name, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
     relevant_codes = []
         
@@ -1604,7 +1604,7 @@ def retrieve_codes_from_vectorstore(vectorstore_opensearch, query, top_k, rag_ty
 
             response = os_client.search(
                 body=query,
-                index="idx-*", # all
+                index=index_name, # all
             )
             # print('lexical query result: ', json.dumps(response))
             
@@ -1612,75 +1612,76 @@ def retrieve_codes_from_vectorstore(vectorstore_opensearch, query, top_k, rag_ty
                 if i>top_k: 
                     break
                 
-                excerpt = document['_source']['text']
-                print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
-
-                name = document['_source']['metadata']['name']
-                print('name: ', name)
-
-                page = ""
-                if "page" in document['_source']['metadata']:
-                    page = document['_source']['metadata']['page']
-                
-                uri = ""
-                if "uri" in document['_source']['metadata']:
-                    uri = document['_source']['metadata']['uri']
-                print('uri: ', uri)
-
-                confidence = str(document['_score'])
-                assessed_score = ""
-                
-                code = ""
-                if "code" in document['_source']['metadata']:
+                if "code" in document['_source']['metadata']:          
                     code = document['_source']['metadata']['code']
-                
-                function_name = ""
-                if "function_name" in document['_source']['metadata']:
-                    function_name = document['_source']['metadata']['function_name']
+                              
+                    excerpt = document['_source']['text']
+                    print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
 
-                if page:
-                    print('page: ', page)
-                    doc_info = {
-                        "rag_type": 'opensearch-keyward',
-                        #"api_type": api_type,
-                        "confidence": confidence,
-                        "metadata": {
-                            #"type": query_result_type,
-                            #"document_id": document_id,
-                            "source": uri,
-                            "title": name,
-                            "excerpt": excerpt,
-                            "document_attributes": {
-                                "_excerpt_page_number": page
+                    name = document['_source']['metadata']['name']
+                    print('name: ', name)
+
+                    page = ""
+                    if "page" in document['_source']['metadata']:
+                        page = document['_source']['metadata']['page']
+                    
+                    uri = ""
+                    if "uri" in document['_source']['metadata']:
+                        uri = document['_source']['metadata']['uri']
+                    print('uri: ', uri)
+
+                    confidence = str(document['_score'])
+                    assessed_score = ""
+                    
+                    function_name = ""
+                    if "function_name" in document['_source']['metadata']:
+                        function_name = document['_source']['metadata']['function_name']
+
+                    if page:
+                        print('page: ', page)
+                        doc_info = {
+                            "rag_type": 'opensearch-keyward',
+                            #"api_type": api_type,
+                            "confidence": confidence,
+                            "metadata": {
+                                #"type": query_result_type,
+                                #"document_id": document_id,
+                                "source": uri,
+                                "title": name,
+                                "excerpt": excerpt,
+                                "document_attributes": {
+                                    "_excerpt_page_number": page
+                                },
+                                "code": code,
+                                "function_name": function_name
                             },
-                            "code": code,
-                            "function_name": function_name
-                        },
-                        #"query_id": query_id,
-                        #"feedback_token": feedback_token
-                        "assessed_score": assessed_score,
-                    }
-                else: 
-                    doc_info = {
-                        "rag_type": 'opensearch-keyward',
-                        #"api_type": api_type,
-                        "confidence": confidence,
-                        "metadata": {
-                            #"type": query_result_type,
-                            #"document_id": document_id,
-                            "source": uri,
-                            "title": name,
-                            "excerpt": excerpt,
-                            "code": code,
-                            "function_name": function_name
-                        },
-                        #"query_id": query_id,
-                        #"feedback_token": feedback_token
-                        "assessed_score": assessed_score,
-                    }
-                
-                if checkDupulication(relevant_codes, doc_info) == False:
-                    relevant_codes.append(doc_info)
+                            #"query_id": query_id,
+                            #"feedback_token": feedback_token
+                            "assessed_score": assessed_score,
+                        }
+                    else: 
+                        doc_info = {
+                            "rag_type": 'opensearch-keyward',
+                            #"api_type": api_type,
+                            "confidence": confidence,
+                            "metadata": {
+                                #"type": query_result_type,
+                                #"document_id": document_id,
+                                "source": uri,
+                                "title": name,
+                                "excerpt": excerpt,
+                                "code": code,
+                                "function_name": function_name
+                            },
+                            #"query_id": query_id,
+                            #"feedback_token": feedback_token
+                            "assessed_score": assessed_score,
+                        }
+                    
+                    if checkDupulication(relevant_codes, doc_info) == False:
+                        relevant_codes.append(doc_info)
+                else:
+                    print("No code in metadata")
                     
     return relevant_codes
 
@@ -2220,10 +2221,11 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
     
-    print('index: ', f"idx-{category}-*")
+    index_name =  f"idx-{category}-*"
+    print('index: ', index_name)
         
     vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name = f"idx-{category}-*", # all
+        index_name = index_name,
         is_aoss = False,
         ef_search = 1024, # 512(default)
         m=48,
@@ -2242,7 +2244,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     relevant_codes = [] 
     print('start RAG for question')
     
-    relevant_codes = retrieve_codes_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=text, top_k=top_k, rag_type=rag_type)
+    relevant_codes = retrieve_codes_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, index_name=index_name, query=text, top_k=top_k, rag_type=rag_type)
     print(f'relevant_codes ({rag_type}): '+json.dumps(relevant_codes))
     
     end_time_for_rag = time.time()
