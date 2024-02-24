@@ -30,6 +30,7 @@ from langchain_community.retrievers import AmazonKendraRetriever
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
 from opensearchpy import OpenSearch
+from langchain.schema import BaseMessage
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -1328,7 +1329,7 @@ os_client = OpenSearch(
     ssl_show_warn = False,
 )
 
-def retrieve_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
+def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
     relevant_docs = []
@@ -1499,7 +1500,186 @@ def retrieve_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
                 relevant_docs.append(doc_info)
     return relevant_docs
 
-from langchain.schema import BaseMessage
+def checkDupulication(relevant_codes, doc_info):
+    for doc in relevant_codes:
+        if doc['metadata']['excerpt'] == doc_info['metadata']['excerpt']:
+            return True
+    return False
+
+def retrieve_codes_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
+    print(f"query: {query} ({rag_type})")
+    relevant_codes = []
+        
+    if rag_type == 'opensearch':
+        # Vector Search
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = query,
+            k = top_k,
+        )
+        #print('(opensearch score) relevant_documents: ', relevant_documents)
+
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+
+            name = document[0].metadata['name']
+            print('metadata: ', document[0].metadata)
+
+            page = ""
+            if "page" in document[0].metadata:
+                page = document[0].metadata['page']
+            uri = ""
+            if "uri" in document[0].metadata:
+                uri = document[0].metadata['uri']
+
+            excerpt = document[0].page_content
+            confidence = str(document[1])
+            assessed_score = str(document[1])
+            
+            code = ""
+            if "code" in document[0].metadata:
+                code = document[0].metadata['code']
+                
+            function_name = ""
+            if "function_name" in document[0].metadata:
+                function_name = document[0].metadata['function_name']
+
+            if page:
+                print('page: ', page)
+                doc_info = {
+                    "rag_type": 'opensearch-vector',
+                    "confidence": confidence,
+                    "metadata": {
+                        "source": uri,
+                        "title": name,
+                        "excerpt": excerpt,
+                        "document_attributes": {
+                            "_excerpt_page_number": page
+                        },
+                        "code": code,
+                        "function_name": function_name
+                    },
+                    "assessed_score": assessed_score,
+                }
+            else:
+                doc_info = {
+                    "rag_type": 'opensearch-vector',
+                    "confidence": confidence,
+                    "metadata": {
+                        "source": uri,
+                        "title": name,
+                        "excerpt": excerpt,
+                        "code": code,
+                        "function_name": function_name
+                    },
+                    "assessed_score": assessed_score,
+                }
+            relevant_codes.append(doc_info)
+    
+        # Lexical Search (keyword)
+        min_match = 0
+        if enableNoriPlugin == 'true':
+            query = {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "match": {
+                                    "text": {
+                                        "query": query,
+                                        "minimum_should_match": f'{min_match}%',
+                                        "operator":  "or"
+                                    }
+                                }
+                            },
+                        ],
+                        "filter": [
+                        ]
+                    }
+                }
+            }
+
+            response = os_client.search(
+                body=query,
+                index="idx-*", # all
+            )
+            # print('lexical query result: ', json.dumps(response))
+            
+            for i, document in enumerate(response['hits']['hits']):
+                if i>top_k: 
+                    break
+                
+                excerpt = document['_source']['text']
+                print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
+
+                name = document['_source']['metadata']['name']
+                print('name: ', name)
+
+                page = ""
+                if "page" in document['_source']['metadata']:
+                    page = document['_source']['metadata']['page']
+                
+                uri = ""
+                if "uri" in document['_source']['metadata']:
+                    uri = document['_source']['metadata']['uri']
+                print('uri: ', uri)
+
+                confidence = str(document['_score'])
+                assessed_score = ""
+                
+                code = ""
+                if "code" in document['_source']['metadata']:
+                    code = document['_source']['metadata']['code']
+                
+                function_name = ""
+                if "function_name" in document['_source']['metadata']:
+                    function_name = document['_source']['metadata']['function_name']
+
+                if page:
+                    print('page: ', page)
+                    doc_info = {
+                        "rag_type": 'opensearch-keyward',
+                        #"api_type": api_type,
+                        "confidence": confidence,
+                        "metadata": {
+                            #"type": query_result_type,
+                            #"document_id": document_id,
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "document_attributes": {
+                                "_excerpt_page_number": page
+                            },
+                            "code": code,
+                            "function_name": function_name
+                        },
+                        #"query_id": query_id,
+                        #"feedback_token": feedback_token
+                        "assessed_score": assessed_score,
+                    }
+                else: 
+                    doc_info = {
+                        "rag_type": 'opensearch-keyward',
+                        #"api_type": api_type,
+                        "confidence": confidence,
+                        "metadata": {
+                            #"type": query_result_type,
+                            #"document_id": document_id,
+                            "source": uri,
+                            "title": name,
+                            "excerpt": excerpt,
+                            "code": code,
+                            "function_name": function_name
+                        },
+                        #"query_id": query_id,
+                        #"feedback_token": feedback_token
+                        "assessed_score": assessed_score,
+                    }
+                
+                if checkDupulication(relevant_codes, doc_info) == False:
+                    relevant_codes.append(doc_info)
+                    
+    return relevant_codes
+
 _ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
 def _get_chat_history(chat_history):
     #print('_get_chat_history: ', chat_history)
@@ -1557,7 +1737,7 @@ def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_ty
         rel_docs = retrieve_from_kendra(query=query, top_k=top_k)      
         print('rel_docs (kendra): '+json.dumps(rel_docs))
     else:
-        rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=query, top_k=top_k, rag_type=rag_type)
+        rel_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=query, top_k=top_k, rag_type=rag_type)
         print(f'rel_docs ({rag_type}): '+json.dumps(rel_docs))
 
     if(len(rel_docs)>=1):
@@ -1743,7 +1923,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                             rel_docs = retrieve_from_kendra(query=translated_revised_question, top_k=top_k)      
                             print('rel_docs (kendra): '+json.dumps(rel_docs))
                         else:
-                            rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=translated_revised_question, top_k=top_k, rag_type=reg)
+                            rel_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=translated_revised_question, top_k=top_k, rag_type=reg)
                             print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
                     
                         if(len(rel_docs)>=1):
@@ -1770,7 +1950,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     rel_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)      
                     print('rel_docs (kendra): '+json.dumps(rel_docs))
                 else:
-                    rel_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=reg)
+                    rel_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=reg)
                     print(f'rel_docs ({reg}): '+json.dumps(rel_docs))
                 
                 if(len(rel_docs)>=1):
@@ -1976,7 +2156,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 if len(relevant_docs) >= 1:
                     relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
             else:
-                relevant_docs = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
+                relevant_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
             print('relevant_docs: ', json.dumps(relevant_docs))
 
             end_time_for_rag = time.time()
@@ -2058,7 +2238,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     relevant_codes = [] 
     print('start RAG for question')
     
-    relevant_codes = retrieve_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=text, top_k=top_k, rag_type=rag_type)
+    relevant_codes = retrieve_codes_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=text, top_k=top_k, rag_type=rag_type)
     print(f'relevant_codes ({rag_type}): '+json.dumps(relevant_codes))
     
     end_time_for_rag = time.time()
