@@ -84,11 +84,11 @@ kendra_client = boto3.client(
 )
 
 # embedding for RAG
-bedrock_region = "ap-northeast-1"  # "us-west-2"
+region_name = os.environ.get('bedrock_region')
     
 boto3_bedrock = boto3.client(
     service_name='bedrock-runtime',
-    region_name=bedrock_region,
+    region_name=region_name,
     config=Config(
         retries = {
             'max_attempts': 30
@@ -98,7 +98,7 @@ boto3_bedrock = boto3.client(
 
 bedrock_embeddings = BedrockEmbeddings(
     client=boto3_bedrock,
-    region_name = bedrock_region,
+    region_name = region_name,
     model_id = 'amazon.titan-embed-text-v1' 
 )   
 
@@ -480,14 +480,14 @@ def get_parameter(model_type, maxOutputTokens):
 # Multi-LLM
 def get_llm(profile_of_LLMs, selected_LLM):
     profile = profile_of_LLMs[selected_LLM]
-    bedrock_region =  profile['bedrock_region']
+    region_name =  profile['bedrock_region']
     modelId = profile['model_id']
-    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'LLM: {selected_LLM}, region_name: {region_name}, modelId: {modelId}')
         
     # bedrock   
     boto3_bedrock = boto3.client(
         service_name='bedrock-runtime',
-        region_name=bedrock_region,
+        region_name=region_name,
         config=Config(
             retries = {
                 'max_attempts': 30
@@ -529,7 +529,7 @@ def summary_of_code(llm, code):
    
     return summary
 
-def summarize_process_for_relevent_code(conn, llm, code, key, bedrock_region):
+def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
     try: 
         start = code.find('\ndef ')
         end = code.find(':')                    
@@ -541,7 +541,7 @@ def summarize_process_for_relevent_code(conn, llm, code, key, bedrock_region):
             # print('function_name: ', function_name)
                             
             summary = summary_of_code(llm, code)
-            print(f"summary ({bedrock_region}): {summary}")
+            print(f"summary ({region_name}): {summary}")
             
             #print('first line summary: ', summary[:len(function_name)])
             #print('function name: ', function_name)            
@@ -577,9 +577,9 @@ def summarize_relevant_codes_using_parallel_processing(codes, key):
         parent_connections.append(parent_conn)
             
         llm = get_llm(profile_of_LLMs, selected_LLM)
-        bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
+        region_name = profile_of_LLMs[selected_LLM]['bedrock_region']
 
-        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, llm, code, key, bedrock_region))
+        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, llm, code, key, region_name))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1

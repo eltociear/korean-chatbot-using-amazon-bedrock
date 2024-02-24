@@ -44,7 +44,7 @@ const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default
 const enableNoriPlugin = 'true';
 const enableParallelSummay = 'true';
 
-const claude_instance = JSON.stringify([
+const claude_instant = [
   {
     "bedrock_region": "us-west-2", // Oregon
     "model_type": "claude",
@@ -69,9 +69,9 @@ const claude_instance = JSON.stringify([
     "model_id": "anthropic.claude-instant-v1",
     "maxOutputTokens": "8196"
     },
-]);
+];
 
-const claude_basic = JSON.stringify([
+const claude_basic = [
   {
     "bedrock_region": "us-west-2", // Oregon
     "model_type": "claude",
@@ -84,9 +84,9 @@ const claude_basic = JSON.stringify([
     "model_id": "anthropic.claude-v2:1",
     "maxOutputTokens": "8196"
   }
-]);
+];
 
-const profile_of_LLMs = claude_instance;
+const profile_of_LLMs = claude_instant;
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -662,7 +662,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
         kendraMethod: kendraMethod,
-        profile_of_LLMs:profile_of_LLMs,
+        profile_of_LLMs:JSON.stringify(profile_of_LLMs),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
@@ -753,35 +753,73 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
     queueS3event.grantSendMessages(lambdaS3event); // permision for SQS putItem
 
-    // Lambda for document manager
-    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
-      description: 'S3 document manager',
-      functionName: `lambda-document-manager-for-${projectName}`,
-      role: roleLambdaWebsocket,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
-      timeout: cdk.Duration.seconds(600),
-      memorySize: 8192,
+    // SQS for S3 event (fifo) 
+    let queueUrl:string[] = [];
+    let queue:any[] = [];
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
+        visibilityTimeout: cdk.Duration.seconds(600),
+        queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
+        fifo: true,
+        contentBasedDeduplication: false,
+        deliveryDelay: cdk.Duration.millis(0),
+        retentionPeriod: cdk.Duration.days(2),
+      });
+      queueUrl.push(queue[i].queueUrl);
+    }
+
+    // Lambda for s3 event manager
+    const lambdaS3eventManager = new lambda.Function(this, `lambda-s3-event-manager-for-${projectName}`, {
+      description: 'lambda for s3 event manager',
+      functionName: `lambda-s3-event-manager-for-${projectName}`,
+      handler: 'lambda_function.lambda_handler',
+      runtime: lambda.Runtime.PYTHON_3_11,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event-manager')),
+      timeout: cdk.Duration.seconds(60),      
+      logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
-        s3_bucket: s3Bucket.bucketName,
-        s3_prefix: s3_prefix,
-        kendra_region: String(kendra_region),
-        opensearch_account: opensearch_account,
-        opensearch_passwd: opensearch_passwd,
-        opensearch_url: opensearch_url,
-        kendraIndex: kendraIndex,
-        roleArn: roleLambdaWebsocket.roleArn,
-        path: 'https://'+distribution.domainName+'/', 
-        capabilities: capabilities,
-        sqsUrl: queueS3event.queueUrl,
-        max_object_size: String(max_object_size),
-        enableNoriPlugin: enableNoriPlugin,
-        supportedFormat: supportedFormat,
-        profile_of_LLMs: profile_of_LLMs,
-        enableParallelSummay: enableParallelSummay
+        queueUrl: JSON.stringify(queueUrl),
+        nqueue: String(profile_of_LLMs.length)
       }
-    });         
-    s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
-    lambdDocumentManager.addEventSource(new SqsEventSource(queueS3event)); // permission for SQS
+    });
+    lambdaS3eventManager.addEventSource(new SqsEventSource(queueS3event)); // permission for SQS
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
+    }
+
+    // Lambda for document manager
+    let lambdDocumentManager:any[] = [];
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
+        description: 'S3 document manager',
+        functionName: `lambda-document-manager-for-${projectName}-${i}`,
+        role: roleLambdaWebsocket,
+        code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
+        timeout: cdk.Duration.seconds(600),
+        memorySize: 8192,
+        environment: {
+          bedrock_region: profile_of_LLMs[i].bedrock_region,
+          s3_bucket: s3Bucket.bucketName,
+          s3_prefix: s3_prefix,
+          kendra_region: String(kendra_region),
+          opensearch_account: opensearch_account,
+          opensearch_passwd: opensearch_passwd,
+          opensearch_url: opensearch_url,
+          kendraIndex: kendraIndex,
+          roleArn: roleLambdaWebsocket.roleArn,
+          path: 'https://'+distribution.domainName+'/', 
+          capabilities: capabilities,
+          sqsUrl: queueS3event.queueUrl,
+          max_object_size: String(max_object_size),
+          enableNoriPlugin: enableNoriPlugin,
+          supportedFormat: supportedFormat,
+          profile_of_LLMs: JSON.stringify(profile_of_LLMs),
+          enableParallelSummay: enableParallelSummay
+        }
+      });         
+      s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
+      lambdDocumentManager[i].addEventSource(new SqsEventSource(queue[i])); // permission for SQS
+    }
     
     // s3 event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
