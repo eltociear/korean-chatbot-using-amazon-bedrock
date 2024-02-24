@@ -5,8 +5,8 @@ import uuid
 
 sqs_client = boto3.client('sqs')
 sqsUrl = os.environ.get('sqsUrl')
-sqsFifoUrl = json.loads(os.environ.get('queueUrl'))
-print('sqsFifoUrl: ', sqsFifoUrl)
+sqsFifoUrl = json.loads(os.environ.get('sqsFifoUrl'))
+print('sqsFifoUrl: ', json.dumps(sqsFifoUrl))
 
 nqueue = os.environ.get('nqueue')
 
