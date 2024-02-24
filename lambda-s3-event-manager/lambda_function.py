@@ -44,15 +44,15 @@ def lambda_handler(event, context):
                 MessageBody=body
             )
             print('Successfully push the queue message: ', body)
+            
+            # delete queue
+            try:
+                sqs_client.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
+            except Exception as e:        
+                print('Fail to delete the queue message: ', e)
 
         except Exception as e:        
             print('Fail to push the queue message: ', e)
-            
-        # delete queue
-        try:
-            sqs_client.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
-        except Exception as e:        
-            print('Fail to delete the queue message: ', e)
         
     return {
         'statusCode': 200
