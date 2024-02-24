@@ -4,8 +4,9 @@ import os
 import uuid
 
 sqs_client = boto3.client('sqs')
-sqsUrl = json.loads(os.environ.get('queueUrl'))
-print('sqsUrl: ', sqsUrl)
+sqsUrl = os.environ.get('sqsUrl')
+sqsFifoUrl = json.loads(os.environ.get('queueUrl'))
+print('sqsFifoUrl: ', sqsFifoUrl)
 
 nqueue = os.environ.get('nqueue')
 
@@ -27,16 +28,16 @@ def lambda_handler(event, context):
         
         # push to SQS
         try:
-            print('sqsUrl: ', sqsUrl[idx])            
+            print('sqsFifoUrl: ', sqsFifoUrl[idx])            
             #sqs_client.send_message(  # standard 
             #    DelaySeconds=0,
             #    MessageAttributes={},
             #    MessageBody=body,
-            #    QueueUrl=sqsUrl[idx])
+            #    QueueUrl=sqsFifoUrl[idx])
             #)
             
             sqs_client.send_message(  # fifo
-                QueueUrl=sqsUrl[idx], 
+                QueueUrl=sqsFifoUrl[idx], 
                 MessageAttributes={},
                 MessageDeduplicationId=eventId,
                 MessageGroupId="putEvent",
@@ -46,6 +47,12 @@ def lambda_handler(event, context):
 
         except Exception as e:        
             print('Fail to push the queue message: ', e)
+            
+        # delete queue
+        try:
+            sqs_client.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
+        except Exception as e:        
+            print('Fail to delete the queue message: ', e)
         
     return {
         'statusCode': 200

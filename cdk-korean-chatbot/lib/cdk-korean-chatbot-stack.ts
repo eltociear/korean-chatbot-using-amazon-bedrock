@@ -778,7 +778,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),      
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
-        queueUrl: JSON.stringify(queueUrl),
+        sqsUrl: queueS3event.queueUrl,
+        sqsFifoUrl: JSON.stringify(queueUrl),
         nqueue: String(profile_of_LLMs.length)
       }
     });
