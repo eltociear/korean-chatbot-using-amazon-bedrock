@@ -2114,6 +2114,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
+                global number_of_relevant_docs
                 number_of_relevant_docs = len(source_documents)                    
 
         elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
@@ -2146,6 +2147,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
+                global number_of_relevant_docs
                 number_of_relevant_docs = len(result['source_documents'])
         
         elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
@@ -2173,6 +2175,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             print('processing time for RAG: ', time_for_rag)
             
             if debugMessageMode=='true':  
+                global number_of_relevant_docs
                 number_of_relevant_docs = len(relevant_docs)
 
             relevant_context = ""
