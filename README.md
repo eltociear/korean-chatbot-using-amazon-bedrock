@@ -47,7 +47,7 @@
 
 대량으로 파일 업로드 또는 삭제시는 아래와 같은 Event driven구조를 활용할 수 있습니다.
 
-<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/89d233cf-36df-4e5d-944d-03dce064c130" width="700">
+<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/644dbf4e-d0c1-40c4-8ce2-2794db15e42e" width="800">
 
 
 
