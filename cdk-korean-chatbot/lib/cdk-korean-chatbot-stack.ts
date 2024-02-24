@@ -727,6 +727,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The commend for uploading contents of FAQ',
     });
 
+    // S3 - Lambda(S3 event) - SQS(Satandard) - Lambda(S3 event manager) - SQS(fifo) - Lambda(document)
+    /*
     // SQS for S3 event
     const queueS3event = new sqs.Queue(this, `queue-s3-event-for-${projectName}`, {
       visibilityTimeout: cdk.Duration.seconds(600),
@@ -820,6 +822,86 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       });         
       s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
       lambdDocumentManager[i].addEventSource(new SqsEventSource(queue[i])); // permission for SQS
+    } 
+
+    // s3 event source
+    const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
+      events: [
+        s3.EventType.OBJECT_CREATED_PUT,
+        s3.EventType.OBJECT_REMOVED_DELETE
+      ],
+      filters: [
+        { prefix: s3_prefix+'/' },
+      ]
+    });
+    lambdaS3event.addEventSource(s3PutEventSource); */
+
+    // S3 - Lambda(S3 event) - SQS(fifo) - Lambda(document)
+    // SQS for S3 event (fifo) 
+    let queueUrl:string[] = [];
+    let queue:any[] = [];
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
+        visibilityTimeout: cdk.Duration.seconds(600),
+        queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
+        fifo: true,
+        contentBasedDeduplication: false,
+        deliveryDelay: cdk.Duration.millis(0),
+        retentionPeriod: cdk.Duration.days(2),
+      });
+      queueUrl.push(queue[i].queueUrl);
+    }
+
+    // Lambda for s3 event manager
+    const lambdaS3eventManager = new lambda.Function(this, `lambda-s3-event-manager-for-${projectName}`, {
+      description: 'lambda for s3 event manager',
+      functionName: `lambda-s3-event-manager-for-${projectName}`,
+      handler: 'lambda_function.lambda_handler',
+      runtime: lambda.Runtime.PYTHON_3_11,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event-manager')),
+      timeout: cdk.Duration.seconds(60),      
+      logRetention: logs.RetentionDays.ONE_DAY,
+      environment: {
+        sqsFifoUrl: JSON.stringify(queueUrl),
+        nqueue: String(profile_of_LLMs.length)
+      }
+    });
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
+    }
+
+    // Lambda for document manager
+    let lambdDocumentManager:any[] = [];
+    for(let i=0;i<profile_of_LLMs.length;i++) {
+      lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
+        description: 'S3 document manager',
+        functionName: `lambda-document-manager-for-${projectName}-${i}`,
+        role: roleLambdaWebsocket,
+        code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
+        timeout: cdk.Duration.seconds(600),
+        memorySize: 8192,
+        environment: {
+          bedrock_region: profile_of_LLMs[i].bedrock_region,
+          s3_bucket: s3Bucket.bucketName,
+          s3_prefix: s3_prefix,
+          kendra_region: String(kendra_region),
+          opensearch_account: opensearch_account,
+          opensearch_passwd: opensearch_passwd,
+          opensearch_url: opensearch_url,
+          kendraIndex: kendraIndex,
+          roleArn: roleLambdaWebsocket.roleArn,
+          path: 'https://'+distribution.domainName+'/', 
+          capabilities: capabilities,
+          sqsUrl: queueUrl[i],
+          max_object_size: String(max_object_size),
+          enableNoriPlugin: enableNoriPlugin,
+          supportedFormat: supportedFormat,
+          profile_of_LLMs: JSON.stringify(profile_of_LLMs),
+          enableParallelSummay: enableParallelSummay
+        }
+      });         
+      s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
+      lambdDocumentManager[i].addEventSource(new SqsEventSource(queue[i])); // permission for SQS
     }
     
     // s3 event source
@@ -832,7 +914,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         { prefix: s3_prefix+'/' },
       ]
     });
-    lambdaS3event.addEventSource(s3PutEventSource); 
+    lambdaS3eventManager.addEventSource(s3PutEventSource); 
 
     // lambda - provisioning
     const lambdaProvisioning = new lambda.Function(this, `lambda-provisioning-for-${projectName}`, {
