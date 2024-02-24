@@ -47,8 +47,7 @@
 
 대량으로 파일 업로드 또는 삭제시는 아래와 같은 Event driven구조를 활용할 수 있습니다.
 
-<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/644dbf4e-d0c1-40c4-8ce2-2794db15e42e" width="1000">
-
+<img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/eaace9e5-9d4e-4bdc-aa67-bad935dffaa3" width="900">
 
 
 ## 향상된 RAG 구현하기
