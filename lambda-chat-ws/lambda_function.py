@@ -2626,12 +2626,12 @@ def getResponse(connectionId, jsonBody):
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:       
-                if conv_type == 'qa':   # RAG
+                if conv_type == 'normal' or conv_type == 'funny':      # normal
+                    msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
+                
+                elif conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}, rag_method: {rag_method}')
-                    msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)     
-                    
-                elif conv_type == 'normal' or conv_type == 'funny':      # normal
-                        msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
+                    msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)
                     
                 elif conv_type == 'none':   # no prompt
                     try: 
