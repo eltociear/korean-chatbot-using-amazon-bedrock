@@ -2307,6 +2307,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     if debugMessageMode=='true':   # extract chat history for debug
         relevant_length = len(relevant_code)
         token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
+        number_of_relevant_docs = len(relevant_code)
     
     return msg, reference
 
