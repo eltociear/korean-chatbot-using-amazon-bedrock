@@ -632,7 +632,8 @@ attachFile.addEventListener('click', function(){
                                 "type": "document",
                                 "body": filename,
                                 "conv_type": conv_type,
-                                "rag_type": rag_type
+                                "rag_type": rag_type,
+                                "function_type": 'upload'
                             })
                         }
                         else if(xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status != 200) {
