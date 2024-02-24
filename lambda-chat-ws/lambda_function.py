@@ -37,7 +37,6 @@ s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
-isReady = False   
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -2036,6 +2035,8 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
+    
+    print('index: ', f"idx-${category}-*")
         
     vectorstore_opensearch = OpenSearchVectorSearch(
         index_name = f"idx-${category}-*", # all
@@ -2274,7 +2275,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global enableReference
-    global map_chain, map_chat, memory_chat, memory_chain, isReady, debugMessageMode, selected_LLM, allowDualSearch
+    global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'

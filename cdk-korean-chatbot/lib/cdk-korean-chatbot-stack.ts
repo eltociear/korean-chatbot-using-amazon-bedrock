@@ -37,7 +37,7 @@ const useParallelRAG = 'true';
 const numberOfRelevantDocs = '4';
 const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearch = 'false';
-const capabilities = JSON.stringify(["kendra", "opensearch"]);  // ["kendra", "opensearch", "faiss"]
+const capabilities = JSON.stringify(["kendra", "opensearch"]); 
 const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "docx", "doc", "xlsx", "py"]);  
 
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
