@@ -1062,6 +1062,8 @@ def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
             content = doc['metadata']['translated_excerpt']
         else:
             content = doc['metadata']['excerpt']
+            
+        print('content: ', content)
         
         excerpts.append(
             Document(
