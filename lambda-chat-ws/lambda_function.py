@@ -1753,8 +1753,6 @@ def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_ty
     conn.close()
 
 def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
-    global history_length, token_counter_history # debugMessageMode 
-
     history_context = ""
     token_counter_history = 0
     for history in chat_history:
@@ -1844,12 +1842,6 @@ def translate_relevant_documents_using_parallel_processing(docs):
     return relevant_docs
 
 def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
-    global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
-    time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
-
-    global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
-    time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
-    
     vectorstore_opensearch = OpenSearchVectorSearch(
         index_name = "idx-*", # all
         #index_name=f"idx-{userId}',
@@ -2197,8 +2189,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             end_time_for_inference = time.time()
             time_for_inference = end_time_for_inference - end_time_for_rag
             print('processing time for inference: ', time_for_inference)
-
-    global relevant_length, token_counter_relevant_docs
     
     if debugMessageMode=='true':   # extract chat history for debug
         chat_history_all = extract_chat_history_from_memory()
@@ -2234,9 +2224,6 @@ def get_code_prompt_template():
     return PromptTemplate.from_template(prompt_template)
 
 def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
-    global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
-    time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
-    
     index_name =  f"idx-{category}-*"
     print('index: ', index_name)
         
@@ -2301,9 +2288,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     end_time_for_inference = time.time()
     time_for_inference = end_time_for_inference - end_time_for_priority_search
     print('processing time for inference: ', time_for_inference)
-    
-    global relevant_length, token_counter_relevant_docs, number_of_relevant_docs
-    
+        
     if debugMessageMode=='true':   # extract chat history for debug
         relevant_length = len(relevant_code)
         token_counter_relevant_docs = llm.get_num_tokens(relevant_code)
@@ -2486,6 +2471,15 @@ def getResponse(connectionId, jsonBody):
 
     global enableReference
     global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
+    
+    global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes, time_for_revise  # for debug
+    time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = time_for_revise = 0
+    global history_length, token_counter_history 
+    history_length = token_counter_history = 0
+    global time_for_rag_inference, time_for_rag_question_translation, time_for_rag_2nd_inference, time_for_rag_translation
+    time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
+    global relevant_length, token_counter_relevant_docs
+    relevant_length = token_counter_relevant_docs = 0
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
