@@ -70,7 +70,6 @@ minDocSimilarity = 200
 minCodeSimilarity = 300
 
 history_length = token_counter_history = 0  # for debug
-relevant_length = token_counter_relevant_docs = number_of_relevant_docs = 0
 time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = time_for_revise = 0
 time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
 
