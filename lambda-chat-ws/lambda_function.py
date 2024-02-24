@@ -1057,7 +1057,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
-        # print('doc: ', doc)
+        print('doc: ', doc)
         if 'translated_excerpt' in doc['metadata']:
             content = doc['metadata']['translated_excerpt']
         else:
@@ -1970,8 +1970,6 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         time_for_rag = end_time_for_rag - end_time_for_revise
         print('processing time for RAG: ', time_for_rag)
 
-        print('------> relevant_docs: ', relevant_docs)
-        
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             print('start priority search')
