@@ -375,7 +375,7 @@ def load_document(file_type, key):
                 print('err_msg: ', err_msg)
                 # raise Exception ("Not able to load texts from preseation file")
         
-    elif file_type == 'txt':       
+    elif file_type == 'txt' or file_type == 'md':       
         try:  
             contents = doc.get()['Body'].read().decode('utf-8')
         except Exception:
@@ -451,15 +451,14 @@ def isSupported(type):
     
     return False
     
-def check_supported_type(key, file_type, size):
-    print('key: ', key)
-    print('html: ', key.find('/html/'))
+def check_supported_type(key, file_type, size):    
     if key.find('/html/') != -1:  # do not include html folder
+        print('html: ', key.find('/html/'))
         return False
     
     if size > 5000 and size<max_object_size and isSupported(file_type):
         return True
-    if size > 0 and (file_type == 'txt' or file_type == 'py' or file_type == 'js'):
+    if size > 0 and (file_type == 'txt' or file_type == 'md' or file_type == 'py' or file_type == 'js'):
         return True
     else:
         return False
@@ -768,7 +767,7 @@ def lambda_handler(event, context):
                     elif type=='opensearch':
                         docs = []
                         
-                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
+                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                             print('upload to opensearch: ', key) 
                             texts = load_document(file_type, key)
                             

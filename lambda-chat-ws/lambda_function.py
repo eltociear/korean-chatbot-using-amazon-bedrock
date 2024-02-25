@@ -506,7 +506,7 @@ def get_prompt_template(query, conv_type, rag_type):
     
     return PromptTemplate.from_template(prompt_template)
 
-# load documents from s3 for pdf and txt
+# load documents from s3 
 def load_document(file_type, s3_file_name):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
@@ -535,7 +535,7 @@ def load_document(file_type, s3_file_name):
             texts.append(text)
         contents = '\n'.join(texts)
         
-    elif file_type == 'txt' or file_type == 'py':        
+    elif file_type == 'txt' or file_type == 'md':        
         contents = doc.get()['Body'].read().decode('utf-8')
 
     elif file_type == 'docx':
@@ -2755,7 +2755,7 @@ def getResponse(connectionId, jsonBody):
                 
                 msg = summarize_code(llm, texts, 'nodejs')
 
-            elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
+            elif file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
 
                 docs = []

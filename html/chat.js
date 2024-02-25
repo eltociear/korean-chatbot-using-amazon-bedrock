@@ -576,6 +576,9 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'js') {
                 contentType = 'application/javascript'
             }
+            else if(ext == 'md') {
+                contentType = 'text/markdown'
+            }
             console.log('contentType: ', contentType)
 
             let current = new Date();
