@@ -572,6 +572,7 @@ def load_code(file_type, key):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, key)
     
+    separators=""
     if file_type == 'py':        
         contents = doc.get()['Body'].read().decode('utf-8')
         separators = ["\ndef "]
@@ -2744,6 +2745,9 @@ def getResponse(connectionId, jsonBody):
                 msg = get_summary(llm, contexts)
             
             elif file_type == 'py':
+                print('object: ', object)
+                print('file_type: ', file_type)
+                
                 texts = load_code(file_type, object)                
                 print('code: ', texts)
                 
