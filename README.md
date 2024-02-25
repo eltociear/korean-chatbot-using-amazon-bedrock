@@ -1,18 +1,27 @@
-# Multi-RAG를 활용하여 향상된 Chatbot 만들기
+# RAG를 활용하여 향상된 Korean Chatbot 만들기
 
-여기에서는 RAG의 성능을 향상시키는 여러가지 방법들에 대해 설명하고 이를 이용하여 기업 또는 개인의 데이터를 쉽게 활용할 수 있는 Chatbot을 만들고자 합니다. RAG는 기업 또는 개인의 중요한 데이터를 LLM에서 활용할 수 있는 기술입니다. 여기에서는 아래 항목들을 활용하여 RAG의 성능을 향상사킵니다.
+RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)의 기능을 강화하여 다양한 어플리케이션을 개발할 수 있습니다. 여기에서는 RAG의 성능을 향상시키는 방법들에 대해 설명하고 이를 이용하여 기업 또는 개인의 데이터를 쉽게 활용할 수 있는 한국어 Chatbot을 만들고자 합니다. 또한 LLM에서 사용하는 Prompt 기술에 대해 설명합니다.
 
-- Multi-RAG: RAG에 반드시 필요한 [지식 저장소(Knowledge Store)](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)는 별도로 구축할수도 있고, 기존의 RDB를 활용할 수 있습니다. 다양한 지식저장소를 활용하여 RAG의 활용도를 높입니다.
+- Multi-RAG: 다양한 [지식 저장소(Knowledge Store)](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)활용합니다. 
 - Multi-Region LLM: 여러 리전에 있는 LLM을 동시에 활용함으로써 질문후 답변까지의 동작시간을 단축하고, On-Demand 방식의 동시 실행 수의 제한을 완화할 수 있습니다.
-- 한영 동시 검색: RAG에 한국어와 영어 문서들이 혼재할 경우에 한국어로 영어 문서를 검색할 수 없습니다. 한국어로 한국어, 영어 문서를 모두 검색하여 RAG의 성능을 향상 시킬 수 있습니다.
 - 인터넷 검색: RAG의 지식저장소에 관련된 문서가 없는 경우에 인터넷 검색을 통해 활용도를 높입니다.
-- 관련도 기준으로 검색된 문서 활용: RAG는 LLM에 Context로 관련된 문서를 제공합니다. Context에 들어가는 문서의 순서에 따라 RAG의 성능이 달라집니다.
-- Kendra 성능 향상 방법: 완전관리형 검색서비스인 Kendra는 다양한 connector를 통해 RAG를 쉽게 구성할 수 있도록 돕습니다. Kendra의 성능 향상을 위해 FAQ를 활용하고 관련도 기반으로 관련 문서를 선택합니다.
-- OpenSearch의 성능 향상 방법: Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 관련된 문서를 찾을 확율을 높입니다.
+- 한영 동시 검색: RAG에 한국어와 영어 문서들이 혼재할 경우에 한국어로 영어 문서를 검색할 수 없습니다. 한국어로 한국어, 영어 문서를 모두 검색하여 RAG의 성능을 향상 시킬 수 있습니다.
+- Prioroty Search: 검색된 문서를 관련도에 따라 정렬하면 LLM의 결과가 향상됩니다.
+- Kendra 성능 향상: LangChain에서 Kendra의 FAQ를 활용합니다.
+- Vector/Keyward 검색: Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 관련된 문서를 찾을 확율을 높입니다.
+- Code Generation: 기존 코드를 이용하여 Python/Node.js 코드를 생성할 수 있습니다.
+  
+여기서 구현한 코드들은 [LangChain](https://aws.amazon.com/ko/what-is/langchain/)을 기반으로 합니다. 또한, 아래와 같은 Prompt Engineing 예제를 사용해 볼 수 있습니다.
 
-여기서는 [Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)의 Anthropic Claude LLM(Large Language Models) 모델을 이용하여 질문/답변(Question/Answering)을 수행하는 Chatbot을 구성하지만, [LangChain](https://aws.amazon.com/ko/what-is/langchain/)을 기반으로 구성하므로 Llama2와 같은 다른 LLM을 활용할때에도 쉽게 응용할 수 있습니다. 
-
-
+- 번역 (translation): 입력된 문장을 번역합니다.
+- 문법 오류 추출 (Grammatical Error Correction): 영어에 대한 문장 에러를 설명하고, 수정된 문장을 보여줍니다.
+- 리뷰 분석 (Extracted Topic and Sentiment): 입력된 리뷰의 주제와 감정(Sentiment)을 추출합니다.
+- 정보 추출 (Information Extraction): 입력된 문장에서 email과 같은 정보를 추출합니다.
+- 개인 정보 삭제 (Removing PII): 입력된 문장에서 개인정보(PII)를 삭제할 수 있습니다.
+- 복잡한 질문 (Complex Question): step-by-step으로 복잡한 문제를 해결합니다.
+- 어린이와 대화 (Child Conversation): 대화상대에 맞게 적절한 어휘나 답변을 할 수 있습니다.
+- 시간정보 추출 (Timestamp Extraction): 입력된 정보에서 시간정보(timestemp)를 추출합니다.
+- 자유로운 대화(Free Conversation): 친구처럼 반말로 대화합니다.
 
 
 ## 아키텍처 개요
