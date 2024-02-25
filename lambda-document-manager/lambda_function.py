@@ -452,7 +452,7 @@ def isSupported(type):
     return False
     
 def check_supported_type(key, file_type, size):    
-    if key.find('/html/') != -1:  # do not include html folder
+    if key.find('/html/') != -1 or key.find('/node_modules/') != -1: # do not include html/node_modules folders
         print('html: ', key.find('/html/'))
         return False
     
