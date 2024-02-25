@@ -454,7 +454,7 @@ def isSupported(type):
 def check_supported_type(file_type, size):
     if size > 5000 and size<max_object_size and isSupported(file_type):
         return True
-    if size > 0 and (file_type == 'txt' or file_type == 'py'):
+    if size > 0 and (file_type == 'txt' or file_type == 'py' or file_type == 'js'):
         return True
     else:
         return False
