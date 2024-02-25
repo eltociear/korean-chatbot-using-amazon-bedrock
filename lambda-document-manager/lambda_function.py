@@ -451,7 +451,7 @@ def isSupported(type):
     
     return False
     
-def check_supported_type(file_type, size):
+def check_supported_type(key, file_type, size):
     if size > 5000 and size<max_object_size and isSupported(file_type):
         return True
     if size > 0 and (file_type == 'txt' or file_type == 'py' or file_type == 'js'):
@@ -664,7 +664,7 @@ def lambda_handler(event, context):
             
         if eventName == 'ObjectRemoved:Delete':
             if isSupported(file_type):
-                objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)]).upper()
+                objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
                 print('objectName: ', objectName)
                 
                 # get metadata from s3
@@ -734,7 +734,7 @@ def lambda_handler(event, context):
                 print('err_msg: ', err_msg)
                 # raise Exception ("Not able to get object info") 
             
-            if check_supported_type(file_type, size): 
+            if check_supported_type(key, file_type, size): 
                 if file_type == 'py' or file_type == 'js':  # for code
                     category = file_type
                 else:
