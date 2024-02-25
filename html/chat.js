@@ -573,6 +573,9 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'py') {
                 contentType = 'application/x-python-code'
             }
+            else if(ext == 'js') {
+                contentType = 'application/javascript'
+            }
             console.log('contentType: ', contentType)
 
             let current = new Date();
