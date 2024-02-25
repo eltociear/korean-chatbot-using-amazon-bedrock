@@ -549,15 +549,19 @@ def summary_of_code(llm, code, mode):
 
 def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
     try: 
-        if code.find('\ndef '):
+        if code.find('\ndef ') != -1:
             start = code.find('\ndef ')
             end = code.find(':')   
-        elif code.find('\nfunction '):
+        elif code.find('\nfunction ') != -1:
             start = code.find('\nfunction ')
             end = code.find('(')   
-        elif code.find('\nexports.'):
+        elif code.find('\nexports.') != -1:
             start = code.find('\nexports.')
-            end = code.find(' =')           
+            end = code.find(' =')         
+        else:
+            start = -1
+            end = -1
+              
         print('code: ', code)                             
         print(f'start: {start}, end: {end}')
                     
