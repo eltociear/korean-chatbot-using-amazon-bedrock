@@ -2262,7 +2262,7 @@ def get_code_prompt_template(codeType):
 
         Assistant:"""
     elif codeType == 'nodejs':    
-        prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 node.js code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+        prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 node.js code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 node.js 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
                 
         <context>
         {context}
