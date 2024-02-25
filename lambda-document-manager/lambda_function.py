@@ -504,15 +504,32 @@ def get_llm(profile_of_LLMs, selected_LLM):
         model_kwargs=parameters)
     return llm
 
-def summary_of_code(llm, code):
-    PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-           
-    <article>
-    {input}
-    </article>
-                        
-    Assistant:"""
- 
+def summary_of_code(llm, code, mode):
+    if mode == 'python': 
+        PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+            
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
+    elif mode == 'nodejs':
+        PROMPT = """\n\nHuman: 다음의 <article> tag에는 node.js code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+            
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
+    else:
+        PROMPT = """\n\nHuman: 다음의 <article> tag에는 code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+            
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
+    
     try:
         summary = llm(PROMPT.format(input=code))
         #print('summary: ', summary)
@@ -539,9 +556,19 @@ def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
         if start != -1:      
             function_name = code[start+1:end]
             # print('function_name: ', function_name)
+            
+            file_type = key[key.rfind('.')+1:len(key)].lower()
+            print('file_type: ', file_type)
                             
-            summary = summary_of_code(llm, code)
-            print(f"summary ({region_name}): {summary}")
+            if file_type == 'py':
+                mode = 'python'
+            elif file_type == 'js':
+                mode = 'nodejs'
+            else:
+                mode = file_type
+                
+            summary = summary_of_code(llm, code, mode)
+            print(f"summary ({region_name}, {mode}): {summary}")
             
             #print('first line summary: ', summary[:len(function_name)])
             #print('function name: ', function_name)            
@@ -740,7 +767,7 @@ def lambda_handler(event, context):
                                         )
                                     )
                                     
-                        elif file_type == 'py':
+                        elif file_type == 'py' or file_type == 'js':
                             codes = load_code(file_type, key)  # number of functions in the code
                                             
                             if enableParallelSummay=='true':
@@ -755,8 +782,16 @@ def lambda_handler(event, context):
                                     if start != -1:      
                                         function_name = code[start+1:end]
                                         # print('function_name: ', function_name)
-                                                        
-                                        summary = summary_of_code(llm, code)                        
+                                                
+                                        llm = get_llm(profile_of_LLMs, 0)      
+                                        
+                                        if file_type == 'py':
+                                            mode = 'python'
+                                        elif file_type == 'js':
+                                            mode = 'nodejs'
+                                        else:
+                                            mode = file_type  
+                                        summary = summary_of_code(llm, code, mode)                        
                                             
                                         if summary[:len(function_name)]==function_name:
                                             summary = summary[summary.find('\n')+1:len(summary)]
@@ -774,7 +809,7 @@ def lambda_handler(event, context):
                                                 }
                                             )
                                         )                 
-                                                                                 
+                                                                                                         
                         print('docs size: ', len(docs))
                         if len(docs)>0:
                             print('docs[0]: ', docs[0])
