@@ -452,6 +452,8 @@ def isSupported(type):
     return False
     
 def check_supported_type(key, file_type, size):
+    print('key: ', key)
+    print('html: ', key.find('\\html\\'))
     if key.find('\\html\\') != -1:  # not include html folder
         return False
     
