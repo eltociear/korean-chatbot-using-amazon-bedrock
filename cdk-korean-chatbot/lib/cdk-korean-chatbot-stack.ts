@@ -350,9 +350,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       },
       capacity: {
         masterNodes: 3,
-        masterNodeInstanceType: 'm6g.large.search',
+        masterNodeInstanceType: 'r6g.large.search',
         // multiAzWithStandbyEnabled: false,
-        dataNodes: 9,
+        dataNodes: 15,
         dataNodeInstanceType: 'r6g.large.search',        
         // warmNodes: 2,
         // warmInstanceType: 'ultrawarm1.medium.search',
