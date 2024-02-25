@@ -453,8 +453,8 @@ def isSupported(type):
     
 def check_supported_type(key, file_type, size):
     print('key: ', key)
-    print('html: ', key.find('\\html\\'))
-    if key.find('\\html\\') != -1:  # not include html folder
+    print('html: ', key.find('/html/'))
+    if key.find('/html/') != -1:  # do not include html folder
         return False
     
     if size > 5000 and size<max_object_size and isSupported(file_type):
