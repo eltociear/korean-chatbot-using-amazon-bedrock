@@ -1,6 +1,6 @@
 # RAG를 활용하여 향상된 Korean Chatbot 만들기
 
-RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)의 기능을 강화하여 다양한 어플리케이션을 개발할 수 있습니다. 여기에서는 RAG의 성능을 향상시키는 방법들에 대해 설명하고 이를 이용하여 기업 또는 개인의 데이터를 쉽게 활용할 수 있는 한국어 Chatbot을 만들고자 합니다. 또한 LLM에서 사용하는 Prompt 기술에 대해 설명합니다.
+RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)의 기능을 강화하여 다양한 어플리케이션을 개발할 수 있습니다. 여기에서는 RAG의 성능을 향상시키는 방법들에 대해 설명하고 이를 이용하여 기업 또는 개인의 데이터를 쉽게 활용할 수 있는 한국어 Chatbot을 만들고자 합니다. 
 
 - Multi-RAG: 다양한 [지식 저장소(Knowledge Store)](https://aws.amazon.com/ko/about-aws/whats-new/2023/09/knowledge-base-amazon-bedrock-models-data-sources/)활용합니다. 
 - Multi-Region LLM: 여러 리전에 있는 LLM을 동시에 활용함으로써 질문후 답변까지의 동작시간을 단축하고, On-Demand 방식의 동시 실행 수의 제한을 완화할 수 있습니다.
