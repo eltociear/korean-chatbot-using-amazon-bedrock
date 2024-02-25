@@ -566,6 +566,35 @@ def load_document(file_type, s3_file_name):
                 
     return texts
 
+
+# load a code file from s3
+def load_code(file_type, key):
+    s3r = boto3.resource("s3")
+    doc = s3r.Object(s3_bucket, key)
+    
+    if file_type == 'py':        
+        contents = doc.get()['Body'].read().decode('utf-8')
+        separators = ["\ndef "]
+        #print('contents: ', contents)
+    elif file_type == 'js':
+        contents = doc.get()['Body'].read().decode('utf-8')
+        separators = ["\nfunction ", "\nexports.handler "]
+    
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=50,
+        chunk_overlap=0,
+        #separators=["def ", "\n\n", "\n", ".", " ", ""],
+        separators=separators,
+        length_function = len,
+    ) 
+
+    texts = text_splitter.split_text(contents) 
+    
+    for i, text in enumerate(texts):
+        print(f"Chunk #{i}: {text}")
+                
+    return texts
+
 # load csv documents from s3
 def load_csv_document(path, doc_prefix, s3_file_name):
     s3r = boto3.resource("s3")
@@ -2333,6 +2362,14 @@ def summary_of_code(llm, code, code_type):
         </article>
                             
         Assistant:"""
+    elif code_type == 'nodejs':
+        PROMPT = """\n\nHuman: 다음의 <article> tag에는 node.js code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
+            
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
  
     try:
         summary = llm(PROMPT.format(input=code))
@@ -2455,14 +2492,23 @@ def traslation_to_english(llm, msg):
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
-def summarize_code(llm, msg):
-    PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
-            
-    <article>
-    {input}
-    </article>
-                        
-    Assistant:"""
+def summarize_code(llm, msg, codeType):
+    if codeType == 'python':
+        PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
+                
+        <article>
+        {input}
+        </article>
+                            
+        Assistant:"""
+    elif codeType == 'nodejs':
+        PROMPT = """\n\nHuman: 다음의 <article>은 node.js code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
+
+        <article>
+        {input}
+        </article>
+
+        Assistant:"""
 
     try: 
         translated_msg = llm(PROMPT.format(input=msg))
@@ -2498,13 +2544,15 @@ def getResponse(connectionId, jsonBody):
             rag_type = jsonBody['rag_type']  # RAG type
             print('rag_type: ', rag_type)
 
-    global enableReference
+    global enableReference, codeType
     global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
-    #elif function_type == 'code-generation-python':
-    #    allowDualSearch = 'false'
+    elif function_type == 'code-generation-python':
+        codeType = 'python'
+    elif function_type == 'code-generation-nodejs':
+        codeType = 'nodejs'
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2671,10 +2719,7 @@ def getResponse(connectionId, jsonBody):
                     print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
         
         elif type == 'code':
-            if function_type == 'code-generation-python':
-                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'python')  
-            elif function_type == 'code-generation-nodejs':
-                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'nodejs')  
+            msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, codeType)  
             
             # token counter
             if debugMessageMode=='true':
@@ -2688,7 +2733,7 @@ def getResponse(connectionId, jsonBody):
             object = body
             file_type = object[object.rfind('.')+1:len(object)]            
             print('file_type: ', file_type)
-
+            
             if file_type == 'csv':
                 docs = load_csv_document(path, doc_prefix, object)
                 contexts = []
@@ -2699,10 +2744,16 @@ def getResponse(connectionId, jsonBody):
                 msg = get_summary(llm, contexts)
             
             elif file_type == 'py':
-                texts = load_document(file_type, object)                
+                texts = load_code(file_type, object)                
                 print('code: ', texts)
                 
-                msg = summarize_code(llm, texts)
+                msg = summarize_code(llm, texts, 'python')
+            
+            elif file_type == 'js':
+                texts = load_code(file_type, object)                
+                print('code: ', texts)
+                
+                msg = summarize_code(llm, texts, 'nodejs')
 
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
@@ -2754,14 +2805,13 @@ def getResponse(connectionId, jsonBody):
                         print('speech_uri: ', speech_uri)  
            
         if type == 'code':  # code summary
-            if function_type=='code-generation-python':
-                if reference: # Summarize the generated code 
-                    generated_code = msg[msg.find('<result>')+9:len(msg)-10]
-                    generated_code_summary = summary_of_code(llm, generated_code, 'python')    
-                    msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
-                    msg = msg.replace('\n\n\n', '\n\n') 
+            if reference: # Summarize the generated code 
+                generated_code = msg[msg.find('<result>')+9:len(msg)-10]
+                generated_code_summary = summary_of_code(llm, generated_code, codeType)    
+                msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
+                msg = msg.replace('\n\n\n', '\n\n') 
                     
-                    sendResultMessage(connectionId, requestId, msg+reference)
+                sendResultMessage(connectionId, requestId, msg+reference)
 
         item = {    # save dialog
             'user_id': {'S':userId},
