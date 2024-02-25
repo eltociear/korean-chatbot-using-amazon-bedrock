@@ -549,14 +549,21 @@ def summary_of_code(llm, code, mode):
 
 def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
     try: 
-        start = code.find('\ndef ')
-        end = code.find(':')                    
+        if code.find('def '):
+            start = code.find('def ')
+            end = code.find(':')   
+        elif code.find('function '):
+            start = code.find('function ')
+            end = code.find('(')   
+        elif code.find('exports.'):
+            start = code.find('exports.')
+            end = code.find(' =')                                        
         # print(f'start: {start}, end: {end}')
                     
         doc = ""    
         if start != -1:      
             function_name = code[start+1:end]
-            # print('function_name: ', function_name)
+            print('function_name: ', function_name)
             
             file_type = key[key.rfind('.')+1:len(key)].lower()
             print('file_type: ', file_type)
@@ -571,8 +578,8 @@ def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
             summary = summary_of_code(llm, code, mode)
             print(f"summary ({region_name}, {mode}): {summary}")
             
-            #print('first line summary: ', summary[:len(function_name)])
-            #print('function name: ', function_name)            
+            # print('first line summary: ', summary[:len(function_name)])
+            # print('function name: ', function_name)            
             if summary[:len(function_name)]==function_name:
                 summary = summary[summary.find('\n')+1:len(summary)]
 
