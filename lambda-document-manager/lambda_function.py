@@ -557,8 +557,9 @@ def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
             end = code.find('(')   
         elif code.find('exports.'):
             start = code.find('exports.')
-            end = code.find(' =')                                        
-        # print(f'start: {start}, end: {end}')
+            end = code.find(' =')           
+        print('code: ', code)                             
+        print(f'start: {start}, end: {end}')
                     
         doc = ""    
         if start != -1:      
