@@ -566,11 +566,10 @@ def load_document(file_type, s3_file_name):
                 
     return texts
 
-
 # load a code file from s3
-def load_code(file_type, key):
+def load_code(file_type, s3_file_name):
     s3r = boto3.resource("s3")
-    doc = s3r.Object(s3_bucket, key)
+    doc = s3r.Object(s3_bucket, s3_prefix+'/'+s3_file_name)
     
     separators=""
     if file_type == 'py':        
@@ -2493,8 +2492,8 @@ def traslation_to_english(llm, msg):
     
     return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
 
-def summarize_code(llm, msg, codeType):
-    if codeType == 'python':
+def summarize_code(llm, msg, file_type):
+    if file_type == 'py':
         PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
                 
         <article>
@@ -2502,7 +2501,7 @@ def summarize_code(llm, msg, codeType):
         </article>
                             
         Assistant:"""
-    elif codeType == 'nodejs':
+    elif file_type == 'js':
         PROMPT = """\n\nHuman: 다음의 <article>은 node.js code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
 
         <article>
@@ -2744,21 +2743,12 @@ def getResponse(connectionId, jsonBody):
 
                 msg = get_summary(llm, contexts)
             
-            elif file_type == 'py':
-                print('object: ', object)
-                print('file_type: ', file_type)
-                
+            elif file_type == 'py' or file_type == 'js':
                 texts = load_code(file_type, object)                
                 print('code: ', texts)
                 
-                msg = summarize_code(llm, texts, 'python')
+                msg = summarize_code(llm, texts, file_type)
             
-            elif file_type == 'js':
-                texts = load_code(file_type, object)                
-                print('code: ', texts)
-                
-                msg = summarize_code(llm, texts, 'nodejs')
-
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
 
