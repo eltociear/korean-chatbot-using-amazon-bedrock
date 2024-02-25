@@ -2219,25 +2219,42 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
     return msg, reference
 
-def get_code_prompt_template():    
-    #prompt_template = """\n\nHuman: 다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
-    prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 python code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
-            
-    <context>
-    {context}
-    </context>
+def get_code_prompt_template(codeType):    
+    if codeType == 'python':    
+        prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 python code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+                
+        <context>
+        {context}
+        </context>
 
-    <question>            
-    {question}
-    </question>
+        <question>            
+        {question}
+        </question>
 
-    Assistant:"""
+        Assistant:"""
+    elif codeType == 'nodejs':    
+        prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 node.js code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+                
+        <context>
+        {context}
+        </context>
+
+        <question>            
+        {question}
+        </question>
+
+        Assistant:"""
                     
     return PromptTemplate.from_template(prompt_template)
 
-def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, category):
+def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, codeType):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
+    
+    if codeType == 'python':
+        category = 'py'
+    elif codeType == 'nodejs':
+        category = 'js'
     
     index_name =  f"idx-{category}-*"
     print('index: ', index_name)
@@ -2256,7 +2273,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     start_time_for_rag = time.time()
 
     rag_type = 'opensearch'
-    PROMPT = get_code_prompt_template()
+    PROMPT = get_code_prompt_template(codeType)
     print('PROMPT: ', PROMPT)        
 
     relevant_codes = [] 
@@ -2655,9 +2672,9 @@ def getResponse(connectionId, jsonBody):
         
         elif type == 'code':
             if function_type == 'code-generation-python':
-                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')  
+                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'python')  
             elif function_type == 'code-generation-nodejs':
-                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'js')  
+                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'nodejs')  
             
             # token counter
             if debugMessageMode=='true':
