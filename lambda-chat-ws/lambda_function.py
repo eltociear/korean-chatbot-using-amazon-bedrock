@@ -2655,7 +2655,9 @@ def getResponse(connectionId, jsonBody):
         
         elif type == 'code':
             if function_type == 'code-generation-python':
-                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')    
+                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'py')  
+            elif function_type == 'code-generation-nodejs':
+                msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, 'js')  
             
             # token counter
             if debugMessageMode=='true':
