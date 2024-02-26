@@ -325,9 +325,9 @@ Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 
 
 ## 주요 구성
 
-### Bedrock을 LangChain으로 연결
+### LangChain에서 LLM 활용
 
-[Bedrock](https://python.langchain.com/docs/integrations/providers/bedrock)을 import하여 LangChain로 application을 개발할 수 있습니다. 아래와 같이 bedrock client를 정의합니다. 서비스이름은 "bedrock-runtime"입니다.
+LangChain을 이용하면 LLM을 활용한 application을 쉽고 편리하게 개발할 수 있습니다. 여기서는 Amazon Bedrock을 이용합니다. Bedrock의 서비스 이름은 "bedrock-runtime"입니다.
 
 ```python
 import boto3
