@@ -221,7 +221,7 @@ if len(relevant_docs_using_translated_question)>=1:
 
 ### 인터넷 검색
 
-Multi-RAG를 이용하여 여러개의 지식 저장소에 관련된 문서를 조회하였음에도 문서가 없다면, 구글 인터넷 검색을 통해 얻어진 결과를 활용합니다. 여기서, assessed_score는 priority search시 FAISS의 Score로 업데이트 됩니다. 상세한 내용은 [Google Search API](./GoogleSearchAPI.md). 관련된 Blog인 [
+Multi-RAG를 이용하여 여러개의 지식 저장소에 관련된 문서를 조회하였음에도 문서가 없다면, 구글 인터넷 검색을 통해 얻어진 결과를 활용합니다. 여기서, assessed_score는 priority search시 FAISS의 Score로 업데이트 됩니다. 상세한 내용은 [Google Search API](./GoogleSearchAPI.md) 관련된 Blog인 [
 한영 동시 검색 및 인터넷 검색을 활용하여 RAG를 편리하게 활용하기](https://aws.amazon.com/ko/blogs/tech/rag-enhanced-searching/)을 참조합니다. 
 
 ```python
