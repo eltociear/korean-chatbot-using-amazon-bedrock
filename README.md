@@ -262,7 +262,7 @@ try:
         relevant_docs.append(doc_info)
 ```
 
-### 관련도 기준 문서 선택
+### Priority Search (관련도 기준 문서 선택)
 
 Multi-RAG, 한영 동시 검색, 인터넷 검색등을 활용하여 다수의 관련된 문서가 나오면, 관련도가 높은 순서대로 일부 문서만을 RAG에서 활용합니다. 이를 위해 Faiss의 similarity search를 이용합니다. 이것은 정량된 값의 관련도를 얻을 수 있어서, 관련되지 않은 문서를 Context로 활용하지 않도록 해줍니다. 
 
