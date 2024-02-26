@@ -54,7 +54,7 @@ RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)�
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/251d2666-8837-4e8b-8521-534cbd3ced53" width="1000">
 
-대량으로 파일 업로드 또는 삭제시는 아래와 같은 Event driven구조를 활용할 수 있습니다.
+대량으로 파일 업로드 또는 삭제시는 아래와 같은 Event driven구조를 활용할 수 있습니다. 이를 통해 S3로 대규모로 문서 또는 코드를 넣을때에 정보의 유출없이 RAG의 지식저장소를 데이터를 주입할 수 있습니다. 
 
 <img src="https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/eaace9e5-9d4e-4bdc-aa67-bad935dffaa3" width="900">
 
