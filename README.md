@@ -654,15 +654,15 @@ opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_except
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
 
-### OpenSearch Embedding 에
+### OpenSearch Embedding시 bulk_size
 
-아래와 같이 OpenSearch Embedding의 bulk_size의 기본값이 500이므로, 2000으로 아래와 같이 변경합니다. 아래의 1840은 PDF의 Text가 1540631자이므로 embedding을 해야하는 chunk의 숫자를 의미힙나다. 
+아래는 OpenSearch에서 Embedding을 할때 bulk_size 기본값인 500을 사용할때의 에러입니다. 문서를 embedding하기 위해 1840번 embedding을 해야하는데, bulk_size가 500이므로 에러가 발생하였습니다.
 
 ```text
 RuntimeError: The embeddings count, 1840 is more than the [bulk_size], 500. Increase the value of [bulk_size].
 ```
 
-수정 코드는 아래와 같습니다.
+bulk_size를 2000으로 변경하여 해결합니다.
 
 ```python
 new_vectorstore = OpenSearchVectorSearch(
