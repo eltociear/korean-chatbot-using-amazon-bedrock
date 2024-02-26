@@ -694,7 +694,7 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 [인프라 설치](https://github.com/kyopark2014/question-answering-chatbot-using-RAG-based-on-LLM/blob/main/deployment.md)에 따라 CDK로 인프라 설치를 진행합니다. 
 
 
-### 실행결과
+## 실행결과
 
 [fsi_faq_ko.csv](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/fsi_faq_ko.csv)을 다운로드한 후에 파일 아이콘을 선택하여 업로드한후, 채팅창에 "간편조회 서비스를 영문으로 사용할 수 있나요?” 라고 입력합니다. 이때의 결과는 ＂아니오”입니다. 이때의 결과는 아래와 같습니다.
 
@@ -733,33 +733,33 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b5548594-abc8-4447-8f95-d6d12d36c23e)
 
 
-### Prompt Engineering 결과 예제
+## Prompt Engineering 결과 예제
 
-#### Translation
+### Translation
 
 "아마존 베드락을 이용하여 주셔서 감사합니다. 편안한 대화를 즐기실수 있으며, 파일을 업로드하면 요약을 할 수 있습니다.”로 입력하고 번역 결과를 확인합니다.
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/818662e1-983f-44c2-bfcf-e2605ba7a1e6)
 
-#### Extracted Topic and sentiment
+### Extracted Topic and sentiment
 
 “식사 가성비 좋습니다. 위치가 좋고 스카이라운지 바베큐 / 야경 최곱니다. 아쉬웠던 점 · 지하주차장이 비좁습니다.. 호텔앞 교통이 너무 복잡해서 주변시설을 이용하기 어렵습니다. / 한강나가는 길 / 주변시설에 나가는 방법등.. 필요합니다.”를 입력하고 결과를 확인합니다.
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/8c38a58b-08df-4e9e-a162-1cd8f542fb46)
 
-#### Information extraction
+### Information extraction
 
 “John Park. Solutions Architect | WWCS Amazon Web Services Email: john@amazon.com Mobile: +82-10-1234-5555“로 입력후에 이메일이 추출되는지 확인합니다.
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/f613e86e-b08d-45e8-ac0e-71334427f450)
 
-#### PII(personally identifiable information) 삭제하기
+### PII(personally identifiable information) 삭제하기
 
 PII(Personal Identification Information)의 삭제의 예는 아래와 같습니다. "John Park, Ph.D. Solutions Architect | WWCS Amazon Web Services Email: john@amazon.com Mobile: +82-10-1234-4567"와 같이 입력하여 name, phone number, address를 삭제한 텍스트를 얻습니다. 프롬프트는 [PII](https://docs.anthropic.com/claude/docs/constructing-a-prompt)를 참조합니다.
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/a77d034c-32fc-4c84-8054-f4e1230292d6)
 
-#### 문장 오류 고치기
+### 문장 오류 고치기
 
 "To have a smoth conversation with a chatbot, it is better for usabilities to show responsesess in a stream-like, conversational maner rather than waiting until the complete answer."로 오류가 있는 문장을 입력합니다.
 
@@ -769,7 +769,7 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/7b098a29-9bf5-43bf-a32f-82c94ccd04eb)
 
-#### 복잡한 질문 (step-by-step)
+### 복잡한 질문 (step-by-step)
 
 "I have two pet cats. One of them is missing a leg. The other one has a normal number of legs for a cat to have. In total, how many legs do my cats have?"를 입력하고 결과를 확인합니다.
 
@@ -780,7 +780,7 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/992c8385-f897-4411-b6cf-b185465e8690)
 
-#### 날짜/시간 추출하기
+### 날짜/시간 추출하기
 
 메뉴에서 "Timestamp Extraction"을 선택하고, "지금은 2023년 12월 5일 18시 26분이야"라고 입력하면 prompt를 이용해 아래처럼 시간을 추출합니다.
 
@@ -799,7 +799,7 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 </result>
 ```
 
-#### 어린이와 대화 (Few shot example)
+### 어린이와 대화 (Few shot example)
 
 대화의 상대에 맞추어서 질문에 답변을하여야 합니다. 이를테면 [General Conversation]에서 "산타가 크리스마스에 선물을 가져다 줄까?"로 질문을 하면 아래와 같이 답변합니다.
 
@@ -810,8 +810,6 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/cbbece5c-5476-4f3b-89f7-c7fcf90ca796)
 
 
-
-
 ## 리소스 정리하기 
 
 더이상 인프라를 사용하지 않는 경우에 아래처럼 모든 리소스를 삭제할 수 있습니다. 
@@ -820,11 +818,11 @@ PII(Personal Identification Information)의 삭제의 예는 아래와 같습니
 
 2) [Cloud9 console](https://ap-northeast-2.console.aws.amazon.com/cloud9control/home?region=ap-northeast-2#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
 
-
 ```text
 cdk destroy --all
 ```
 
-## Reference 
+## 결론
 
-[Claude - Constructing a prompt](https://docs.anthropic.com/claude/docs/constructing-a-prompt)
+LLM을 사용한 Enterprise용 application을 개발하기 위해서는 기업이 가진 다양한 정보를 활용하여야 합니다. 이를 위해 Fine-tuning이나 RAG를 활용할 수 있습니다. Fine-tuning은 일반적으로 RAG보다 우수한 성능을 기대할 수 있으나, 다양한 application에서 활용하기 위해서 많은 비용과 시행착오가 있을 수 있습니다. RAG는 데이터의 빠른 업데이트 및 비용면에서 활용도가 높아서, Fine-tuning과 RAG를 병행하여 활용하는 방법을 생각해 볼 수 있습니다. 여기에서는 RAG의 성능을 향상시키리 위해 다양한 기술을 통합하고, 이를 활용할 수 있는 Korean Chatbot을 만들었습니다. 이를 통해 다양한 RAG 기술들을 테스트하고 사용하는 용도에 맞게 RAG 기술을 활용할 수 있습니다.
+
