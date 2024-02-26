@@ -93,7 +93,6 @@ Build 정보를 가지고 있는 [cdk-korean-chatbot-stack.ts](https://github.co
 const bucketName = `storage-for-${projectName}-${region}`;   <-------- 1) 이름 변경
 
 // s3 
-// s3 
 const s3Bucket = new s3.Bucket(this, `storage-${projectName}`, {
     // bucketName: bucketName,              <----------- 2) 주석 제거
     blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
