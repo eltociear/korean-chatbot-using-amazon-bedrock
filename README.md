@@ -8,7 +8,7 @@ RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)�
 - 한영 동시 검색: RAG에 한국어와 영어 문서들이 혼재할 경우에 한국어로 영어 문서를 검색할 수 없습니다. 한국어로 한국어, 영어 문서를 모두 검색하여 RAG의 성능을 향상 시킬 수 있습니다.
 - Prioroty Search: 검색된 문서를 관련도에 따라 정렬하면 LLM의 결과가 향상됩니다.
 - Kendra 성능 향상: LangChain에서 Kendra의 FAQ를 활용합니다.
-- Vector/Keyward 검색: Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 관련된 문서를 찾을 확율을 높입니다.
+- Vector/Keyword 검색: Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyword)을 활용하여 관련된 문서를 찾을 확율을 높입니다.
 - Code Generation: 기존 코드를 이용하여 Python/Node.js 코드를 생성할 수 있습니다.
   
 여기서 구현한 코드들은 [LangChain](https://aws.amazon.com/ko/what-is/langchain/)을 기반으로 합니다. 또한, 아래와 같은 Prompt Engineing 예제를 사용해 볼 수 있습니다.
@@ -320,7 +320,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
 
 ### OpenSearch의 성능 향상 방법
 
-Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyward)을 활용하여 관련된 문서를 찾을 확율을 높입니다. 상세한 내용은 [OpenSearch에서 Lexical 검색](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/opensearch-nori-plugin.md)에 있습니다.
+Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyword)을 활용하여 관련된 문서를 찾을 확율을 높입니다. 상세한 내용은 [OpenSearch에서 Lexical 검색](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/opensearch-nori-plugin.md)에 있습니다.
 
 ### Code Generation
 
