@@ -21,7 +21,7 @@ RAG(Retrieval-Augmented Generation)를 활용하면, LLM(Large Language Model)�
 - 복잡한 질문 (Complex Question): step-by-step으로 복잡한 문제를 해결합니다.
 - 어린이와 대화 (Child Conversation): 대화상대에 맞게 적절한 어휘나 답변을 할 수 있습니다.
 - 시간정보 추출 (Timestamp Extraction): 입력된 정보에서 시간정보(timestemp)를 추출합니다.
-- 자유로운 대화(Free Conversation): 친구처럼 반말로 대화합니다.
+- 자유로운 대화 (Free Conversation): 친구처럼 반말로 대화합니다.
 
 
 ## 아키텍처 개요
