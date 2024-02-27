@@ -682,7 +682,7 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 
 ### AWS CDK로 인프라 구현하기
 
-[CDK 구현 코드](./cdk-easy-ocr-lambda/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
+[CDK 구현 코드](./cdk-qa-with-rag/README.md)에서는 Typescript로 인프라를 정의하는 방법에 대해 상세히 설명하고 있습니다.
 
 ## 직접 실습 해보기
 
