@@ -8,9 +8,12 @@ import PyPDF2
 import csv
 import traceback
 import re
-from urllib import parse
+import base64
 
+from urllib import parse
 from botocore.config import Config
+from PIL import Image
+
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
@@ -563,6 +566,39 @@ def extract_timestamp(chat, text):
         raise Exception ("Not able to request to LLM")
     
     return msg
+
+def use_multimodal(chat, img_base64, query):    
+    if query == "":
+        query = "그림에 대해 상세히 설명해줘."
+    
+    messages = [
+        SystemMessage(content="답변은 500자 이내의 한국어로 설명해주세요."),
+        HumanMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{img_base64}", 
+                    },
+                },
+                {
+                    "type": "text", "text": query
+                },
+            ]
+        )
+    ]
+    
+    try: 
+        result = chat.invoke(messages)
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return summary
 
 def get_prompt_template(query, conv_type, rag_type):    
     if isKorean(query):
@@ -1242,39 +1278,6 @@ def query_using_RAG_context(connectionId, requestId, chat, context, revised_ques
 
     return msg
     
-def use_multimodal(chat, img_base64, query):    
-    if query == "":
-        query = "그림에 대해 상세히 설명해줘."
-    
-    messages = [
-        SystemMessage(content="답변은 500자 이내의 한국어로 설명해주세요."),
-        HumanMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/png;base64,{img_base64}", 
-                    },
-                },
-                {
-                    "type": "text", "text": query
-                },
-            ]
-        )
-    ]
-    
-    try: 
-        result = chat.invoke(messages)
-        
-        summary = result.content
-        print('result of code summarization: ', summary)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        raise Exception ("Not able to request to LLM")
-    
-    return summary
-
 def extract_text(chat, img_base64):    
     query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
     
@@ -2999,12 +3002,6 @@ def getResponse(connectionId, jsonBody):
 
                 msg = get_summary(chat, contexts)
             
-            elif file_type == 'py' or file_type == 'js':
-                texts = load_code(file_type, object)                
-                print('code: ', texts)
-                
-                msg = summary_of_code(chat, texts, file_type)
-            
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
 
@@ -3029,6 +3026,61 @@ def getResponse(connectionId, jsonBody):
                 print('contexts: ', contexts)
 
                 msg = get_summary(chat, contexts)
+                
+            elif file_type == 'py' or file_type == 'js':
+                s3r = boto3.resource("s3")
+                doc = s3r.Object(s3_bucket, s3_prefix+'/'+object)
+                
+                contents = doc.get()['Body'].read().decode('utf-8')
+                
+                #contents = load_code(file_type, object)                
+                                
+                msg = summary_of_code(chat, contents, file_type)                  
+                
+            elif file_type == 'png' or file_type == 'jpeg' or file_type == 'jpg':
+                print('multimodal: ', object)
+                
+                s3_client = boto3.client('s3') 
+                    
+                image_obj = s3_client.get_object(Bucket=s3_bucket, Key=s3_prefix+'/'+object)
+                # print('image_obj: ', image_obj)
+                
+                image_content = image_obj['Body'].read()
+                img = Image.open(BytesIO(image_content))
+                
+                width, height = img.size 
+                print(f"width: {width}, height: {height}, size: {width*height}")
+                
+                isResized = False
+                while(width*height > 5242880):                    
+                    width = int(width/2)
+                    height = int(height/2)
+                    isResized = True
+                    print(f"width: {width}, height: {height}, size: {width*height}")
+                
+                if isResized:
+                    img = img.resize((width, height))
+                
+                buffer = BytesIO()
+                img.save(buffer, format="PNG")
+                img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                
+                commend  = jsonBody['commend']
+                print('commend: ', commend)
+                
+                # verify the image
+                msg = use_multimodal(chat, img_base64, commend)       
+                
+                # extract text from the image
+                text = extract_text(chat, img_base64)
+                extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
+                print('extracted_text: ', extracted_text)
+                if len(extracted_text)>10:
+                    msg = msg + f"\n\n[추출된 Text]\n{extracted_text}\n"
+                
+                memory_chain.chat_memory.add_user_message(f"{object}에서 텍스트를 추출하세요.")
+                memory_chain.chat_memory.add_ai_message(extracted_text)
+            
             else:
                 msg = "uploaded file: "+object
                                                         

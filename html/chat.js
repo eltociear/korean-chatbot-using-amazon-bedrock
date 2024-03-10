@@ -579,6 +579,12 @@ attachFile.addEventListener('click', function(){
             else if(ext == 'md') {
                 contentType = 'text/markdown'
             }
+            else if(ext == 'png') {
+                contentType = 'image/png'
+            }
+            else if(ext == 'jpeg' || ext == 'jpg') {
+                contentType = 'image/jpeg'
+            }
             console.log('contentType: ', contentType)
 
             let current = new Date();
@@ -638,6 +644,9 @@ attachFile.addEventListener('click', function(){
                                 conv_type = conversationType,
                                 rag_type = ''
                             }
+
+                            let commend = message.value;
+                            if(ext == 'png' || ext == 'jpeg' || ext == 'jpg') message.value = "";
                                            
                             // summary for the upload file                            
                             sendMessage({
@@ -646,6 +655,7 @@ attachFile.addEventListener('click', function(){
                                 "request_time": requestTime,
                                 "type": "document",
                                 "body": filename,
+                                "commend": commend,
                                 "conv_type": conv_type,
                                 "rag_type": rag_type,
                                 "function_type": function_type
