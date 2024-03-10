@@ -108,22 +108,25 @@ def retrieve_process_from_RAG(conn, query, top_k, rag_type):
 
 ### Multi-Region LLM
 
-여러 리전의 LLM에 대한 profile을 정의합니다. 
+여러 리전의 LLM에 대한 profile을 정의합니다. 상세한 내용은 [cdk-korean-chatbot-stack.ts](./cdk-korean-chatbot/lib/cdk-korean-chatbot-stack.ts)을 참조합니다.
 
 ```typescript
-const profile_of_LLMs = JSON.stringify([
+const claude3_sonnet = [
   {
-    "bedrock_region": "us-west-2",
-    "model_type": "claude",
-    "model_id": "anthropic.claude-v2:1", 
-  },
-  {
-    "bedrock_region": "us-east-1",
-    "model_type": "claude",
-    "model_id": "anthropic.claude-v2:1",
+    "bedrock_region": "us-west-2", // Oregon
+    "model_type": "claude3",
+    "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",   
     "maxOutputTokens": "8196"
   },
-]);
+  {
+    "bedrock_region": "us-east-1", // N.Virginia
+    "model_type": "claude3",
+    "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",
+    "maxOutputTokens": "8196"
+  }
+];
+
+const profile_of_LLMs = claude3_sonnet;
 ```
 
 Bedrock에서 client를 지정할때 bedrock_region을 지정할 수 있습니다. 아래와 같이 LLM을 선택하면 Lambda에 event가 올때마다 다른 리전의 LLM을 활용할 수 있습니다. 
@@ -132,33 +135,41 @@ Bedrock에서 client를 지정할때 bedrock_region을 지정할 수 있습니�
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 selected_LLM = 0
 
-profile = profile_of_LLMs[selected_LLM]
-bedrock_region = profile['bedrock_region']
-modelId = profile['model_id']
-
-boto3_bedrock = boto3.client(
-    service_name = 'bedrock-runtime',
-    region_name = bedrock_region,
-    config = Config(
-        retries = {
-            'max_attempts': 30
-        }
+def get_chat(profile_of_LLMs, selected_LLM):
+    profile = profile_of_LLMs[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
     )
-)
-parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
+    # print('parameters: ', parameters)
 
-llm = Bedrock(
-    model_id = modelId,
-    client = boto3_bedrock,
-    streaming = True,
-    callbacks = [StreamingStdOutCallbackHandler()],
-    model_kwargs = parameters)
-
-bedrock_embeddings = BedrockEmbeddings(
-    client = boto3_bedrock,
-    region_name = bedrock_region,
-    model_id = 'amazon.titan-embed-text-v1'
-)
+    chat = BedrockChat(
+        model_id=modelId,
+        client=boto3_bedrock, 
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters,
+    )        
+    
+    return chat
 ```
 
 lambda(chat)와 같이 문서를 번역할 때에서 병렬로 조회하기 위하여, [Lambda의 Multi thread](https://aws.amazon.com/ko/blogs/compute/parallel-processing-in-python-with-aws-lambda/)를 이용합니다. 이때, 병렬 처리된 데이터를 연동 할 때에는 [Pipe()](https://docs.python.org/3/library/multiprocessing.html)을 이용합니다. 
@@ -173,10 +184,10 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        llm = get_llm(profile_of_LLMs, selected_LLM)
+        chat = get_chat(profile_of_LLMs, selected_LLM)
         bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
 
-        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc, bedrock_region))
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, chat, doc, bedrock_region))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1
@@ -399,69 +410,68 @@ bedrock_embeddings = BedrockEmbeddings(
 
 ## 메모리에 대화 저장
 
-### RAG를 사용하지 않는 경우
-
-lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chat에 기저장된 대화 이력(memory_chat)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)로 memory_chat을 설정합니다. 여기서, Anhropic Claude는 human과 ai의 이름으로 "Human"과 "Assistant"로 설정합니다. LLM에 응답을 요청할때에는 ConversationChain을 이용합니다. [ConversationBufferWindowMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer_window.ConversationBufferWindowMemory.html)을 이용하여 간단하게 k개로 conversation의 숫자를 제한할 수 있습니다.
-
+lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chain에 저장된 대화 이력(memory_chain)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferWindowMemory](https://python.langchain.com/docs/modules/memory/types/buffer_window)로 memory_chain을 설정합니다. 여기서, 
 
 ```python
-map_chat = dict()
+map_chain = dict() 
 
-if userId in map_chat:  
-    memory_chat = map_chat[userId]
-else:
-    memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=20)
-    map_chat[userId] = memory_chat
-conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+if userId in map_chain:
+    print('memory exist. reuse it!')        
+    memory_chain = map_chain[userId]
+        
+else: 
+    memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=10)
+    map_chain[userId] = memory_chain
+        
+    allowTime = getAllowTime()
+    load_chat_history(userId, allowTime)
 
-msg = get_answer_from_conversation(text, conversation, convType, connectionId, requestId)      
-def get_answer_from_conversation(text, conversation, convType, connectionId, requestId):
-    conversation.prompt = get_prompt_template(text, convType)
-    stream = conversation.predict(input=text)                        
-    msg = readStreamMsg(connectionId, requestId, stream)
+msg = general_conversation(connectionId, requestId, chat, text)
+
+def general_conversation(connectionId, requestId, chat, query):
+    if isKorean(query)==True :
+        system = (
+            "다음의 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+        )
+    else: 
+        system = (
+            "Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor."
+        )
+    
+    human = "{input}"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), MessagesPlaceholder(variable_name="history"), ("human", human)])
+    
+    history = memory_chain.load_memory_variables({})["chat_history"]
+                
+    chain = prompt | chat    
+    try: 
+        isTyping(connectionId, requestId)  
+        stream = chain.invoke(
+            {
+                "history": history,
+                "input": query,
+            }
+        )
+        msg = readStreamMsg(connectionId, requestId, stream.content)    
+                            
+        msg = stream.content
+        print('msg: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+            
+        sendErrorMessage(connectionId, requestId, err_msg)    
+        raise Exception ("Not able to request to LLM")
 
     return msg
 ```
 
-### RAG를 사용하는 경우
-
-RAG를 이용할때는 [ConversationBufferMemory](https://api.python.langchain.com/en/latest/memory/langchain.memory.buffer.ConversationBufferMemory.html?highlight=conversationbuffermemory#langchain.memory.buffer.ConversationBufferMemory)을 이용해 아래와 같이 채팅 메모리를 지정합니다. 대화가 끝난후에는 add_user_message()와 add_ai_message()를 이용하여 새로운 chat diaglog를 업데이트 합니다.
+새로운 Diaglog는 아래와 같이 chat_memory에 추가합니다.
 
 ```python
-map_chain = dict()
-
-if userId in map_chain:  
-    memory_chain = map_chain[userId]
-else: 
-    memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=5)
-    map_chain[userId] = memory_chain
-
-memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+memory_chain.chat_memory.add_user_message(text) 
 memory_chain.chat_memory.add_ai_message(msg)
-
-msg = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)
-
-revised_question = get_revised_question(llm, connectionId, requestId, text)
-PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
-
-relevant_docs = []
-capabilities = ["kendra", "opensearch", "faiss"];
-for reg in capabilities:
-    if reg == 'kendra':
-        rel_docs = retrieve_from_kendra(query = revised_question, top_k = top_k)
-    else:
-        rel_docs = retrieve_from_vectorstore(query = revised_question, top_k = top_k, rag_type = reg)
-
-    for doc in rel_docs:
-        relevant_docs.append(doc)
-
-selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings)
-
-for document in selected_relevant_docs:
-    relevant_context = relevant_context + document['metadata']['excerpt'] + "\n\n"
-
-stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-msg = readStreamMsg(connectionId, requestId, stream)
 ```
 
 ### Stream 처리
@@ -699,6 +709,17 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 
 
 ## 실행결과
+
+"Conversation Type"으로 [General Conversation]을 선택하고, [dice.png](./contents/dice.png) 파일을 다운로드합니다.
+
+
+<img src="./contents/dice.png" width="300">
+
+이후에 채팅창 아래의 파일 버튼을 선택하여 업로드합니다. 이때의 결과는 아래와 같습니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/3980f1f4-1809-4250-b137-4511ae166f06)
+
+
 
 [fsi_faq_ko.csv](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/fsi_faq_ko.csv)을 다운로드한 후에 파일 아이콘을 선택하여 업로드한후, 채팅창에 "간편조회 서비스를 영문으로 사용할 수 있나요?” 라고 입력합니다. 이때의 결과는 ＂아니오”입니다. 이때의 결과는 아래와 같습니다.
 
