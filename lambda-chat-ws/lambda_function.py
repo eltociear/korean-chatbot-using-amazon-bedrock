@@ -14,14 +14,10 @@ from botocore.config import Config
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
-from langchain.chains import ConversationChain
-from langchain.chains import RetrievalQA
-from langchain.chains import LLMChain
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from langchain_community.llms.bedrock import Bedrock
 from langchain_community.docstore.document import Document
 from langchain_community.vectorstores.faiss import FAISS
 from langchain_community.vectorstores.opensearch_vector_search import OpenSearchVectorSearch
@@ -30,7 +26,10 @@ from langchain_community.retrievers import AmazonKendraRetriever
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
 from opensearchpy import OpenSearch
-from langchain.schema import BaseMessage
+
+from langchain_community.chat_models import BedrockChat
+from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
+from langchain_core.messages import HumanMessage, SystemMessage
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -93,34 +92,17 @@ print('connection_url: ', connection_url)
 
 HUMAN_PROMPT = "\n\nHuman:"
 AI_PROMPT = "\n\nAssistant:"
-def get_parameter(model_type, maxOutputTokens):
-    if model_type=='titan': 
-        return {
-            "maxTokenCount":1024,
-            "stopSequences":[],
-            "temperature":0,
-            "topP":0.9
-        }
-    elif model_type=='claude':
-        return {
-            "max_tokens_to_sample":maxOutputTokens, # 8k    
-            "temperature":0.1,
-            "top_k":250,
-            "top_p":0.9,
-            "stop_sequences": [HUMAN_PROMPT]            
-        }
 
-map_chain = dict() # For RAG
-map_chat = dict() # For general conversation  
-
+map_chain = dict() 
 
 # Multi-LLM
-def get_llm(profile_of_LLMs, selected_LLM):
+def get_chat(profile_of_LLMs, selected_LLM):
     profile = profile_of_LLMs[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
     print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
-        
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
     # bedrock   
     boto3_bedrock = boto3.client(
         service_name='bedrock-runtime',
@@ -131,17 +113,49 @@ def get_llm(profile_of_LLMs, selected_LLM):
             }            
         )
     )
-    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
     # print('parameters: ', parameters)
 
-    # langchain for bedrock
-    llm = Bedrock(
-        model_id=modelId, 
+    chat = BedrockChat(
+        model_id=modelId,
         client=boto3_bedrock, 
-        # streaming=True,
-        # callbacks=[StreamingStdOutCallbackHandler()],
-        model_kwargs=parameters)
-    return llm
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters,
+    )        
+    
+    return chat
+
+def get_embedding(profile_of_LLMs, selected_LLM):
+    profile = profile_of_LLMs[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'Embedding: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
+    )
+    
+    bedrock_embedding = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = 'amazon.titan-embed-text-v1' 
+    )  
+    
+    return bedrock_embedding
 
 def sendMessage(id, body):
     try:
@@ -193,6 +207,362 @@ def isKorean(text):
     else:
         print('Not Korean: ', word_kor)
         return False
+
+def general_conversation(connectionId, requestId, chat, query):
+    global time_for_inference, history_length, token_counter_history    
+    time_for_inference = history_length = token_counter_history = 0
+    
+    if debugMessageMode == 'true':  
+        start_time_for_inference = time.time()
+    
+    if isKorean(query)==True :
+        system = (
+            "다음의 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+        )
+    else: 
+        system = (
+            "Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor."
+        )
+    
+    human = "{input}"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), MessagesPlaceholder(variable_name="history"), ("human", human)])
+    print('prompt: ', prompt)
+    
+    history = memory_chain.load_memory_variables({})["chat_history"]
+    print('memory_chain: ', history)
+                
+    chain = prompt | chat    
+    try: 
+        isTyping(connectionId, requestId)  
+        stream = chain.invoke(
+            {
+                "history": history,
+                "input": query,
+            }
+        )
+        msg = readStreamMsg(connectionId, requestId, stream.content)    
+                            
+        msg = stream.content
+        print('msg: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+            
+        sendErrorMessage(connectionId, requestId, err_msg)    
+        raise Exception ("Not able to request to LLM")
+
+    if debugMessageMode == 'true':  
+        chat_history = ""
+        for dialogue_turn in history:
+            #print('type: ', dialogue_turn.type)
+            #print('content: ', dialogue_turn.content)
+            
+            dialog = f"{dialogue_turn.type}: {dialogue_turn.content}\n"            
+            chat_history = chat_history + dialog
+                
+        history_length = len(chat_history)
+        print('chat_history length: ', history_length)
+        
+        token_counter_history = 0
+        if chat_history:
+            token_counter_history = chat.get_num_tokens(chat_history)
+            print('token_size of history: ', token_counter_history)
+        
+        end_time_for_inference = time.time()
+        time_for_inference = end_time_for_inference - start_time_for_inference
+        
+    return msg
+
+def translate_text(chat, text):
+    global time_for_inference
+    
+    if debugMessageMode == 'true':  
+        start_time_for_inference = time.time()
+        
+    system = (
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+    )
+    human = "<article>{text}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    if isKorean(text)==False :
+        input_language = "English"
+        output_language = "Korean"
+    else:
+        input_language = "Korean"
+        output_language = "English"
+                        
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "input_language": input_language,
+                "output_language": output_language,
+                "text": text,
+            }
+        )
+        
+        msg = result.content
+        print('translated text: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+
+    if debugMessageMode == 'true':          
+        end_time_for_inference = time.time()
+        time_for_inference = end_time_for_inference - start_time_for_inference
+    
+    return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
+
+def check_grammer(chat, text):
+    global time_for_inference
+    
+    if debugMessageMode == 'true':  
+        start_time_for_inference = time.time()
+        
+    if isKorean(text)==True:
+        system = (
+            "다음의 <article> tag안의 문장의 오류를 찾아서 설명하고, 오류가 수정된 문장을 답변 마지막에 추가하여 주세요."
+        )
+    else: 
+        system = (
+            "Here is pieces of article, contained in <article> tags. Find the error in the sentence and explain it, and add the corrected sentence at the end of your answer."
+        )
+        
+    human = "<article>{text}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )
+        
+        msg = result.content
+        print('result of grammer correction: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+
+    if debugMessageMode == 'true':          
+        end_time_for_inference = time.time()
+        time_for_inference = end_time_for_inference - start_time_for_inference
+    
+    return msg
+
+def extract_sentiment(chat, text):
+    if isKorean(text)==True:
+        system = (
+            """아래의 <example> review와 Extracted Topic and sentiment 인 <result>가 있습니다.
+            <example>
+            객실은 작지만 깨끗하고 편안합니다. 프론트 데스크는 정말 분주했고 체크인 줄도 길었지만, 직원들은 프로페셔널하고 매우 유쾌하게 각 사람을 응대했습니다. 우리는 다시 거기에 머물것입니다.
+            </example>
+            <result>
+            청소: 긍정적, 
+            서비스: 긍정적
+            </result>
+
+            아래의 <review>에 대해서 위의 <result> 예시처럼 Extracted Topic and sentiment 을 만들어 주세요."""
+        )
+    else: 
+        system = (
+            """Here is <example> review and extracted topics and sentiments as <result>.
+
+            <example>
+            The room was small but clean and comfortable. The front desk was really busy and the check-in line was long, but the staff were professional and very pleasant with each person they helped. We will stay there again.
+            </example>
+
+            <result>
+            Cleanliness: Positive, 
+            Service: Positive
+            </result>"""
+        )
+        
+    human = "<review>{text}</review>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )        
+        msg = result.content                
+        print('result of sentiment extraction: ', msg)
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return msg
+
+def extract_information(chat, text):
+    if isKorean(text)==True:
+        system = (
+            """다음 텍스트에서 이메일 주소를 정확하게 복사하여 한 줄에 하나씩 적어주세요. 입력 텍스트에 정확하게 쓰여있는 이메일 주소만 적어주세요. 텍스트에 이메일 주소가 없다면, "N/A"라고 적어주세요. 또한 결과는 <result> tag를 붙여주세요."""
+        )
+    else: 
+        system = (
+            """Please precisely copy any email addresses from the following text and then write them, one per line.  Only write an email address if it's precisely spelled out in the input text. If there are no email addresses in the text, write "N/A".  Do not say anything else.  Put it in <result> tags."""
+        )
+        
+    human = "<text>{text}</text>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )        
+        output = result.content        
+        msg = output[output.find('<result>')+8:len(output)-9] # remove <result> 
+        
+        print('result of information extraction: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return msg
+
+def remove_pii(chat, text):
+    if isKorean(text)==True:
+        system = (
+            """아래의 <text>에서 개인식별정보(PII)를 모두 제거하여 외부 계약자와 안전하게 공유할 수 있도록 합니다. 이름, 전화번호, 주소, 이메일을 XXX로 대체합니다. 또한 결과는 <result> tag를 붙여주세요."""
+        )
+    else: 
+        system = (
+            """We want to de-identify some text by removing all personally identifiable information from this text so that it can be shared safely with external contractors.
+            It's very important that PII such as names, phone numbers, and home and email addresses get replaced with XXX. Put it in <result> tags."""
+        )
+        
+    human = "<text>{text}</text>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )        
+        output = result.content        
+        msg = output[output.find('<result>')+8:len(output)-9] # remove <result> 
+        
+        print('result of removing PII : ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return msg
+
+def do_step_by_step(chat, text):
+    if isKorean(text)==True:
+        system = (
+            """다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. 아래 문맥(context)을 참조했음에도 답을 알 수 없다면, 솔직히 모른다고 말합니다. 여기서 Assistant의 이름은 서연입니다.
+
+            Assistant: 단계별로 생각할까요?
+
+            Human: 예, 그렇게하세요."""
+        )
+    else: 
+        system = (
+            """Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor. 
+            
+            Assistant: Can I think step by step?
+
+            Human: Yes, please do."""
+        )
+        
+    human = "<text>{text}</text>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )        
+        msg = result.content        
+        
+        print('result of sentiment extraction: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return msg
+
+def extract_timestamp(chat, text):
+    system = (
+        """Human: 아래의 <text>는 시간을 포함한 텍스트입니다. 친절한 AI Assistant로서 시간을 추출하여 아래를 참조하여 <example>과 같이 정리해주세요.
+            
+        - 년도를 추출해서 <year>/<year>로 넣을것 
+        - 월을 추출해서 <month>/<month>로 넣을것
+        - 일을 추출해서 <day>/<day>로 넣을것
+        - 시간을 추출해서 24H으로 정리해서 <hour>/<hour>에 넣을것
+        - 분을 추출해서 <minute>/<minute>로 넣을것
+
+        이때의 예제는 아래와 같습니다.
+        <example>
+        2022년 11월 3일 18시 26분
+        </example>
+        <result>
+            <year>2022</year>
+            <month>11</month>
+            <day>03</day>
+            <hour>18</hour>
+            <minute>26</minute>
+        </result>
+
+        결과에 개행문자인 "\n"과 글자 수와 같은 부가정보는 절대 포함하지 마세요."""
+    )    
+        
+    human = "<text>{text}</text>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )        
+        output = result.content        
+        msg = output[output.find('<result>')+8:len(output)-9] # remove <result> 
+        
+        print('result of sentiment extraction: ', msg)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return msg
 
 def get_prompt_template(query, conv_type, rag_type):    
     if isKorean(query):
@@ -630,13 +1000,19 @@ def load_csv_document(path, doc_prefix, s3_file_name):
 
     return docs
 
-def get_summary(llm, texts):    
-    # check korean
-    pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+') 
-    word_kor = pattern_hangul.search(str(texts))
-    print('word_kor: ', word_kor)
+def get_summary(chat, docs):    
+    text = ""
+    for doc in docs:
+        text = text + doc
     
-    if word_kor:
+    if isKorean(text)==True:
+        system = (
+            "다음의 <article> tag안의 문장을 요약해서 500자 이내로 설명하세오."
+        )
+    else: 
+        system = (
+            "Here is pieces of article, contained in <article> tags. Write a concise summary within 500 characters."
+        )
         #prompt_template = """\n\nHuman: 다음 텍스트를 간결하게 요약하세오. 텍스트의 요점을 다루는 글머리 기호로 응답을 반환합니다.
         #prompt_template = """\n\nHuman: 아래 <text>는 문서에서 추출한 텍스트입니다. 친절한 AI Assistant로서 아래와 같이 정리해주세요.
         
@@ -647,40 +1023,290 @@ def get_summary(llm, texts):
 
         #모든 생성 결과는 한국어로 해주세요. 결과에 개행문자인 "\m"과 글자 수와 같은 부가정보는 절대 포함하지 마세요.
         #생성이 어렵거나 해당 내용을 모르는 경우 "None"로 결과를 생성하세요.
-
-        prompt_template = """\n\nHuman: 다음 텍스트를 요약해서 500자 이내로 설명하세오.
-        
-        <text>
-        {text}
-        </text
-        
-        Assistant:"""        
-    else:         
-        prompt_template = """\n\nHuman: Write a concise summary of the following:
-
-        {text}
-        
-        Assistant:"""
     
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
-    chain = load_summarize_chain(llm, chain_type="stuff", prompt=PROMPT)
+    human = "<article>{text}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "text": text
+            }
+        )
+        
+        summary = result.content
+        print('result of summarization: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return summary
 
-    docs = [
-        Document(
-            page_content=t
-        ) for t in texts[:5]
-    ]
-    summary = chain.run(docs)
-    print('summary: ', summary)
+def generate_code(connectionId, requestId, chat, text, context, mode):
+    if mode == 'py':    
+        system = (
+            """다음의 <context> tag안에는 질문과 관련된 python code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    elif mode == 'js':
+        system = (
+            """다음의 <context> tag안에는 질문과 관련된 node.js code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 node.js 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    
+    human = "<context>{text}</context>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        isTyping(connectionId, requestId)  
+        stream = chain.invoke(
+            {
+                "context": context,
+                "text": text
+            }
+        )
+        
+        geenerated_code = readStreamMsg(connectionId, requestId, stream.content)
+                              
+        geenerated_code = stream.content        
+        print('result of code generation: ', geenerated_code)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return geenerated_code
 
-    if summary == '':  # error notification
-        summary = 'Fail to summarize the document. Try agan...'
-        return summary
+def summary_of_code(chat, code, mode):
+    if mode == 'py':
+        system = (
+            "다음의 <article> tag에는 python code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    elif mode == 'js':
+        system = (
+            "다음의 <article> tag에는 node.js code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
     else:
-        # return summary[1:len(summary)-1]   
-        return summary
+        system = (
+            "다음의 <article> tag에는 code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
     
-def load_chat_history(userId, allowTime, conv_type, rag_type):
+    human = "<article>{code}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "code": code
+            }
+        )
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return summary
+
+def revise_question(connectionId, requestId, chat, query):    
+    global history_length, token_counter_history    
+    history_length = token_counter_history = 0
+        
+    if isKorean(query)==True :      
+        system = (
+            ""
+        )  
+        human = """이전 대화를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요. 새로운 질문은 원래 질문의 중요한 단어를 반드시 포함합니다. 결과는 <result> tag를 붙여주세요.
+        
+        <question>            
+        {question}
+        </question>"""
+        
+    else: 
+        system = (
+            ""
+        )
+        human = """Rephrase the follow up <question> to be a standalone question. Put it in <result> tags.
+        <question>            
+        {question}
+        </question>"""
+            
+    prompt = ChatPromptTemplate.from_messages([("system", system), MessagesPlaceholder(variable_name="history"), ("human", human)])
+    print('prompt: ', prompt)
+    
+    history = memory_chain.load_memory_variables({})["chat_history"]
+    print('memory_chain: ', history)
+                
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "history": history,
+                "question": query,
+            }
+        )
+        generated_question = result.content
+        
+        revised_question = generated_question[generated_question.find('<result>')+8:len(generated_question)-9] # remove <result> tag                   
+        print('revised_question: ', revised_question)
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+            
+        sendErrorMessage(connectionId, requestId, err_msg)    
+        raise Exception ("Not able to request to LLM")
+
+    if debugMessageMode == 'true':  
+        chat_history = ""
+        for dialogue_turn in history:
+            #print('type: ', dialogue_turn.type)
+            #print('content: ', dialogue_turn.content)
+            
+            dialog = f"{dialogue_turn.type}: {dialogue_turn.content}\n"            
+            chat_history = chat_history + dialog
+                
+        history_length = len(chat_history)
+        print('chat_history length: ', history_length)
+        
+        token_counter_history = 0
+        if chat_history:
+            token_counter_history = chat.get_num_tokens(chat_history)
+            print('token_size of history: ', token_counter_history)
+            
+        sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
+            
+    return revised_question    
+    # return revised_question.replace("\n"," ")
+
+def query_using_RAG_context(connectionId, requestId, chat, context, revised_question):    
+    if isKorean(revised_question)==True:
+        system = (
+            """다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    else: 
+        system = (
+            """Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    
+    human = "{input}"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+                   
+    chain = prompt | chat
+    
+    try: 
+        isTyping(connectionId, requestId)  
+        stream = chain.invoke(
+            {
+                "context": context,
+                "input": revised_question,
+            }
+        )
+        msg = readStreamMsg(connectionId, requestId, stream.content)    
+        print('msg: ', msg)
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+            
+        sendErrorMessage(connectionId, requestId, err_msg)    
+        raise Exception ("Not able to request to LLM")
+
+    return msg
+    
+def use_multimodal(chat, img_base64, query):    
+    if query == "":
+        query = "그림에 대해 상세히 설명해줘."
+    
+    messages = [
+        SystemMessage(content="답변은 500자 이내의 한국어로 설명해주세요."),
+        HumanMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{img_base64}", 
+                    },
+                },
+                {
+                    "type": "text", "text": query
+                },
+            ]
+        )
+    ]
+    
+    try: 
+        result = chat.invoke(messages)
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return summary
+
+def extract_text(chat, img_base64):    
+    query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
+    
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{img_base64}", 
+                    },
+                },
+                {
+                    "type": "text", "text": query
+                },
+            ]
+        )
+    ]
+    
+    try: 
+        result = chat.invoke(messages)
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+    
+    return summary
+    
+def load_chat_history(userId, allowTime):
     dynamodb_client = boto3.client('dynamodb')
 
     response = dynamodb_client.query(
@@ -704,11 +1330,6 @@ def load_chat_history(userId, allowTime, conv_type, rag_type):
                 memory_chain.chat_memory.add_ai_message(msg[:MSG_LENGTH])                          
             else:
                 memory_chain.chat_memory.add_ai_message(msg) 
-                
-            if len(msg) > MSG_LENGTH:
-                memory_chat.save_context({"input": text}, {"output": msg[:MSG_LENGTH]})
-            else:
-                memory_chat.save_context({"input": text}, {"output": msg})
                 
 def getAllowTime():
     d = datetime.datetime.now() - datetime.timedelta(days = 2)
@@ -742,105 +1363,6 @@ def readStreamMsg(connectionId, requestId, stream):
             sendMessage(connectionId, result)
     # print('msg: ', msg)
     return msg
-
-_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
-def extract_chat_history_from_memory():
-    chat_history = []
-    chats = memory_chain.load_memory_variables({})    
-    # print('chats: ', chats)
-
-    for dialogue_turn in chats['chat_history']:
-        role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-        history = f"{role_prefix[2:]}{dialogue_turn.content}"
-        if len(history)>MSG_LENGTH:
-            chat_history.append(history[:MSG_LENGTH])
-        else:
-            chat_history.append(history)
-
-    return chat_history
-
-def get_revised_question(llm, connectionId, requestId, query):    
-    # check korean
-    pattern_hangul = re.compile('[\u3131-\u3163\uac00-\ud7a3]+')
-    word_kor = pattern_hangul.search(str(query))
-    print('word_kor: ', word_kor)
-
-    if word_kor and word_kor != 'None':
-        #condense_template = """{chat_history}
-
-        #Human: 이전 대화와 다음의 <question>을 이용하여, 새로운 질문을 생성하여 질문만 전달합니다.
-
-        #<question>            
-        #{question}
-        #</question>
-            
-        #Assistant: 새로운 질문:"""
-
-        condense_template = """
-        <history>
-        {chat_history}
-        </history>
-
-        Human: <history>를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요. 새로운 질문은 원래 질문의 중요한 단어를 반드시 포함합니다.
-
-        <question>            
-        {question}
-        </question>
-            
-        Assistant: 새로운 질문:"""
-    else: 
-        #condense_template = """{chat_history}    
-        #Answer only with the new question.
-
-        #Human: How would you ask the question considering the previous conversation: {question}
-
-        #Assistant: Standalone question:"""
-
-
-        #Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
-
-
-        condense_template = """
-        <history>
-        {chat_history}
-        </history>
-        Answer only with the new question.
-
-        Human: using <history>, rephrase the follow up <question> to be a standalone question. The standalone question must have main words of the original question.
-         
-        <quesion>
-        {question}
-        </question>
-
-        Assistant: Standalone question:"""
-
-        #Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question, in its original language. Answer only with the new question.
-
-    print('condense_template: ', condense_template)
-
-    print('start prompt!')
-
-    condense_prompt_claude = PromptTemplate.from_template(condense_template)
-        
-    condense_prompt_chain = LLMChain(llm=llm, prompt=condense_prompt_claude)
-
-    chat_history = extract_chat_history_from_memory()
-    try:         
-        revised_question = condense_prompt_chain.run({"chat_history": chat_history, "question": query})
-        print('revised_question: '+revised_question)
-        
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-
-        sendErrorMessage(connectionId, requestId, err_msg)        
-        raise Exception ("Not able to request to LLM")
-    
-    if debugMessageMode=='true':
-        # sendDebugMessage(connectionId, requestId, '[Debug]: '+revised_question)
-        debug_msg_for_revised_question(llm, revised_question.replace("\n"," "), chat_history, connectionId, requestId)
-    
-    return revised_question.replace("\n"," ")
 
 kendraRetriever = AmazonKendraRetriever(
     index_id=kendraIndex, 
@@ -1083,7 +1605,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 
     return relevant_docs
 
-def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
+def priority_search(query, relevant_docs, bedrock_embedding, minSimilarity):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
@@ -1105,7 +1627,7 @@ def priority_search(query, relevant_docs, bedrock_embeddings, minSimilarity):
         )  
     print('excerpts: ', excerpts)
 
-    embeddings = bedrock_embeddings
+    embeddings = bedrock_embedding
     vectorstore_confidence = FAISS.from_documents(
         excerpts,  # documents
         embeddings  # embeddings
@@ -1716,57 +2238,6 @@ def retrieve_codes_from_vectorstore(vectorstore_opensearch, index_name, query, t
                     
     return relevant_codes
 
-_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
-def _get_chat_history(chat_history):
-    #print('_get_chat_history: ', chat_history)
-    buffer = ""
-    for dialogue_turn in chat_history:
-        if isinstance(dialogue_turn, BaseMessage):
-            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
-            buffer += f"\n{role_prefix}{dialogue_turn.content}"
-        elif isinstance(dialogue_turn, tuple):
-            human = "\n\nHuman: " + dialogue_turn[0]
-            ai = "\n\nAssistant: " + dialogue_turn[1]
-            buffer += "\n" + "\n".join([human, ai])
-        else:
-            raise ValueError(
-                f"Unsupported chat history format: {type(dialogue_turn)}."
-                f" Full chat history: {chat_history} "
-            )
-    #print('buffer: ', buffer)
-    return buffer
-
-def create_ConversationalRetrievalChain(llm, PROMPT, retriever):  
-    condense_template = """\n\nHuman: Given the following <history> and a follow up question, rephrase the follow up question to be a standalone question, in its original language. Answer only with the new question.
-
-    <history>
-    {chat_history}
-    </history>
-    
-    Follow Up Input: {question}
-    
-    Assistant: Standalone question:"""
-    CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(condense_template)
-        
-    qa = ConversationalRetrievalChain.from_llm(
-        llm=llm, 
-        retriever=retriever,
-        condense_question_prompt=CONDENSE_QUESTION_PROMPT, # chat history and new question
-        combine_docs_chain_kwargs={'prompt': PROMPT},
-
-        memory=memory_chain,
-        get_chat_history=_get_chat_history,
-        verbose=False, # for logging to stdout
-        
-        #max_tokens_limit=300,
-        chain_type='stuff', # 'refine'
-        rephrase_question=True,  # to pass the new generated question to the combine_docs_chain       
-        return_source_documents=True, # retrieved source
-        return_generated_question=False, # generated question
-    )
-
-    return qa
-
 def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_type):
     relevant_docs = []
     if rag_type == 'kendra':
@@ -1782,22 +2253,6 @@ def retrieve_process_from_RAG(conn, vectorstore_opensearch, query, top_k, rag_ty
     
     conn.send(relevant_docs)
     conn.close()
-
-def debug_msg_for_revised_question(llm, revised_question, chat_history, connectionId, requestId):
-    global history_length, token_counter_history # debugMessageMode 
-
-    history_context = ""
-    token_counter_history = 0
-    for history in chat_history:
-        history_context = history_context + history
-
-    if history_context:
-        token_counter_history = llm.get_num_tokens(history_context)
-        print('token_size of history: ', token_counter_history)
-
-    history_length = len(history_context)
-
-    sendDebugMessage(connectionId, requestId, f"새로운 질문: {revised_question}\n * 대화이력({str(history_length)}자, {token_counter_history} Tokens)을 활용하였습니다.")
 
 def get_relevant_documents_using_parallel_processing(vectorstore_opensearch, question, top_k):
     relevant_docs = []    
@@ -1827,9 +2282,9 @@ def get_relevant_documents_using_parallel_processing(vectorstore_opensearch, que
     #print('relevant_docs: ', relevant_docs)
     return relevant_docs
 
-def translate_process_from_relevent_doc(conn, llm, doc, bedrock_region):
+def translate_process_from_relevent_doc(conn, chat, doc, bedrock_region):
     try: 
-        translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+        translated_excerpt = traslation_to_korean(chat=chat, msg=doc['metadata']['excerpt'])
         print(f"translated_excerpt ({bedrock_region}): {translated_excerpt}")
 
         doc['metadata']['translated_excerpt'] = translated_excerpt
@@ -1851,10 +2306,10 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        llm = get_llm(profile_of_LLMs, selected_LLM)
+        chat = get_chat(profile_of_LLMs, selected_LLM)
         bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
 
-        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, llm, doc, bedrock_region))
+        process = Process(target=translate_process_from_relevent_doc, args=(child_conn, chat, doc, bedrock_region))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1
@@ -1874,7 +2329,7 @@ def translate_relevant_documents_using_parallel_processing(docs):
     #print('relevant_docs: ', relevant_docs)
     return relevant_docs
 
-def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type):
+def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock_embedding, rag_type):
     global time_for_revise, time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_docs  # for debug
     time_for_revise = time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_docs = 0
 
@@ -1888,7 +2343,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         ef_search = 1024, # 512(default)
         m=48,
         #engine="faiss",  # default: nmslib
-        embedding_function = bedrock_embeddings,
+        embedding_function = bedrock_embedding,
         opensearch_url=opensearch_url,
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     ) 
@@ -1897,10 +2352,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
     if rag_type == 'all': # kendra, opensearch
         start_time_for_revise = time.time()
 
-        revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history                    
-        PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
-        # print('PROMPT: ', PROMPT)        
-
+        # revise question
+        revised_question = revise_question(connectionId, requestId, chat, text)     
+        print('revised_question: ', revised_question)  
+        
         end_time_for_revise = time.time()
         time_for_revise = end_time_for_revise - start_time_for_revise
         print('processing time for revised question: ', time_for_revise)
@@ -1916,7 +2371,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
 
             if allowDualSearch=='true' and isKorean(text)==True:
                 print('start RAG for translated revised question')
-                translated_revised_question = traslation_to_english(llm=llm, msg=revised_question)
+                translated_revised_question = traslation_to_english(chat=chat, msg=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
 
                 if debugMessageMode=='true':
@@ -1969,7 +2424,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                     if len(relevant_docs_using_translated_question)>=1:
                         for i, doc in enumerate(relevant_docs_using_translated_question):
                             if isKorean(doc)==False:
-                                translated_excerpt = traslation_to_korean(llm=llm, msg=doc['metadata']['excerpt'])
+                                translated_excerpt = traslation_to_korean(chat=chat, msg=doc['metadata']['excerpt'])
                                 print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
                                 print(f"#### {i} (KOR): {translated_excerpt}")
 
@@ -2004,7 +2459,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             print('start priority search')
-            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
+            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
             print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
         if len(selected_relevant_docs)==0:
@@ -2057,7 +2512,7 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
                 #raise Exception ("Not able to search using google api") 
             
             if len(relevant_docs)>=1:
-                selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
+                selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             # print('selected_relevant_docs (google): ', selected_relevant_docs)
 
@@ -2076,17 +2531,10 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
             relevant_context = relevant_context + content + "\n\n"
         print('relevant_context: ', relevant_context)
 
-        try: 
-            isTyping(connectionId, requestId)
-            stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-            msg = readStreamMsg(connectionId, requestId, stream)      
-            # msg = msg.replace(" ","&nbsp;")        
-        except Exception:
-            err_msg = traceback.format_exc()
-            print('error message: ', err_msg)       
-            sendErrorMessage(connectionId, requestId, err_msg)    
-            raise Exception ("Not able to request to LLM")    
+        # query using RAG context
+        msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, revised_question)
 
+        reference = ""
         if len(selected_relevant_docs)>=1 and enableReference=='true':
             reference = get_reference(selected_relevant_docs, rag_method, rag_type, path, doc_prefix)  
 
@@ -2095,161 +2543,59 @@ def get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_
         print('processing time for inference: ', time_for_inference)
         
     else:        
-        if rag_method == 'RetrievalQA': # RetrievalQA
-            start_time_for_revise = time.time()
+        start_time_for_revise = time.time()
 
-            revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-
-            end_time_for_revise = time.time()
-            time_for_revise = end_time_for_revise - start_time_for_revise
-            print('processing time for revised question: ', time_for_revise)
-
-            start_time_for_rag = time.time()
-            PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
-            #print('PROMPT: ', PROMPT)
-
-            if rag_type=='kendra':
-                retriever = kendraRetriever
-            elif rag_type=='opensearch':
-                retriever = vectorstore_opensearch.as_retriever(
-                    search_type="similarity", 
-                    search_kwargs={
-                        #"k": 3, 'score_threshold': 0.8
-                        "k": top_k
-                    }
-                )
-
-            qa = RetrievalQA.from_chain_type(
-                llm=llm,
-                chain_type="stuff",
-                retriever=retriever,
-                return_source_documents=True,
-                chain_type_kwargs={"prompt": PROMPT}
-            )
-
-            isTyping(connectionId, requestId)        
-            result = qa({"query": revised_question})    
-            print('result: ', result)
-
-            msg = readStreamMsg(connectionId, requestId, result['result'])
-            # msg = msg.replace(" ","&nbsp;")  
-
-            source_documents = result['source_documents']
-            print('source_documents: ', source_documents)
-
-            if len(source_documents)>=1 and enableReference=='true':
-                reference = get_reference(source_documents, rag_method, rag_type, path, doc_prefix)    
+        # revise question
+        revised_question = revise_question(connectionId, requestId, chat, text)     
+        print('revised_question: ', revised_question) 
             
-            end_time_for_rag = time.time()
-            time_for_rag = end_time_for_rag - end_time_for_revise
-            print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(source_documents)
+        end_time_for_revise = time.time()
+        time_for_revise = end_time_for_revise - start_time_for_revise
+        print('processing time for revised question: ', time_for_revise)
 
-        elif rag_method == 'ConversationalRetrievalChain': # ConversationalRetrievalChain
-            start_time_for_rag = time.time()
+        if rag_type == 'kendra':
+            relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
+            if len(relevant_docs) >= 1:
+                relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
+        else:
+            relevant_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
+        print('relevant_docs: ', json.dumps(relevant_docs))
 
-            PROMPT = get_prompt_template(text, conv_type, rag_type)
-            if rag_type == 'kendra':
-                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=kendraRetriever)            
-            elif rag_type == 'opensearch': # opensearch
-                vectorstoreRetriever = vectorstore_opensearch.as_retriever(
-                    search_type="similarity", 
-                    search_kwargs={
-                        "k": 5
-                    }
-                )
-                qa = create_ConversationalRetrievalChain(llm, PROMPT, retriever=vectorstoreRetriever)
-            result = qa({"question": text})
-            
-            msg = result['answer']
-            print('\nquestion: ', result['question'])    
-            print('answer: ', result['answer'])    
-            # print('chat_history: ', result['chat_history'])    
-            print('source_documents: ', result['source_documents']) 
+        end_time_for_rag = time.time()
+        time_for_rag = end_time_for_rag - end_time_for_revise
+        print('processing time for RAG: ', time_for_rag)
+        number_of_relevant_docs = len(relevant_docs)
 
-            if len(result['source_documents'])>=1 and enableReference=='true':
-                reference = get_reference(result['source_documents'], rag_method, rag_type, path, doc_prefix)
-            
-            end_time_for_rag = time.time()
-            time_for_rag = end_time_for_rag - start_time_for_rag
-            print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(result['source_documents'])
-        
-        elif rag_method == 'RetrievalPrompt': # RetrievalPrompt
-            start_time_for_revise = time.time()
-
-            revised_question = get_revised_question(llm, connectionId, requestId, text) # generate new prompt using chat history
-            
-            end_time_for_revise = time.time()
-            time_for_revise = end_time_for_revise - start_time_for_revise
-            print('processing time for revised question: ', time_for_revise)
-
-            PROMPT = get_prompt_template(revised_question, conv_type, rag_type)
-            #print('PROMPT: ', PROMPT)
-
-            if rag_type == 'kendra':
-                relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
-                if len(relevant_docs) >= 1:
-                    relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embeddings, minDocSimilarity)
+        relevant_context = ""
+        for document in relevant_docs:
+            if document['metadata']['translated_excerpt']:
+                content = document['metadata']['translated_excerpt']
             else:
-                relevant_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
-            print('relevant_docs: ', json.dumps(relevant_docs))
+                content = document['metadata']['excerpt']
 
-            end_time_for_rag = time.time()
-            time_for_rag = end_time_for_rag - end_time_for_revise
-            print('processing time for RAG: ', time_for_rag)
-            number_of_relevant_docs = len(relevant_docs)
+            relevant_context = relevant_context + content + "\n\n"
+        print('relevant_context: ', relevant_context)
 
-            relevant_context = ""
-            for document in relevant_docs:
-                if document['metadata']['translated_excerpt']:
-                    content = document['metadata']['translated_excerpt']
-                else:
-                    content = document['metadata']['excerpt']
+        # query using RAG context
+        msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, revised_question)
 
-                relevant_context = relevant_context + content + "\n\n"
-            print('relevant_context: ', relevant_context)
-
-            try: 
-                isTyping(connectionId, requestId)
-                stream = llm(PROMPT.format(context=relevant_context, question=revised_question))
-                msg = readStreamMsg(connectionId, requestId, stream)
-                # msg = msg.replace(" ","&nbsp;")  
-            except Exception:
-                err_msg = traceback.format_exc()
-                print('error message: ', err_msg)       
-
-                sendErrorMessage(connectionId, requestId, err_msg)    
-                raise Exception ("Not able to request to LLM")    
-
-            if len(relevant_docs)>=1 and enableReference=='true':
-                reference = get_reference(relevant_docs, rag_method, rag_type, path, doc_prefix)
+        if len(relevant_docs)>=1 and enableReference=='true':
+            reference = get_reference(relevant_docs, rag_method, rag_type, path, doc_prefix)
             
-            end_time_for_inference = time.time()
-            time_for_inference = end_time_for_inference - end_time_for_rag
-            print('processing time for inference: ', time_for_inference)
+        end_time_for_inference = time.time()
+        time_for_inference = end_time_for_inference - end_time_for_rag
+        print('processing time for inference: ', time_for_inference)
 
     global relevant_length, token_counter_relevant_docs
     
     if debugMessageMode=='true':   # extract chat history for debug
-        chat_history_all = extract_chat_history_from_memory()
-        # print('chat_history_all: ', chat_history_all)
-
-        history_length = []
-        for history in chat_history_all:
-            history_length.append(len(history))
-        print('chat_history length: ', history_length)
-
         relevant_length = len(relevant_context)
-        token_counter_relevant_docs = llm.get_num_tokens(relevant_context)
-
-    memory_chain.chat_memory.add_user_message(text)  # append new diaglog
-    memory_chain.chat_memory.add_ai_message(msg)
+        token_counter_relevant_docs = chat.get_num_tokens(relevant_context)
 
     return msg, reference
 
-def get_code_prompt_template(codeType):    
-    if codeType == 'python':    
+def get_code_prompt_template(code_type):    
+    if code_type == 'py':    
         prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 python code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 python 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
                 
         <context>
@@ -2261,7 +2607,7 @@ def get_code_prompt_template(codeType):
         </question>
 
         Assistant:"""
-    elif codeType == 'nodejs':    
+    elif code_type == 'js':    
         prompt_template = """\n\nHuman: 다음의 <context> tag안에는 질문과 관련된 node.js code가 있습니다. 주어진 예제를 참조하여 질문과 관련된 node.js 코드를 생성합니다. Assistant의 이름은 서연입니다. 결과는 <result> tag를 붙여주세요.
                 
         <context>
@@ -2276,14 +2622,11 @@ def get_code_prompt_template(codeType):
                     
     return PromptTemplate.from_template(prompt_template)
 
-def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, codeType):
+def get_code_using_RAG(chat, text, code_type, connectionId, requestId, bedrock_embedding):
     global time_for_rag, time_for_inference, time_for_priority_search, number_of_relevant_codes  # for debug
     time_for_rag = time_for_inference = time_for_priority_search = number_of_relevant_codes = 0
     
-    if codeType == 'python':
-        category = 'py'
-    elif codeType == 'nodejs':
-        category = 'js'
+    category = code_type
     
     index_name =  f"idx-{category}-*"
     print('index: ', index_name)
@@ -2293,7 +2636,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
         is_aoss = False,
         ef_search = 1024, # 512(default)
         m=48,
-        embedding_function = bedrock_embeddings,
+        embedding_function = bedrock_embedding,
         opensearch_url=opensearch_url,
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     )
@@ -2302,7 +2645,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     start_time_for_rag = time.time()
 
     rag_type = 'opensearch'
-    PROMPT = get_code_prompt_template(codeType)
+    PROMPT = get_code_prompt_template(code_type)
     print('PROMPT: ', PROMPT)        
 
     relevant_codes = [] 
@@ -2317,7 +2660,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
 
     selected_relevant_codes = []
     if len(relevant_codes)>=1:
-        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embeddings, minCodeSimilarity)
+        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embedding, minCodeSimilarity)
         print('selected_relevant_codes: ', json.dumps(selected_relevant_codes))
     
     end_time_for_priority_search = time.time() 
@@ -2332,17 +2675,7 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
             relevant_code = relevant_code + code + "\n\n"            
     print('relevant_code: ', relevant_code)
 
-    msg = ""
-    try: 
-        isTyping(connectionId, requestId)
-        stream = llm(PROMPT.format(context=relevant_code, question=text))
-        msg = readStreamMsg(connectionId, requestId, stream)        
-        msg = msg.replace(" ","&nbsp;")                    
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)       
-        sendErrorMessage(connectionId, requestId, err_msg)    
-        raise Exception ("Not able to request to LLM")    
+    msg = generate_code(connectionId, requestId, chat, text, relevant_code, code_type)
      
     if len(selected_relevant_codes)>=1 and enableReference=='true':
         reference = get_code_reference(selected_relevant_codes)  
@@ -2352,82 +2685,6 @@ def get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_em
     print('processing time for inference: ', time_for_inference)
     
     return msg, reference
-
-def summary_of_code(llm, code, code_type):
-    if code_type == 'python':
-        PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-            
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
-    elif code_type == 'nodejs':
-        PROMPT = """\n\nHuman: 다음의 <article> tag에는 node.js code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-            
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
- 
-    try:
-        summary = llm(PROMPT.format(input=code))
-        #print('summary: ', summary)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to summary the message")
-   
-    summary = summary[summary.find('<result>')+9:len(summary)-10] # remove <result> tag
-    
-    summary = summary.replace('\n\n', '\n') 
-    if summary[0] == '\n':
-        summary = summary[1:len(summary)]
-   
-    return summary
-
-def get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type):
-    conversation.prompt = get_prompt_template(text, conv_type, rag_type)
-    try: 
-        isTyping(connectionId, requestId)    
-        stream = conversation.predict(input=text)
-        #print('stream: ', stream)                    
-        msg = readStreamMsg(connectionId, requestId, stream)
-        # msg = msg.replace(" ","&nbsp;")  
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        
-        sendErrorMessage(connectionId, requestId, err_msg)    
-        raise Exception ("Not able to request to LLM")
-
-    if debugMessageMode == 'true':   # extract chat history for debug
-        chats = memory_chat.load_memory_variables({})
-        chat_history_all = chats['history']
-        # print('chat_history_all: ', chat_history_all)
-        
-        print('chat_history length: ', len(chat_history_all))
-
-    return msg
-
-def get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId):
-    PROMPT = get_prompt_template(text, conv_type, "")
-    #print('PROMPT: ', PROMPT)
-
-    try: 
-        isTyping(connectionId, requestId)
-        stream = llm(PROMPT.format(input=text))
-        msg = readStreamMsg(connectionId, requestId, stream)
-        # msg = msg.replace(" ","&nbsp;")  
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        
-        sendErrorMessage(connectionId, requestId, err_msg)    
-        raise Exception ("Not able to request to LLM")
-    
-    return msg
 
 def get_text_speech(path, speech_prefix, bucket, msg):
     ext = "mp3"
@@ -2454,73 +2711,103 @@ def get_text_speech(path, speech_prefix, bucket, msg):
 
     return path+speech_prefix+parse.quote(object)
 
-def traslation_to_korean(llm, msg):
-    PROMPT = """\n\nHuman: Here is an article, contained in <article> tags. Translate the article to Korean. Put it in <result> tags.
-            
-    <article>
-    {input}
-    </article>
-                        
-    Assistant:"""
-
+def traslation_to_korean(chat, text):
+    input_language = "English"
+    output_language = "Korean"
+        
+    system = (
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+    )
+    human = "<article>{text}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
     try: 
-        translated_msg = llm(PROMPT.format(input=msg))
-        #print('translated_msg: ', translated_msg)
+        result = chain.invoke(
+            {
+                "input_language": input_language,
+                "output_language": output_language,
+                "text": text,
+            }
+        )
+        
+        msg = result.content
+        print('translated text: ', msg)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to translate the message")
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+
+    return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
+
+def traslation_to_english(chat, text):
+    input_language = "Korean"
+    output_language = "English"
+        
+    system = (
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+    )
+    human = "<article>{text}</article>"
     
-    return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
-
-def traslation_to_english(llm, msg):
-    PROMPT = """\n\nHuman: 다음의 <article>를 English로 번역하세요. 머리말은 건너뛰고 본론으로 바로 들어가주세요. 또한 결과는 <result> tag를 붙여주세요.
-
-    <article>
-    {input}
-    </article>
-                        
-    Assistant:"""
-
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
     try: 
-        translated_msg = llm(PROMPT.format(input=msg))
-        #print('translated_msg: ', translated_msg)
+        result = chain.invoke(
+            {
+                "input_language": input_language,
+                "output_language": output_language,
+                "text": text,
+            }
+        )
+        
+        msg = result.content
+        print('translated text: ', msg)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to translate the message")
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
+
+    return msg[msg.find('<result>')+8:len(msg)-9] # remove <result> tag
+
+def summary_of_code(chat, code, mode):
+    if mode == 'py':
+        system = (
+            "다음의 <article> tag에는 python code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    elif mode == 'js':
+        system = (
+            "다음의 <article> tag에는 node.js code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    else:
+        system = (
+            "다음의 <article> tag에는 code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
     
-    return translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
-
-def summarize_code(llm, msg, file_type):
-    if file_type == 'py':
-        PROMPT = """\n\nHuman: 다음의 <article>은 python code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
-                
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
-    elif file_type == 'js':
-        PROMPT = """\n\nHuman: 다음의 <article>은 node.js code입니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result></result> tag를 붙여주세요.
-
-        <article>
-        {input}
-        </article>
-
-        Assistant:"""
-
+    human = "<article>{code}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
     try: 
-        translated_msg = llm(PROMPT.format(input=msg))
-        #print('translated_msg: ', translated_msg)
+        result = chain.invoke(
+            {
+                "code": code
+            }
+        )
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to translate the message")
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
     
-    msg = translated_msg[translated_msg.find('<result>')+9:len(translated_msg)-10]
-    
-    return msg
+    return summary
 
 def getResponse(connectionId, jsonBody):
     userId  = jsonBody['user_id']
@@ -2544,15 +2831,15 @@ def getResponse(connectionId, jsonBody):
             rag_type = jsonBody['rag_type']  # RAG type
             print('rag_type: ', rag_type)
 
-    global enableReference, codeType
+    global enableReference, code_type
     global map_chain, map_chat, memory_chat, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
     elif function_type == 'code-generation-python':
-        codeType = 'python'
+        code_type = 'py'
     elif function_type == 'code-generation-nodejs':
-        codeType = 'nodejs'
+        code_type = 'js'
 
     # Multi-LLM
     profile = profile_of_LLMs[selected_LLM]
@@ -2561,57 +2848,21 @@ def getResponse(connectionId, jsonBody):
     print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     # print('profile: ', profile)
     
-    # bedrock   
-    boto3_bedrock = boto3.client(
-        service_name='bedrock-runtime',
-        region_name=bedrock_region,
-        config=Config(
-            retries = {
-                'max_attempts': 30
-            }            
-        )
-    )
-    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
-    print('parameters: ', parameters)
+    chat = get_chat(profile_of_LLMs, selected_LLM)    
+    bedrock_embedding = get_embedding(profile_of_LLMs, selected_LLM)
 
-    # langchain for bedrock
-    llm = Bedrock(
-        model_id=modelId, 
-        client=boto3_bedrock, 
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
-        model_kwargs=parameters)
-
-    # embedding for RAG
-    bedrock_embeddings = BedrockEmbeddings(
-        client=boto3_bedrock,
-        region_name = bedrock_region,
-        model_id = 'amazon.titan-embed-text-v1' 
-    )    
-
-    # create memory
-    if userId in map_chat or userId in map_chain:  
+    # allocate memory
+    if userId in map_chain:  
         print('memory exist. reuse it!')        
         memory_chain = map_chain[userId]
-        memory_chat = map_chat[userId]
-        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
         
     else: 
         print('memory does not exist. create new one!')
         memory_chain = ConversationBufferWindowMemory(memory_key="chat_history", output_key='answer', return_messages=True, k=10)
         map_chain[userId] = memory_chain
         
-        memory_chat = ConversationBufferWindowMemory(human_prefix='Human', ai_prefix='Assistant', k=MSG_HISTORY_LENGTH)
-        map_chat[userId] = memory_chat
-
-        # memory_chain = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-        #from langchain.memory import ConversationSummaryBufferMemory
-        #memory_chat = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1024,
-        #    human_prefix='Human', ai_prefix='Assistant') #Maintains a summary of previous messages
-
         allowTime = getAllowTime()
-        load_chat_history(userId, allowTime, conv_type, rag_type)
-        conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
+        load_chat_history(userId, allowTime)
  
     start = int(time.time())    
 
@@ -2686,45 +2937,50 @@ def getResponse(connectionId, jsonBody):
             elif text == 'clearMemory':
                 memory_chain.clear()
                 map_chain[userId] = memory_chain
-                memory_chat.clear()                
-                map_chat[userId] = memory_chat
-                conversation = ConversationChain(llm=llm, verbose=False, memory=memory_chat)
                     
                 print('initiate the chat memory!')
                 msg  = "The chat memory was intialized in this session."
             else:       
                 if conv_type == 'normal' or conv_type == 'funny':      # normal
-                    msg = get_answer_using_ConversationChain(text, conversation, conv_type, connectionId, requestId, rag_type)
+                    msg = general_conversation(connectionId, requestId, chat, text)  
                 
                 elif conv_type == 'qa':   # RAG
-                    print(f'rag_type: {rag_type}, rag_method: {rag_method}')
-                    msg, reference = get_answer_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, rag_type)
+                    print(f'rag_type: {rag_type}')
+                    msg, reference = get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock_embedding, rag_type)
+                
+                elif conv_type == "translation":
+                    msg = translate_text(chat, text) 
+                elif conv_type == "grammar":
+                    msg = check_grammer(chat, text)  
+                elif conv_type == "sentiment":
+                    msg = extract_sentiment(chat, text)
+                elif conv_type == "extraction": # infomation extraction
+                    msg = extract_information(chat, text)  
+                elif conv_type == "pii":
+                    msg = remove_pii(chat, text)   
+                elif conv_type == "step-by-step":
+                    msg = do_step_by_step(chat, text)  
+                elif conv_type == "timestamp-extraction":
+                    msg = extract_timestamp(chat, text)  
+                else:
+                    msg = general_conversation(connectionId, requestId, chat, text) 
                     
-                elif conv_type == 'none':   # no prompt
-                    try: 
-                        msg = llm(HUMAN_PROMPT+text+AI_PROMPT)
-                    except Exception:
-                        err_msg = traceback.format_exc()
-                        print('error message: ', err_msg)
-
-                        sendErrorMessage(connectionId, requestId, err_msg)    
-                        raise Exception ("Not able to request to LLM")
-                else: 
-                    msg = get_answer_from_PROMPT(llm, text, conv_type, connectionId, requestId)
-
                 # token counter
                 if debugMessageMode=='true':
-                    token_counter_input = llm.get_num_tokens(text)
-                    token_counter_output = llm.get_num_tokens(msg)
+                    token_counter_input = chat.get_num_tokens(text)
+                    token_counter_output = chat.get_num_tokens(msg)
                     print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
+                
+                memory_chain.chat_memory.add_user_message(text)  # append new diaglog
+                memory_chain.chat_memory.add_ai_message(msg)
         
         elif type == 'code':
-            msg, reference = get_code_using_RAG(llm, text, conv_type, connectionId, requestId, bedrock_embeddings, codeType)  
+            msg, reference = get_code_using_RAG(chat, text, code_type, connectionId, requestId, bedrock_embedding)  
             
             # token counter
             if debugMessageMode=='true':
-                token_counter_input = llm.get_num_tokens(text)
-                token_counter_output = llm.get_num_tokens(msg)
+                token_counter_input = chat.get_num_tokens(text)
+                token_counter_output = chat.get_num_tokens(msg)
                 print(f"token_counter: question: {token_counter_input}, answer: {token_counter_output}")
                 
         elif type == 'document':
@@ -2741,13 +2997,13 @@ def getResponse(connectionId, jsonBody):
                     contexts.append(doc.page_content)
                 print('contexts: ', contexts)
 
-                msg = get_summary(llm, contexts)
+                msg = get_summary(chat, contexts)
             
             elif file_type == 'py' or file_type == 'js':
                 texts = load_code(file_type, object)                
                 print('code: ', texts)
                 
-                msg = summarize_code(llm, texts, file_type)
+                msg = summary_of_code(chat, texts, file_type)
             
             elif file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'pptx' or file_type == 'docx':
                 texts = load_document(file_type, object)
@@ -2772,7 +3028,7 @@ def getResponse(connectionId, jsonBody):
                     contexts.append(doc.page_content)
                 print('contexts: ', contexts)
 
-                msg = get_summary(llm, contexts)
+                msg = get_summary(chat, contexts)
             else:
                 msg = "uploaded file: "+object
                                                         
@@ -2786,7 +3042,7 @@ def getResponse(connectionId, jsonBody):
         if type=='text' and isControlMsg==False:        
             if (conv_type=='qa' or  conv_type == "normal"):
                 if isKorean(msg)==False :
-                    translated_msg = traslation_to_korean(llm, msg)
+                    translated_msg = traslation_to_korean(chat, msg)
                     print('translated_msg: ', translated_msg)
                     msg = msg+'\n[한국어]\n'+translated_msg
                     
@@ -2801,7 +3057,7 @@ def getResponse(connectionId, jsonBody):
         if type == 'code':  # code summary
             if reference: # Summarize the generated code 
                 generated_code = msg[msg.find('<result>')+9:len(msg)-10]
-                generated_code_summary = summary_of_code(llm, generated_code, codeType)    
+                generated_code_summary = summary_of_code(chat, generated_code, code_type)    
                 msg += f'\n\n[생성된 코드 설명]\n{generated_code_summary}'
                 msg = msg.replace('\n\n\n', '\n\n') 
                     

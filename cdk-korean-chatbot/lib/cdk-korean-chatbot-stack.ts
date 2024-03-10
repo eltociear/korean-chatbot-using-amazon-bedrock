@@ -44,6 +44,21 @@ const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default
 const enableNoriPlugin = 'true';
 const enableParallelSummay = 'true';
 
+const claude3_sonnet = [
+  {
+    "bedrock_region": "us-west-2", // Oregon
+    "model_type": "claude3",
+    "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",   
+    "maxOutputTokens": "8196"
+  },
+  {
+    "bedrock_region": "us-east-1", // N.Virginia
+    "model_type": "claude3",
+    "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",
+    "maxOutputTokens": "8196"
+  }
+];
+
 const claude_instant = [
   {
     "bedrock_region": "us-west-2", // Oregon
@@ -71,7 +86,7 @@ const claude_instant = [
     },
 ];
 
-const claude_basic = [
+const claude2 = [
   {
     "bedrock_region": "us-west-2", // Oregon
     "model_type": "claude",
@@ -86,7 +101,7 @@ const claude_basic = [
   }
 ];
 
-const profile_of_LLMs = claude_instant;
+const profile_of_LLMs = claude3_sonnet;
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

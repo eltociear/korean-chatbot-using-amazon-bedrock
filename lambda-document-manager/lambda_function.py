@@ -18,6 +18,9 @@ from opensearchpy import OpenSearch
 from pptx import Presentation
 from langchain_community.llms.bedrock import Bedrock
 from multiprocessing import Process, Pipe
+from langchain_community.chat_models import BedrockChat
+from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 s3 = boto3.client('s3')
 
@@ -465,93 +468,106 @@ def check_supported_type(key, file_type, size):
 
 HUMAN_PROMPT = "\n\nHuman:"
 AI_PROMPT = "\n\nAssistant:"
-def get_parameter(model_type, maxOutputTokens):
-    if model_type=='titan': 
-        return {
-            "maxTokenCount":1024,
-            "stopSequences":[],
-            "temperature":0,
-            "topP":0.9
-        }
-    elif model_type=='claude':
-        return {
-            "max_tokens_to_sample":maxOutputTokens, # 8k    
-            "temperature":0.1,
-            "top_k":250,
-            "top_p":0.9,
-            "stop_sequences": [HUMAN_PROMPT]            
-        }
         
 # Multi-LLM
-def get_llm(profile_of_LLMs, selected_LLM):
+def get_chat(profile_of_LLMs, selected_LLM):
     profile = profile_of_LLMs[selected_LLM]
-    region_name =  profile['bedrock_region']
+    bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
-    print(f'LLM: {selected_LLM}, region_name: {region_name}, modelId: {modelId}')
-        
+    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
     # bedrock   
     boto3_bedrock = boto3.client(
         service_name='bedrock-runtime',
-        region_name=region_name,
+        region_name=bedrock_region,
         config=Config(
             retries = {
                 'max_attempts': 30
             }            
         )
     )
-    parameters = get_parameter(profile['model_type'], int(profile['maxOutputTokens']))
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
     # print('parameters: ', parameters)
 
-    # langchain for bedrock
-    llm = Bedrock(
-        model_id=modelId, 
+    chat = BedrockChat(
+        model_id=modelId,
         client=boto3_bedrock, 
-        model_kwargs=parameters)
-    return llm
-
-def summary_of_code(llm, code, mode):
-    if mode == 'python': 
-        PROMPT = """\n\nHuman: 다음의 <article> tag에는 python code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-            
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
-    elif mode == 'nodejs':
-        PROMPT = """\n\nHuman: 다음의 <article> tag에는 node.js code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-            
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
-    else:
-        PROMPT = """\n\nHuman: 다음의 <article> tag에는 code가 있습니다. 각 함수의 기능과 역할을 자세하게 500자 이내로 설명하세요. 결과는 <result> tag를 붙여주세요.
-            
-        <article>
-        {input}
-        </article>
-                            
-        Assistant:"""
+        streaming=True,
+        callbacks=[StreamingStdOutCallbackHandler()],
+        model_kwargs=parameters,
+    )        
     
-    try:
-        summary = llm(PROMPT.format(input=code))
-        #print('summary: ', summary)
+    return chat
+
+def get_embedding(profile_of_LLMs, selected_LLM):
+    profile = profile_of_LLMs[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'Embedding: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }            
+        )
+    )
+    
+    bedrock_embedding = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = 'amazon.titan-embed-text-v1' 
+    )  
+    
+    return bedrock_embedding
+
+def summary_of_code(chat, code, mode):
+    if mode == 'py':
+        system = (
+            "다음의 <article> tag에는 python code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    elif mode == 'js':
+        system = (
+            "다음의 <article> tag에는 node.js code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    else:
+        system = (
+            "다음의 <article> tag에는 code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
+        )
+    
+    human = "<article>{code}</article>"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    print('prompt: ', prompt)
+    
+    chain = prompt | chat    
+    try: 
+        result = chain.invoke(
+            {
+                "code": code
+            }
+        )
+        
+        summary = result.content
+        print('result of code summarization: ', summary)
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to summary the message")
-   
-    summary = summary[summary.find('<result>')+9:len(summary)-10] # remove <result> tag
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to LLM")
     
-    summary = summary.replace('\n\n', '\n') 
-    if summary[0] == '\n':
-        summary = summary[1:len(summary)]
-   
     return summary
 
-def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
+def summarize_process_for_relevent_code(conn, chat, code, key, region_name):
     try: 
         if code.find('\ndef ') != -1:
             start = code.find('\ndef ')
@@ -577,15 +593,8 @@ def summarize_process_for_relevent_code(conn, llm, code, key, region_name):
             file_type = key[key.rfind('.')+1:len(key)].lower()
             print('file_type: ', file_type)
                             
-            if file_type == 'py':
-                mode = 'python'
-            elif file_type == 'js':
-                mode = 'nodejs'
-            else:
-                mode = file_type
-                
-            summary = summary_of_code(llm, code, mode)
-            print(f"summary ({region_name}, {mode}): {summary}")
+            summary = summary_of_code(chat, code, file_type)
+            print(f"summary ({region_name}, {file_type}): {summary}")
             
             # print('first line summary: ', summary[:len(function_name)])
             # print('function name: ', function_name)            
@@ -620,10 +629,10 @@ def summarize_relevant_codes_using_parallel_processing(codes, key):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        llm = get_llm(profile_of_LLMs, selected_LLM)
+        chat = get_chat(profile_of_LLMs, selected_LLM)
         region_name = profile_of_LLMs[selected_LLM]['bedrock_region']
 
-        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, llm, code, key, region_name))
+        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, chat, code, key, region_name))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1
@@ -800,15 +809,9 @@ def lambda_handler(event, context):
                                         function_name = code[start+1:end]
                                         # print('function_name: ', function_name)
                                                 
-                                        llm = get_llm(profile_of_LLMs, 0)      
+                                        chat = get_chat(profile_of_LLMs, 0)      
                                         
-                                        if file_type == 'py':
-                                            mode = 'python'
-                                        elif file_type == 'js':
-                                            mode = 'nodejs'
-                                        else:
-                                            mode = file_type  
-                                        summary = summary_of_code(llm, code, mode)                        
+                                        summary = summary_of_code(chat, code, file_type)                        
                                             
                                         if summary[:len(function_name)]==function_name:
                                             summary = summary[summary.find('\n')+1:len(summary)]
