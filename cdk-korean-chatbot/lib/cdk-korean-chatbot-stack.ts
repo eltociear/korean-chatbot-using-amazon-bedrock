@@ -109,7 +109,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     
     // s3 
     const s3Bucket = new s3.Bucket(this, `storage-${projectName}`,{
-      // bucketName: bucketName,
+      bucketName: bucketName,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
