@@ -463,8 +463,11 @@ def check_supported_type(key, file_type, size):
         print('html: ', key.find('/html/'))
         return False
     
+    firstcharacter = key[key.rfind('/')]
+    print('firstcharacter: ', firstcharacter)
+    
     if key[0] == '.':
-        print(f"Ignore {key} since the filename starts a dot character for macbook.")
+        print(f"Ignore {key} since the filename starts a dot character for macbook.")        
         return False
     if size > 5000 and size<max_object_size and isSupported(file_type):
         return True
