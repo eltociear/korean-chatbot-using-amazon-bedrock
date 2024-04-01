@@ -2340,7 +2340,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
     time_for_rag_inference = time_for_rag_question_translation = time_for_rag_2nd_inference = time_for_rag_translation = 0
     
     vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name = "idx-*", # all
+        index_name = "idex-*", # all
         #index_name=f"idx-{userId}',
         is_aoss = False,
         ef_search = 1024, # 512(default)
@@ -2631,7 +2631,7 @@ def get_code_using_RAG(chat, text, code_type, connectionId, requestId, bedrock_e
     
     category = code_type
     
-    index_name =  f"idx-{category}-*"
+    index_name =  f"idex-{category}-*"
     print('index: ', index_name)
         
     vectorstore_opensearch = OpenSearchVectorSearch(

@@ -107,7 +107,6 @@ def delete_document_if_exist(vectorstore, key):
         print('error message: ', err_msg)        
         raise Exception ("Not able to create meta file")
 
-
 # Kendra
 kendra_client = boto3.client(
     service_name='kendra', 
