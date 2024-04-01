@@ -91,15 +91,19 @@ def delete_document_if_exist(key):
     try: 
         s3r = boto3.resource("s3")
         doc = s3r.Object(s3_bucket, metaKey)
-        meta = doc.get()['Body'].read().decode('utf-8')
-        print('meta: ', meta)
         
-        ids = json.loads(meta)['ids']
-        print('ids: ', ids)
-        
-        result = vectorstore.delete(ids)
-        print('result: ', result)        
-        
+        if doc: 
+            meta = doc.get()['Body'].read().decode('utf-8')
+            print('meta: ', meta)
+            
+            ids = json.loads(meta)['ids']
+            print('ids: ', ids)
+            
+            result = vectorstore.delete(ids)
+            print('result: ', result)        
+        else:
+            print('no meta file: ', metaKey)
+            
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
