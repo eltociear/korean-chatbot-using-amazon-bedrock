@@ -19,11 +19,12 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 const region = process.env.CDK_DEFAULT_REGION;    
+const accountId = process.env.CDK_DEFAULT_ACCOUNT
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
 const projectName = `korean-chatbot-with-rag`; 
-const bucketName = `storage-for-${projectName}-${region}`; 
+const bucketName = `storage-for-${projectName}-${accountId}-${region}`; 
 let kendra_region = process.env.CDK_DEFAULT_REGION;   //  "us-west-2"
 const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
@@ -123,7 +124,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     
     // s3 
     const s3Bucket = new s3.Bucket(this, `storage-${projectName}`,{
-      // bucketName: bucketName,
+      bucketName: bucketName,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,

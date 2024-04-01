@@ -3175,9 +3175,6 @@ def getResponse(connectionId, jsonBody):
             if history_length:
                 statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
             
-            if history_length:
-                statusMsg = statusMsg + f"History: {str(history_length)}자 / {token_counter_history}토큰\n"
-
             statusMsg = statusMsg + f"Time(초): "            
             if time_for_inference != 0:
                 statusMsg = statusMsg + f"{time_for_inference:.2f}(Inference), "
