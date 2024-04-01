@@ -1992,7 +1992,7 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
 
             response = os_client.search(
                 body=query,
-                index="idx-*", # all
+                index="idex-*", # all
             )
             # print('lexical query result: ', json.dumps(response))
             

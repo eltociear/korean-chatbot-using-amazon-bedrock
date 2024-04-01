@@ -116,7 +116,7 @@ bedrock_embeddings = BedrockEmbeddings(
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
-    index_name = 'idx-rag'
+    index_name = 'idex-rag'
     
     try:
         vectorstore = OpenSearchVectorSearch(
@@ -141,6 +141,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
+    index_name = 'idex-rag'
     
     index_body = {
         'settings': {
