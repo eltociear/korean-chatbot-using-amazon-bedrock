@@ -112,7 +112,7 @@ bedrock_embeddings = BedrockEmbeddings(
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     index_name = get_index_name(documentId)
     
-    delete_index_if_exist(index_name)
+    # delete_index_if_exist(index_name)
 
     try:
         vectorstore = OpenSearchVectorSearch(
@@ -132,10 +132,12 @@ def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
 
     print('uploaded into opensearch')
     
+    return response
+    
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
     index_name = get_index_name(documentId)
     
-    delete_index_if_exist(index_name)
+    # delete_index_if_exist(index_name)
     
     index_body = {
         'settings': {
@@ -310,7 +312,7 @@ def store_document_for_kendra(path, key, documentId):
         print('error message: ', err_msg)        
         # raise Exception ("Not able to put a document in Kendra")
 
-def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId):    
+def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId, ids):
     title = key
     timestamp = int(time.time())
 
@@ -322,7 +324,8 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
             "_language_code": "ko"
         },
         "Title": title,
-        "DocumentId": documentId,        
+        "DocumentId": documentId,      
+        "ids": ids  
     }
     print('metadata: ', metadata)
     
@@ -756,7 +759,7 @@ def lambda_handler(event, context):
                         # delete document index of opensearch
                         index_name = get_index_name(documentId)
                                                 
-                        delete_index_if_exist(index_name)                    
+                        # delete_index_if_exist(index_name)                    
                     except Exception:
                         err_msg = traceback.format_exc()
                         print('err_msg: ', err_msg)
@@ -806,6 +809,7 @@ def lambda_handler(event, context):
                 documentId = get_documentId(key, category)                                
                 print('documentId: ', documentId)
                 
+                ids = []
                 for type in capabilities:                
                     if type=='kendra' and category=='upload':         
                         print('upload to kendra: ', key)                                                
@@ -916,11 +920,11 @@ def lambda_handler(event, context):
                             print('docs[0]: ', docs[0])
                                 
                             if enableNoriPlugin == 'true':
-                                store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
+                                ids = store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
                             else:
-                                store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                                ids = store_document_for_opensearch(bedrock_embeddings, docs, documentId)
 
-                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId)
+                create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId, ids=ids)
             else: # delete if the object is unsupported one for format or size
                 try:
                     print('delete the unsupported file: ', key)                                

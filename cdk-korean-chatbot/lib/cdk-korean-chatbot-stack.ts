@@ -41,7 +41,7 @@ const capabilities = JSON.stringify(["kendra", "opensearch"]);
 const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "docx", "doc", "xlsx", "py", "js", "md", 'png', 'jpeg', 'jpg']);  
 
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
-const enableNoriPlugin = 'true';
+const enableNoriPlugin = 'false';
 const enableParallelSummay = 'true';
 
 const claude3_sonnet = [
@@ -382,7 +382,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         masterNodes: 3,
         masterNodeInstanceType: 'r6g.large.search',
         // multiAzWithStandbyEnabled: false,
-        dataNodes: 15,
+        dataNodes: 3,
         dataNodeInstanceType: 'r6g.large.search',        
         // warmNodes: 2,
         // warmInstanceType: 'ultrawarm1.medium.search',
