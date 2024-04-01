@@ -68,7 +68,7 @@ os_client = OpenSearch(
     ssl_assert_hostname = False,
     ssl_show_warn = False,
 )
-
+                        
 """
 def delete_index_if_exist(index_name):    
     if os_client.indices.exists(index_name):
@@ -81,7 +81,7 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
-def delete_document_if_exist(vectorstore, key):
+def delete_document_if_exist(key):
     objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
     print('objectName: ', objectName)
     
@@ -135,20 +135,21 @@ bedrock_embeddings = BedrockEmbeddings(
     model_id = 'amazon.titan-embed-text-v1' 
 )   
 
-def store_document_for_opensearch(bedrock_embeddings, docs, key):    
+index_name = 'idx-rag'
+vectorstore = OpenSearchVectorSearch(
+    index_name=index_name,  
+    is_aoss = False,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
+    opensearch_url = opensearch_url,
+    http_auth=(opensearch_account, opensearch_passwd),
+)    
+
+def store_document_for_opensearch(docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
     
-    index_name = 'idx-rag'
-    vectorstore = OpenSearchVectorSearch(
-        index_name=index_name,  
-        is_aoss = False,
-        #engine="faiss",  # default: nmslib
-        embedding_function = bedrock_embeddings,
-        opensearch_url = opensearch_url,
-        http_auth=(opensearch_account, opensearch_passwd),
-    )
-    delete_document_if_exist(vectorstore, key)
+    delete_document_if_exist(key)
     
     try:        
         response = vectorstore.add_documents(docs, bulk_size = 2000)
@@ -162,7 +163,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, key):
     
     return response
     
-def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
+def store_document_for_opensearch_with_nori(docs):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
     index_name = 'idx-rag'
@@ -227,6 +228,7 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
         }
     }
     
+    """
     try: # create index
         response = os_client.indices.create(
             index_name,
@@ -237,16 +239,9 @@ def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
         #raise Exception ("Not able to create the index")
-
+    """
+    
     try: # put the doucment
-        vectorstore = OpenSearchVectorSearch(
-            index_name=index_name,  
-            is_aoss = False,
-            #engine="faiss",  # default: nmslib
-            embedding_function = bedrock_embeddings,
-            opensearch_url = opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd),
-        )
         response = vectorstore.add_documents(docs, bulk_size = 2000)
         print('response of adding documents: ', response)
     except Exception:
@@ -789,6 +784,8 @@ def lambda_handler(event, context):
                         # delete document index of opensearch
                         # index_name = get_index_name(documentId)                                                
                         # delete_index_if_exist(index_name)      
+                        
+                        delete_document_if_exist(key)
                                       
                     except Exception:
                         err_msg = traceback.format_exc()
@@ -950,9 +947,9 @@ def lambda_handler(event, context):
                             print('docs[0]: ', docs[0])
                                 
                             if enableNoriPlugin == 'true':
-                                ids = store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
+                                ids = store_document_for_opensearch_with_nori(docs)
                             else:
-                                ids = store_document_for_opensearch(bedrock_embeddings, docs, key)
+                                ids = store_document_for_opensearch(docs, key)
 
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId, ids=ids)
             else: # delete if the object is unsupported one for format or size
