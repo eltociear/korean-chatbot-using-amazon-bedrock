@@ -84,7 +84,10 @@ def delete_index_if_exist(index_name):
 """
 
 def delete_document_if_exist(key):
-    metaKey = meta_prefix+'/'+key+'.metadata.json'
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)
+    
+    metaKey = meta_prefix+objectName+'.metadata.json'
     print('meta file name: ', metaKey)
     
     try: 
