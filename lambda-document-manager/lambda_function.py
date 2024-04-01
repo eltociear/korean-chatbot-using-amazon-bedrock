@@ -83,7 +83,7 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
-def delete_document_if_exist(key):
+def delete_document_if_exist(vectorstore, key):
     objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
     print('objectName: ', objectName)
     
@@ -93,9 +93,15 @@ def delete_document_if_exist(key):
     try: 
         s3r = boto3.resource("s3")
         doc = s3r.Object(s3_bucket, metaKey)
-        meta = doc.get()['Body'].read().decode('utf-8')        
+        meta = doc.get()['Body'].read().decode('utf-8')
         print('meta: ', meta)
-    
+        
+        ids = json.loads(meta)['ids']
+        print('ids: ', ids)
+        
+        result = vectorstore.adelete(ids)
+        print('result: ', result)        
+        
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
@@ -132,22 +138,22 @@ bedrock_embeddings = BedrockEmbeddings(
     model_id = 'amazon.titan-embed-text-v1' 
 )   
 
-def store_document_for_opensearch(bedrock_embeddings, docs, key):
+def store_document_for_opensearch(bedrock_embeddings, docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
-    delete_document_if_exist(key)
     
     index_name = 'idex-rag'
+    vectorstore = OpenSearchVectorSearch(
+        index_name=index_name,  
+        is_aoss = False,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embeddings,
+        opensearch_url = opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd),
+    )
+    delete_document_if_exist(vectorstore, key)
     
-    try:
-        vectorstore = OpenSearchVectorSearch(
-            index_name=index_name,  
-            is_aoss = False,
-            #engine="faiss",  # default: nmslib
-            embedding_function = bedrock_embeddings,
-            opensearch_url = opensearch_url,
-            http_auth=(opensearch_account, opensearch_passwd),
-        )
+    try:        
         response = vectorstore.add_documents(docs, bulk_size = 2000)
         print('response of adding documents: ', response)
     except Exception:
