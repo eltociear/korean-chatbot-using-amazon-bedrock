@@ -83,6 +83,22 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
+def delete_document_if_exist(key):
+    metaKey = meta_prefix+'/'+key+'.metadata.json'
+    print('meta file name: ', metaKey)
+    
+    try: 
+        s3r = boto3.resource("s3")
+        doc = s3r.Object(s3_bucket, metaKey)
+        meta = doc.get()['Body'].read().decode('utf-8')        
+        print('meta: ', meta)
+    
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create meta file")
+
+
 # Kendra
 kendra_client = boto3.client(
     service_name='kendra', 
@@ -113,9 +129,11 @@ bedrock_embeddings = BedrockEmbeddings(
     model_id = 'amazon.titan-embed-text-v1' 
 )   
 
-def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
+def store_document_for_opensearch(bedrock_embeddings, docs, key):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
+    delete_document_if_exist(key)
+    
     index_name = 'idex-rag'
     
     try:
@@ -928,7 +946,7 @@ def lambda_handler(event, context):
                             if enableNoriPlugin == 'true':
                                 ids = store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId)
                             else:
-                                ids = store_document_for_opensearch(bedrock_embeddings, docs, documentId)
+                                ids = store_document_for_opensearch(bedrock_embeddings, docs, key)
 
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId, ids=ids)
             else: # delete if the object is unsupported one for format or size

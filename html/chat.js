@@ -175,7 +175,7 @@ function connect(endpoint, type) {
                     console.log('error: ', response.msg);
 
                     if(response.msg.indexOf('throttlingException') || response.msg.indexOf('Too many requests') || response.msg.indexOf('too many requests')) {
-                        addNotifyMessage('허용된 요청수를 초과하였습니다. 추후 다시 재도시도 해주세요.');  
+                        addNotifyMessage('허용된 요청수를 초과하였습니다. 추후 다시 재시도 해주세요.');  
                     }
                     else {
                         addNotifyMessage(response.msg);
