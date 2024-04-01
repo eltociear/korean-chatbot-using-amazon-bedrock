@@ -56,8 +56,6 @@ print('supportedFormat: ', supportedFormat)
 
 enableNoriPlugin = os.environ.get('enableNoriPlugin')
 
-index_name = 'idex-rag'
-
 os_client = OpenSearch(
     hosts = [{
         'host': opensearch_url.replace("https://", ""), 
@@ -71,6 +69,9 @@ os_client = OpenSearch(
     ssl_show_warn = False,
 )
 
+
+
+"""
 def delete_index_if_exist(index_name):    
     if os_client.indices.exists(index_name):
         print('delete opensearch document index: ', index_name)
@@ -80,6 +81,7 @@ def delete_index_if_exist(index_name):
         print('removed index: ', response)    
     else:
         print('no index: ', index_name)
+"""
 
 # Kendra
 kendra_client = boto3.client(
@@ -114,7 +116,8 @@ bedrock_embeddings = BedrockEmbeddings(
 def store_document_for_opensearch(bedrock_embeddings, docs, documentId):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
-
+    index_name = 'idx-rag'
+    
     try:
         vectorstore = OpenSearchVectorSearch(
             index_name=index_name,  
