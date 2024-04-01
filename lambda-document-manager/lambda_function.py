@@ -99,7 +99,7 @@ def delete_document_if_exist(vectorstore, key):
         ids = json.loads(meta)['ids']
         print('ids: ', ids)
         
-        result = vectorstore.adelete(ids)
+        result = vectorstore.delete(ids)
         print('result: ', result)        
         
     except Exception:
