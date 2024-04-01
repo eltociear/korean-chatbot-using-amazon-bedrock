@@ -69,8 +69,6 @@ os_client = OpenSearch(
     ssl_show_warn = False,
 )
 
-
-
 """
 def delete_index_if_exist(index_name):    
     if os_client.indices.exists(index_name):
@@ -141,7 +139,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, key):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
     
-    index_name = 'idex-rag'
+    index_name = 'idx-rag'
     vectorstore = OpenSearchVectorSearch(
         index_name=index_name,  
         is_aoss = False,
@@ -167,7 +165,7 @@ def store_document_for_opensearch(bedrock_embeddings, docs, key):
 def store_document_for_opensearch_with_nori(bedrock_embeddings, docs, documentId):
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
-    index_name = 'idex-rag'
+    index_name = 'idx-rag'
     
     index_body = {
         'settings': {
