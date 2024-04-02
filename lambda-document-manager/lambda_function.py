@@ -81,16 +81,10 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
-def delete_document_if_exist(key):
-    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
-    print('objectName: ', objectName)
-    
-    metaKey = meta_prefix+objectName+'.metadata.json'
-    print('meta file name: ', metaKey)
-    
+def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
-        doc = s3r.Object(s3_bucket, metaKey)
+        doc = s3r.Object(s3_bucket, metadata_key)
         
         if doc: 
             meta = doc.get()['Body'].read().decode('utf-8')
@@ -102,7 +96,7 @@ def delete_document_if_exist(key):
             result = vectorstore.delete(ids)
             print('result: ', result)        
         else:
-            print('no meta file: ', metaKey)
+            print('no meta file: ', metadata_key)
             
     except Exception:
         err_msg = traceback.format_exc()
@@ -152,8 +146,12 @@ vectorstore = OpenSearchVectorSearch(
 def store_document_for_opensearch(docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
-    
-    delete_document_if_exist(key)
+        
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)    
+    metadata_key = meta_prefix+objectName+'.metadata.json'
+    print('meta file name: ', metadata_key)    
+    delete_document_if_exist(metadata_key)
     
     try:        
         response = vectorstore.add_documents(docs, bulk_size = 2000)
@@ -780,16 +778,12 @@ def lambda_handler(event, context):
                     # raise Exception ("Not able to get the object")
                     
                 if documentId:
-                    try: # delete metadata                        
+                    try: # delete metadata          
+                        delete_document_if_exist(metadata_key)
+                                      
                         print('delete metadata: ', metadata_key)                        
                         result = s3.delete_object(Bucket=bucket, Key=metadata_key)
                         # print('result of metadata deletion: ', result)
-                        
-                        # delete document index of opensearch
-                        # index_name = get_index_name(documentId)                                                
-                        # delete_index_if_exist(index_name)      
-                        
-                        delete_document_if_exist(key)
                                       
                     except Exception:
                         err_msg = traceback.format_exc()
