@@ -89,9 +89,11 @@ def delete_document_if_exist(metadata_key):
         print('objs: ', objs)
         
         if(len(objs)>0):
-            body = s3r.Object(s3_bucket, metadata_key).decode('utf-8')
+            doc = s3r.Object(s3_bucket, metadata_key)
+            meta = doc.get()['Body'].read().decode('utf-8')
+            print('meta: ', meta)
             
-            ids = json.loads(body)['ids']
+            ids = json.loads(meta)['ids']
             print('ids: ', ids)
             
             result = vectorstore.delete(ids)
