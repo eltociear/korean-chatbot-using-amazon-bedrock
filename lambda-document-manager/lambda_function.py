@@ -84,15 +84,14 @@ def delete_index_if_exist(index_name):
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
-        doc = s3r.Object(s3_bucket, metadata_key)
-        print('doc: ', doc)
-            
-        body = doc.get()['Body'].read()
-        print('body: ', body)
+        bucket = s3.Bucket('my-bucket')
+        objs = list(bucket.objects.filter(Prefix=metadata_key))
+        print('objs: ', objs)
         
-                
-        if body:             
-            ids = json.loads(body.decode('utf-8'))['ids']
+        if(len(objs)>0):
+            body = s3r.Object(s3_bucket, metadata_key).decode('utf-8')
+            
+            ids = json.loads(body)['ids']
             print('ids: ', ids)
             
             result = vectorstore.delete(ids)
