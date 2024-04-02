@@ -656,11 +656,9 @@ pip install opensearch-py
 
 [Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
 
-### OpenSearch의 add_documents시 에러
+### OpenSearch의 문서 업데이트
 
-문서 생성시 index를 체크하여 지우는 방식을 사용하였으나 shard가 과도하게 증가하여, metadata에 ids를 저장후 지우는 방식으로 변경하였습니다. [lambda-document-manager](./lambda-document-manager/lambda_function.py)을 참조합니다. 
-
-파일 업데이트시 meta에서 이전 document들을 찾아서 지우고 새로운 문서를 삽입니다.
+문서 생성시 업데이트까지 고려하여 index를 체크하여 지우는 방식을 사용하였으나 shard가 과도하게 증가하여, metadata에 ids를 저장후 지우는 방식으로 변경하였습니다. [lambda-document-manager](./lambda-document-manager/lambda_function.py)을 참조합니다. 동작은 파일 업데이트시 meta에서 이전 document들을 찾아서 지우고 새로운 문서를 삽입니다.
 
 ```python
 def store_document_for_opensearch(docs, key):    
