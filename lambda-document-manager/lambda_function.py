@@ -81,8 +81,6 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
-def isExist()
-
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
