@@ -658,15 +658,52 @@ pip install opensearch-py
 
 ### OpenSearch의 add_documents시 에러
 
-문서를 충분히 많이 넣은 상태에서 아래와 같은 에러가 발생하였습니다.
+문서 생성시 index를 체크하여 지우는 방식을 사용하였으나 shard가 과도하게 증가하여, metadata에 ids를 저장후 지우는 방식으로 변경하였습니다. [lambda-document-manager](./lambda-document-manager/lambda_function.py)을 참조합니다. 
 
-```text
-opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Validation Failed: 1: this action would add [15] total shards, but this cluster currently has [2991]/[3000] maximum shards open;')
+파일 업데이트시 meta에서 이전 document들을 찾아서 지우고 새로운 문서를 삽입니다.
+
+```python
+def store_document_for_opensearch(docs, key):    
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    metadata_key = meta_prefix+objectName+'.metadata.json'
+    delete_document_if_exist(metadata_key)
+    
+    try:        
+        response = vectorstore.add_documents(docs, bulk_size = 2000)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to request to LLM")
+
+    print('uploaded into opensearch')
+    
+    return response
+
+def delete_document_if_exist(metadata_key):
+    try: 
+        s3r = boto3.resource("s3")
+        bucket = s3r.Bucket(s3_bucket)
+        objs = list(bucket.objects.filter(Prefix=metadata_key))
+        print('objs: ', objs)
+        
+        if(len(objs)>0):
+            doc = s3r.Object(s3_bucket, metadata_key)
+            meta = doc.get()['Body'].read().decode('utf-8')
+            print('meta: ', meta)
+            
+            ids = json.loads(meta)['ids']
+            print('ids: ', ids)
+            
+            result = vectorstore.delete(ids)
+            print('result: ', result)        
+        else:
+            print('no meta file: ', metadata_key)
+            
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create meta file")
 ```
-
-실제로 OpenSearch DashBoard에서 2991 shards를 사용중 인것을 확인할 수 있습니다. 이때에는 cluster.max_shards_per_node를 올리거나(default 1000), node수를 늘려서 해당 문제를 해결할 수 있습니다.
-
-![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/e2ff5cca-3913-4d88-9697-48594fed5e4e)
 
 ### OpenSearch Embedding시 bulk_size
 
