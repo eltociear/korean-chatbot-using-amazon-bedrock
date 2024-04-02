@@ -84,7 +84,7 @@ def delete_index_if_exist(index_name):
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
-        bucket = s3.Bucket(s3_bucket)
+        bucket = s3r.Bucket(s3_bucket)
         objs = list(bucket.objects.filter(Prefix=metadata_key))
         print('objs: ', objs)
         
