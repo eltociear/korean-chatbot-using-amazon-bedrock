@@ -68,44 +68,7 @@ os_client = OpenSearch(
     ssl_assert_hostname = False,
     ssl_show_warn = False,
 )
-                        
-"""
-def delete_index_if_exist(index_name):    
-    if os_client.indices.exists(index_name):
-        print('delete opensearch document index: ', index_name)
-        response = os_client.indices.delete(
-            index=index_name
-        )
-        print('removed index: ', response)    
-    else:
-        print('no index: ', index_name)
-"""
-
-def delete_document_if_exist(metadata_key):
-    try: 
-        s3r = boto3.resource("s3")
-        bucket = s3r.Bucket(s3_bucket)
-        objs = list(bucket.objects.filter(Prefix=metadata_key))
-        print('objs: ', objs)
-        
-        if(len(objs)>0):
-            doc = s3r.Object(s3_bucket, metadata_key)
-            meta = doc.get()['Body'].read().decode('utf-8')
-            print('meta: ', meta)
-            
-            ids = json.loads(meta)['ids']
-            print('ids: ', ids)
-            
-            result = vectorstore.delete(ids)
-            print('result: ', result)        
-        else:
-            print('no meta file: ', metadata_key)
-            
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-        raise Exception ("Not able to create meta file")
-
+ 
 # Kendra
 kendra_client = boto3.client(
     service_name='kendra', 
@@ -146,33 +109,15 @@ vectorstore = OpenSearchVectorSearch(
     http_auth=(opensearch_account, opensearch_passwd),
 )    
 
-def store_document_for_opensearch(docs, key):    
-    # index_name = get_index_name(documentId)    
-    # delete_index_if_exist(index_name)
-        
-    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
-    print('objectName: ', objectName)    
-    metadata_key = meta_prefix+objectName+'.metadata.json'
-    print('meta file name: ', metadata_key)    
-    delete_document_if_exist(metadata_key)
-    
-    try:        
-        response = vectorstore.add_documents(docs, bulk_size = 2000)
-        print('response of adding documents: ', response)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-        #raise Exception ("Not able to request to LLM")
-
-    print('uploaded into opensearch')
-    
-    return response
-    
-def store_document_for_opensearch_with_nori(docs):
-    # index_name = get_index_name(documentId)    
-    # delete_index_if_exist(index_name)
-    index_name = 'idx-rag'
-    
+def is_not_exist(index_name):    
+    if os_client.indices.exists(index_name):        
+        print('use exist index: ', index_name)    
+        return False
+    else:
+        print('no index: ', index_name)
+        return True
+                       
+def create_nori_index():
     index_body = {
         'settings': {
             'analysis': {
@@ -233,20 +178,69 @@ def store_document_for_opensearch_with_nori(docs):
         }
     }
     
-    """
-    try: # create index
-        response = os_client.indices.create(
-            index_name,
-            body=index_body
+    if(is_not_exist(index_name)):
+        try: # create index
+            response = os_client.indices.create(
+                index_name,
+                body=index_body
+            )
+            print('index was created with nori plugin:', response)
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                
+            #raise Exception ("Not able to create the index")
+
+"""
+def delete_index_if_exist(index_name):    
+    if os_client.indices.exists(index_name):
+        print('delete opensearch document index: ', index_name)
+        response = os_client.indices.delete(
+            index=index_name
         )
-        print('index was created with nori plugin:', response)
+        print('removed index: ', response)    
+    else:
+        print('no index: ', index_name)
+"""
+
+def delete_document_if_exist(metadata_key):
+    try: 
+        s3r = boto3.resource("s3")
+        bucket = s3r.Bucket(s3_bucket)
+        objs = list(bucket.objects.filter(Prefix=metadata_key))
+        print('objs: ', objs)
+        
+        if(len(objs)>0):
+            doc = s3r.Object(s3_bucket, metadata_key)
+            meta = doc.get()['Body'].read().decode('utf-8')
+            print('meta: ', meta)
+            
+            ids = json.loads(meta)['ids']
+            print('ids: ', ids)
+            
+            result = vectorstore.delete(ids)
+            print('result: ', result)        
+        else:
+            print('no meta file: ', metadata_key)
+            
     except Exception:
         err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-        #raise Exception ("Not able to create the index")
-    """
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create meta file")
+
+if enableNoriPlugin == 'true':
+    create_nori_index()
+
+def store_document_for_opensearch(docs, key):    
+    # index_name = get_index_name(documentId)    
+    # delete_index_if_exist(index_name)
+        
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)    
+    metadata_key = meta_prefix+objectName+'.metadata.json'
+    print('meta file name: ', metadata_key)    
+    delete_document_if_exist(metadata_key)
     
-    try: # put the doucment
+    try:        
         response = vectorstore.add_documents(docs, bulk_size = 2000)
         print('response of adding documents: ', response)
     except Exception:
@@ -254,8 +248,10 @@ def store_document_for_opensearch_with_nori(docs):
         print('error message: ', err_msg)                
         #raise Exception ("Not able to request to LLM")
 
-    print('uploaded into opensearch')    
-  
+    print('uploaded into opensearch')
+    
+    return response
+          
 """  
 def get_index_name(documentId):
     index_name = "idx-"+documentId
@@ -731,7 +727,7 @@ def get_documentId(key, category):
     documentId = documentId.lower() # change to lowercase
                 
     return documentId
-    
+                                    
 # load csv documents from s3
 def lambda_handler(event, context):
     print('event: ', event)    
@@ -947,10 +943,7 @@ def lambda_handler(event, context):
                         if len(docs)>0:
                             print('docs[0]: ', docs[0])
                                 
-                            if enableNoriPlugin == 'true':
-                                ids = store_document_for_opensearch_with_nori(docs)
-                            else:
-                                ids = store_document_for_opensearch(docs, key)
+                            ids = store_document_for_opensearch(docs, key)
 
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId, ids=ids)
             else: # delete if the object is unsupported one for format or size
