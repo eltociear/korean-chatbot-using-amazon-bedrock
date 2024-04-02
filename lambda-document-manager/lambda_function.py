@@ -86,6 +86,7 @@ def delete_document_if_exist(metadata_key):
         s3r = boto3.resource("s3")
         doc = s3r.Object(s3_bucket, metadata_key)
         print('doc: ', doc)
+        print('body: ', doc.get()['Body'])
         
         if doc: 
             meta = doc.get()['Body'].read().decode('utf-8')
