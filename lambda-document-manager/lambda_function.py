@@ -81,12 +81,19 @@ def delete_index_if_exist(index_name):
         print('no index: ', index_name)
 """
 
+def isExist()
+
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
         doc = s3r.Object(s3_bucket, metadata_key)
         print('doc: ', doc)
-        print('body: ', doc.get()['Body'])
+        
+        
+        response = s3r.get_object_attributes(s3_bucket, metadata_key)
+        print('response: ', response)
+        
+        
         
         if doc: 
             meta = doc.get()['Body'].read().decode('utf-8')
