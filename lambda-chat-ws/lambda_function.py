@@ -33,6 +33,7 @@ from opensearchpy import OpenSearch
 from langchain_community.chat_models import BedrockChat
 from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_aws import ChatBedrock
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -125,13 +126,11 @@ def get_chat(profile_of_LLMs, selected_LLM):
     }
     # print('parameters: ', parameters)
 
-    chat = BedrockChat(
+    chat = ChatBedrock(   # new chat model
         model_id=modelId,
         client=boto3_bedrock, 
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
         model_kwargs=parameters,
-    )        
+    )    
     
     return chat
 
@@ -246,6 +245,10 @@ def general_conversation(connectionId, requestId, chat, query):
         )
         msg = readStreamMsg(connectionId, requestId, stream.content)    
                             
+        usage = stream.response_metadata['usage']
+        print('prompt_tokens: ', usage['prompt_tokens'])
+        print('completion_tokens: ', usage['completion_tokens'])
+        print('total_tokens: ', usage['total_tokens'])
         msg = stream.content
         print('msg: ', msg)
     except Exception:
