@@ -116,13 +116,13 @@ const claude3_sonnet = [
     "bedrock_region": "us-west-2", // Oregon
     "model_type": "claude3",
     "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",   
-    "maxOutputTokens": "8196"
+    "maxOutputTokens": "4096"
   },
   {
     "bedrock_region": "us-east-1", // N.Virginia
     "model_type": "claude3",
     "model_id": "anthropic.claude-3-sonnet-20240229-v1:0",
-    "maxOutputTokens": "8196"
+    "maxOutputTokens": "4096"
   }
 ];
 
@@ -132,6 +132,8 @@ const profile_of_LLMs = claude3_sonnet;
 Bedrock에서 client를 지정할때 bedrock_region을 지정할 수 있습니다. 아래와 같이 LLM을 선택하면 Lambda에 event가 올때마다 다른 리전의 LLM을 활용할 수 있습니다. 
 
 ```python
+from langchain_aws import ChatBedrock
+
 profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 selected_LLM = 0
 
@@ -161,13 +163,11 @@ def get_chat(profile_of_LLMs, selected_LLM):
     }
     # print('parameters: ', parameters)
 
-    chat = BedrockChat(
+    chat = ChatBedrock(   # new chat model
         model_id=modelId,
         client=boto3_bedrock, 
-        streaming=True,
-        callbacks=[StreamingStdOutCallbackHandler()],
         model_kwargs=parameters,
-    )        
+    )       
     
     return chat
 ```
