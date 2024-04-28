@@ -330,9 +330,6 @@ def priority_search(query, relevant_docs, bedrock_embeddings):
 
 [Kendra 를 이용한 RAG의 구현](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra.md)에 따라 Kendra의 RAG 성능을 향상 시킬 수 있습니다. [Kendra의 FAQ](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-faq.md)와 같이 정리된 문서를 활용하고, 관련도 기반으로 관련 문서를 선택하여 Context로 확인 합니다. Kendra에서 문서 등록에 필요한 내용은 [kendra-document.md](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/kendra-document.md)을 참조합니다. 또한, 상세한 내용은 관련된 Blog인 [Amazon Bedrock의 Claude와 Amazon Kendra로 향상된 RAG 사용하기](https://aws.amazon.com/ko/blogs/tech/bedrock-claude-kendra-rag/)을 참고합니다. 
 
-### OpenSearch의 성능 향상 방법
-
-Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyword)을 활용하여 관련된 문서를 찾을 확율을 높입니다. 상세한 내용은 [OpenSearch에서 Lexical 검색](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/opensearch-nori-plugin.md)에 있습니다.
 
 ### Code Generation
 
@@ -593,6 +590,7 @@ aws kendra create-data-source
 
 ### OpenSearch
 
+
 [Python client](https://opensearch.org/docs/latest/clients/python-low-level/)에 따라 OpenSearch를 활용합니다.
 
 opensearch-py를 설치합니다.
@@ -602,6 +600,11 @@ pip install opensearch-py
 ```
 
 [Index naming restrictions](https://opensearch.org/docs/1.0/opensearch/rest-api/create-index/#index-naming-restrictions)에 따랏 index는 low case여야하고, 공백이나 ','을 가질수 없습니다.
+
+### OpenSearch의 성능 향상 방법
+
+Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyword)을 활용하여 관련된 문서를 찾을 확율을 높입니다. 상세한 내용은 [OpenSearch에서 Lexical 검색](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/opensearch-nori-plugin.md)에 있습니다.
+
 
 ### OpenSearch의 문서 업데이트
 
