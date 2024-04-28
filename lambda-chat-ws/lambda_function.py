@@ -250,7 +250,7 @@ def general_conversation(connectionId, requestId, chat, query):
         print('completion_tokens: ', usage['completion_tokens'])
         print('total_tokens: ', usage['total_tokens'])
         msg = stream.content
-        print('msg: ', msg)
+        # print('msg: ', msg)
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
