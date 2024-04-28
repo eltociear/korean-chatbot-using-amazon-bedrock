@@ -338,59 +338,6 @@ Vector 검색(Sementaic) 뿐 아니라, Lexical 검색(Keyword)을 활용하여 
 
 RAG에 저장된 기존 코드를 이용하여 새로운 코드를 생성합니다. [rag-code-generation](https://github.com/kyopark2014/rag-code-generation)는 Code를 한국어로 요약하여 RAG에 저장하고 검색하는 방법을 설명했습니다. 여기에서는 일반 문서와 Code reference를 하나의 RAG에 저장하고 활용합니다. 
 
-## 주요 구성
-
-### LangChain에서 LLM 활용
-
-LangChain을 이용하면 LLM을 활용한 application을 쉽고 편리하게 개발할 수 있습니다. 여기서는 Amazon Bedrock을 이용합니다. Bedrock의 서비스 이름은 "bedrock-runtime"입니다.
-
-```python
-import boto3
-from langchain.llms.bedrock import Bedrock
-
-boto3_bedrock = boto3.client(
-    service_name='bedrock-runtime',
-    region_name=bedrock_region,
-    config=Config(
-        retries = {
-            'max_attempts': 30
-        }            
-    )
-)
-
-llm = Bedrock(
-    model_id=modelId, 
-    client=boto3_bedrock, 
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
-    model_kwargs=parameters)
-```
-
-여기서 파라메터는 아래와 같습니다.
-
-```python
-def get_parameter(modelId):
-    if modelId == 'anthropic.claude-v1' or modelId == 'anthropic.claude-v2':
-        return {
-            "max_tokens_to_sample":8191, # 8k
-            "temperature":0.1,
-            "top_k":250,
-            "top_p": 0.9,
-            "stop_sequences": [HUMAN_PROMPT]            
-        }
-parameters = get_parameter(modelId)
-```
-
-Bedrock의 지원모델은 [service name이 "bedrock"](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock.html)의 list_foundation_models()을 이용하여 조회합니다. 
-
-```python
-bedrock_client = boto3.client(
-    service_name='bedrock',
-    region_name=bedrock_region,
-)
-modelInfo = bedrock_client.list_foundation_models()    
-print('models: ', modelInfo)
-```
 
 ### Embedding
 
@@ -404,11 +351,11 @@ bedrock_embeddings = BedrockEmbeddings(
 )
 ```
 
-## Knowledge Store 
+### Knowledge Store 
 
 여기서는 Knowledge Store로 OpenSearch, Faiss, Kendra을 이용합니다.
 
-## 메모리에 대화 저장
+### 메모리에 대화 저장
 
 lambda-chat-ws는 인입된 메시지의 userId를 이용하여 map_chain에 저장된 대화 이력(memory_chain)가 있는지 확인합니다. 채팅 이력이 없다면 아래와 같이 [ConversationBufferWindowMemory](https://python.langchain.com/docs/modules/memory/types/buffer_window)로 memory_chain을 설정합니다. 여기서, 
 
