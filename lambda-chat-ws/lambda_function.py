@@ -9,11 +9,11 @@ import csv
 import traceback
 import re
 import base64
+import datetime
 
 from urllib import parse
 from botocore.config import Config
 from PIL import Image
-
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
@@ -29,11 +29,15 @@ from langchain_community.retrievers import AmazonKendraRetriever
 from multiprocessing import Process, Pipe
 from googleapiclient.discovery import build
 from opensearchpy import OpenSearch
+from langchain_core.prompts import PromptTemplate
 
 from langchain_community.chat_models import BedrockChat
 from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_aws import ChatBedrock
+
+from langchain.agents import tool
+from langchain.agents import AgentExecutor, create_react_agent
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -114,7 +118,7 @@ def get_chat(profile_of_LLMs, selected_LLM):
         config=Config(
             retries = {
                 'max_attempts': 30
-            }            
+            }
         )
     )
     parameters = {
@@ -158,6 +162,47 @@ def get_embedding(profile_of_LLMs, selected_LLM):
     )  
     
     return bedrock_embedding
+
+
+
+def get_react_prompt_template():
+    # Get the react prompt template
+    return PromptTemplate.from_template("""Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought:{agent_scratchpad}
+""")
+
+@tool
+def check_system_time(format: str = "%Y-%m-%d %H:%M:%S"):
+    """Returns the current date and time in the specified format"""
+
+    # get the current date and time
+    current_time = datetime.datetime.now()
+    
+    # format the time as a string in the format "YYYY-MM-DD HH:MM:SS"
+    formatted_time = current_time.strftime(format)
+    
+    # return the formatted time
+    return formatted_time
+
+tools = [check_system_time]
+
 
 def sendMessage(id, body):
     try:
@@ -278,6 +323,23 @@ def general_conversation(connectionId, requestId, chat, query):
         end_time_for_inference = time.time()
         time_for_inference = end_time_for_inference - start_time_for_inference
         
+    return msg
+
+def use_agent(chat, query):
+    tools = [check_system_time]
+    prompt_template = get_react_prompt_template()
+    print('prompt_template: ', prompt_template)
+    
+    agent = create_react_agent(chat, tools, prompt_template)
+    
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    
+    response = agent_executor.invoke({"input": query})
+    print('response: ', response)
+    
+    msg = response['output']
+    print('msg: ', msg)
+            
     return msg
 
 def translate_text(chat, text):
@@ -2949,6 +3011,9 @@ def getResponse(connectionId, jsonBody):
             else:       
                 if conv_type == 'normal' or conv_type == 'funny':      # normal
                     msg = general_conversation(connectionId, requestId, chat, text)  
+                
+                elif conv_type == 'agent':
+                    msg = use_agent(chat, text)
                 
                 elif conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}')
