@@ -10,6 +10,7 @@ import traceback
 import re
 import base64
 import datetime
+import requests
 
 from urllib import parse
 from botocore.config import Config
@@ -38,6 +39,7 @@ from langchain_aws import ChatBedrock
 
 from langchain.agents import tool
 from langchain.agents import AgentExecutor, create_react_agent
+from bs4 import BeautifulSoup
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -162,48 +164,7 @@ def get_embedding(profile_of_LLMs, selected_LLM):
     )  
     
     return bedrock_embedding
-
-
-
-def get_react_prompt_template():
-    # Get the react prompt template
-    return PromptTemplate.from_template("""Answer the following questions as best you can. You have access to the following tools:
-
-{tools}
-
-Use the following format:
-
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-Begin!
-
-Question: {input}
-Thought:{agent_scratchpad}
-""")
-
-@tool
-def check_system_time(format: str = "%Y-%m-%d %H:%M:%S"):
-    """Returns the current date and time in the specified format"""
-
-    # get the current date and time
-    current_time = datetime.datetime.now()
     
-    # format the time as a string in the format "YYYY-MM-DD HH:MM:SS"
-    formatted_time = current_time.strftime(format)
-    
-    # return the formatted time
-    return formatted_time
-
-tools = [check_system_time]
-
-
 def sendMessage(id, body):
     try:
         client.post_to_connection(
@@ -325,8 +286,64 @@ def general_conversation(connectionId, requestId, chat, query):
         
     return msg
 
+def get_react_prompt_template():
+    # Get the react prompt template
+    return PromptTemplate.from_template("""Answer the following questions as best you can. You have access to the following tools:
+
+{tools}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought:{agent_scratchpad}
+""")
+
+@tool
+def check_system_time(format: str = "%Y-%m-%d %H:%M:%S"):
+    """Returns the current date and time in the specified format"""
+
+    # get the current date and time
+    current_time = datetime.datetime.now()
+    
+    # format the time as a string in the format "YYYY-MM-DD HH:MM:SS"
+    formatted_time = current_time.strftime(format)
+    
+    # return the formatted time
+    return formatted_time
+
+@tool
+def get_product_list(keyword: str) -> list:
+    """
+    Search product list by keyword and then return product list
+    keyword: search keyword
+    return: product list
+    """
+
+    url = f"https://search.kyobobook.co.kr/search?keyword={keyword}&gbCode=TOT&target=total"
+    response = requests.get(url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        prod_info = soup.find_all("a", attrs={"class": "prod_info"})
+        prod_list = [
+            {"title": prod.text.strip(), "link": prod.get("href")} for prod in prod_info
+        ]
+        return prod_list[:5]
+    else:
+        return []
+
 def use_agent(chat, query):
-    tools = [check_system_time]
+    tools = [check_system_time, get_product_list]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
     
