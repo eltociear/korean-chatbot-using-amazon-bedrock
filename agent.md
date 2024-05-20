@@ -6,7 +6,7 @@
 
 교보문고의 Search API를 이용하여 아래와 같이 도서정보를 가져오는 함수를 정의합니다.
 
-```
+```python
 from langchain.agents import tool
 import requests
 from bs4 import BeautifulSoup
