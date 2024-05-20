@@ -34,12 +34,12 @@ def get_product_list(keyword: str) -> list:
 
 ## Agent의 정의
 
-아래와 같이 Agent를 ReAct로 정의합니다.
+아래와 같이 Agent를 ReAct로 정의합니다. 결과는 아래와 같이 stream으로 출력합니다.
 
 ```python
 from langchain.agents import AgentExecutor, create_react_agent
 
-def use_agent(chat, query):
+def use_agent(connectionId, requestId, chat, query):
     tools = [check_system_time, get_product_list]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
@@ -51,6 +51,8 @@ def use_agent(chat, query):
     response = agent_executor.invoke({"input": query})
     print('response: ', response)
     
+    msg = readStreamMsg(connectionId, requestId, response['output'])
+
     msg = response['output']
     print('msg: ', msg)
             
