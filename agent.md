@@ -59,7 +59,7 @@ def use_agent(connectionId, requestId, chat, query):
     return msg
 ```
 
-이때, [ReAct를 위한 Prompt](https://github.com/chrishayuk/how-react-agents-work/blob/main/hello-agent-3.py#L20)는 아래와 같이 정의합니다.
+이때, ReAct를 위한 Prompt는 [hwchase17/react](https://smith.langchain.com/hub/hwchase17/react)을 이용해 아래와 같이 정의합니다.
 
 ```python
 def get_react_prompt_template():
