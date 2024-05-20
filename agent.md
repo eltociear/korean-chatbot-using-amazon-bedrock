@@ -4,7 +4,7 @@
 
 ## 도서 정보 가져오기
 
-교보문고의 Search API를 이용하여 아래와 같이 도서정보를 가져오는 함수를 정의합니다.
+교보문고의 Search API를 이용하여 아래와 같이 [도서정보를 가져오는 함수](https://colab.research.google.com/drive/1juAwGGOEiz7h3XPtCFeRyfDB9hspQdHc?usp=sharing)를 정의합니다.
 
 ```python
 from langchain.agents import tool
@@ -57,7 +57,7 @@ def use_agent(chat, query):
     return msg
 ```
 
-이때, ReAct를 위한 Prompt는 아래와 같이 정의합니다.
+이때, [ReAct를 위한 Prompt](https://github.com/chrishayuk/how-react-agents-work/blob/main/hello-agent-3.py#L4)는 아래와 같이 정의합니다.
 
 ```python
 def get_react_prompt_template():
