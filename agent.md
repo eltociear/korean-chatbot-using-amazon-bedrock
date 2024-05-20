@@ -1,6 +1,6 @@
 # LangChain의 Agent 사용하기
 
-[lambda-chat](./lambda-chat-ws/lambda_function.py)에서는 Agent를 정의하여 CoT를 구현합니다.
+[lambda-chat](./lambda-chat-ws/lambda_function.py)에서는 ReAct Agent를 정의합니다.
 
 ## 도서 정보 가져오기
 
