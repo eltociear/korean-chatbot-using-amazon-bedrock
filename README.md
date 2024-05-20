@@ -695,6 +695,8 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 
 ## 실행결과
 
+#### Multi modal 및 RAG
+
 "Conversation Type"으로 [General Conversation]을 선택하고, [dice.png](./contents/dice.png) 파일을 다운로드합니다.
 
 
@@ -721,6 +723,13 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 채팅창에 "공동인증서 창구발급 서비스는 무엇인가요?"라고 입력하고 결과를 확인합니다.
 
 ![image](https://github.com/kyopark2014/rag-chatbot-using-bedrock-claude-and-kendra/assets/52392004/2e2b2ae1-7c50-4c14-968a-6c58332d99af)
+
+#### Agent 사용하기
+
+채팅창에서 뒤로가기 한 후에 "1-2 Agent"를 선택합니다. 아래와 같이 "여행 관련 도서 추천해줘."와 같이 입력하면 교보문고의 API를 이용하여 "여행"과 관련된 문서를 조회한 후 결과를 보여줍니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b3997df2-b6ea-4419-9843-1dfe420fef2d)
+
 
 #### 잘못된 응답 유도해보기
 
