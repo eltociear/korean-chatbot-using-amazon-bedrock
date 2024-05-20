@@ -342,7 +342,7 @@ def get_product_list(keyword: str) -> list:
     else:
         return []
 
-def use_agent(chat, query):
+def use_agent(connectionId, requestId, chat, query):
     tools = [check_system_time, get_product_list]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
@@ -354,6 +354,8 @@ def use_agent(chat, query):
     response = agent_executor.invoke({"input": query})
     print('response: ', response)
     
+    msg = readStreamMsg(connectionId, requestId, response['output'])
+
     msg = response['output']
     print('msg: ', msg)
             
@@ -3030,7 +3032,7 @@ def getResponse(connectionId, jsonBody):
                     msg = general_conversation(connectionId, requestId, chat, text)  
                 
                 elif conv_type == 'agent':
-                    msg = use_agent(chat, text)
+                    msg = use_agent(connectionId, requestId, chat, text)
                 
                 elif conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}')
