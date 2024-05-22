@@ -391,17 +391,21 @@ def get_weather_info(city: str) -> str:
     return weather_str
 
 def run_agent_react(connectionId, requestId, chat, query):
+    # define tools
     tools = [get_current_time, get_product_list, get_weather_info]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
     
+     # create agent
     agent = create_react_agent(chat, tools, prompt_template)
     
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     
+    # run agent
     response = agent_executor.invoke({"input": query})
     print('response: ', response)
-    
+
+    # streaming    
     msg = readStreamMsg(connectionId, requestId, response['output'])
 
     msg = response['output']
@@ -410,17 +414,27 @@ def run_agent_react(connectionId, requestId, chat, query):
     return msg
 
 def run_agent_react_chat(connectionId, requestId, chat, query):
+    # revise question
+    revised_question = revise_question(connectionId, requestId, chat, query)     
+    print('revised_question: ', revised_question)  
+    
+    # define tools
     tools = [get_current_time, get_product_list, get_weather_info]
+    
+    # get template based on react 
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
     
+    # create agent
     agent = create_react_agent(chat, tools, prompt_template)
     
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     
-    response = agent_executor.invoke({"input": query})
+    # run agent
+    response = agent_executor.invoke({"input": revised_question})
     print('response: ', response)
     
+    # streaming
     msg = readStreamMsg(connectionId, requestId, response['output'])
 
     msg = response['output']
@@ -3100,7 +3114,7 @@ def getResponse(connectionId, jsonBody):
                 elif conv_type == 'agent-react':
                     msg = run_agent_react(connectionId, requestId, chat, text)                
                 elif conv_type == 'agent-react-chat':
-                    msg = run_agent_react(connectionId, requestId, chat, text)
+                    msg = run_agent_react_chat(connectionId, requestId, chat, text)
                 
                 elif conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}')
