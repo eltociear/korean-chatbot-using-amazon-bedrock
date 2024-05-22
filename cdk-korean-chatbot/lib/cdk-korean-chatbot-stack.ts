@@ -696,6 +696,22 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
     googleApiSecret.grantRead(roleLambdaWebsocket) 
 
+    
+    const weatherApiSecret = new secretsmanager.Secret(this, `weather-api-secret-for-${projectName}`, {
+      description: 'secret for weather api key', // openweathermap
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      secretName: 'openweathermap',
+      generateSecretString: {
+        secretStringTemplate: JSON.stringify({ 
+          api_name: 'weather'
+        }),
+        generateStringKey: 'api_key',
+        excludeCharacters: '/@"',
+      },
+
+    });
+    googleApiSecret.grantRead(roleLambdaWebsocket) 
+
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
       description: 'lambda for chat using websocket',

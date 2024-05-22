@@ -40,6 +40,7 @@ from langchain_aws import ChatBedrock
 from langchain.agents import tool
 from langchain.agents import AgentExecutor, create_react_agent
 from bs4 import BeautifulSoup
+from pytz import timezone
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -91,6 +92,19 @@ try:
     google_api_key = secret['google_api_key']
     google_cse_id = secret['google_cse_id']
     #print('google_cse_id: ', google_cse_id)    
+
+except Exception as e:
+    raise e
+
+# api key to get weather information in agent
+try:
+    get_secret_value_response = secretsmanager.get_secret_value(
+        SecretId='openweathermap'
+    )
+    #print('get_secret_value_response: ', get_secret_value_response)
+    secret = json.loads(get_secret_value_response['SecretString'])
+    #print('secret: ', secret)
+    api_key = secret['api_key']
 
 except Exception as e:
     raise e
@@ -286,7 +300,7 @@ def general_conversation(connectionId, requestId, chat, query):
         
     return msg
 
-def get_react_prompt_template():
+def get_react_prompt_template(): # (hwchase17/react) https://smith.langchain.com/hub/hwchase17/react
     # Get the react prompt template
     return PromptTemplate.from_template("""Answer the following questions as best you can. You have access to the following tools:
 
@@ -310,19 +324,6 @@ Thought:{agent_scratchpad}
 """)
 
 @tool
-def check_system_time(format: str = "%Y-%m-%d %H:%M:%S"):
-    """Returns the current date and time in the specified format"""
-
-    # get the current date and time
-    current_time = datetime.datetime.now()
-    
-    # format the time as a string in the format "YYYY-MM-DD HH:MM:SS"
-    formatted_time = current_time.strftime(format)
-    
-    # return the formatted time
-    return formatted_time
-
-@tool
 def get_product_list(keyword: str) -> list:
     """
     Search product list by keyword and then return product list
@@ -342,8 +343,48 @@ def get_product_list(keyword: str) -> list:
     else:
         return []
 
+@tool
+def get_current_time(format: str = "%Y-%m-%d %H:%M:%S"):
+    """Returns the current date and time in the specified format"""
+    
+    timestr = datetime.datetime.now(timezone('Asia/Seoul')).strftime(format)
+    # print('timestr:', timestr)
+    
+    # return the formatted time
+    return timestr
+
+@tool
+def get_weather_info(city: str) -> str:
+    """
+    Search weather information by city name and then return weather statement
+    city: the english name of city to search
+    return: weather statement
+    """    
+    
+    apiKey = api_key
+    lang = 'en' 
+    units = 'metric' 
+    api = f"https://api.openweathermap.org/data/2.5/weather?q={city}&APPID={apiKey}&lang={lang}&units={units}"
+    # print('api: ', api)
+
+    result = requests.get(api)
+    result = json.loads(result.text)
+    
+    overall = result['weather'][0]['main']
+    current_temp = result['main']['temp']
+    min_temp = result['main']['temp_min']
+    max_temp = result['main']['temp_max']
+    humidity = result['main']['humidity']
+    wind_speed = result['wind']['speed']
+    cloud = result['clouds']['all']
+    
+    # weather_str = f"오늘의 {city} 날씨의 특징은 {overall}이며, 현재 온도는 {current_temp}도 이고, 최저온도는 {min_temp}도, 최고 온도는 {max_temp}도 입니다. 현재 습도는 {humidity}% 이고, 바람은 초당 {wind_speed} 미터 입니다. 구름은 {cloud}% 입니다."
+    weather_str = f"Today, the overall of {city} is {overall}, current temperature is {current_temp} degree, min temperature is {min_temp} degree, highest temperature is {max_temp} degree. huminity is {humidity}%, wind status is {wind_speed} meter per second. the amount of cloud is {cloud}%."
+    
+    return weather_str
+
 def use_agent(connectionId, requestId, chat, query):
-    tools = [check_system_time, get_product_list]
+    tools = [get_current_time, get_product_list, get_weather_info]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
     
