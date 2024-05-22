@@ -390,7 +390,26 @@ def get_weather_info(city: str) -> str:
         
     return weather_str
 
-def use_agent(connectionId, requestId, chat, query):
+def run_agent_react(connectionId, requestId, chat, query):
+    tools = [get_current_time, get_product_list, get_weather_info]
+    prompt_template = get_react_prompt_template()
+    print('prompt_template: ', prompt_template)
+    
+    agent = create_react_agent(chat, tools, prompt_template)
+    
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+    
+    response = agent_executor.invoke({"input": query})
+    print('response: ', response)
+    
+    msg = readStreamMsg(connectionId, requestId, response['output'])
+
+    msg = response['output']
+    print('msg: ', msg)
+            
+    return msg
+
+def run_agent_react_chat(connectionId, requestId, chat, query):
     tools = [get_current_time, get_product_list, get_weather_info]
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)
@@ -3077,10 +3096,11 @@ def getResponse(connectionId, jsonBody):
                 msg  = "The chat memory was intialized in this session."
             else:       
                 if conv_type == 'normal' or conv_type == 'funny':      # normal
-                    msg = general_conversation(connectionId, requestId, chat, text)  
-                
-                elif conv_type == 'agent':
-                    msg = use_agent(connectionId, requestId, chat, text)
+                    msg = general_conversation(connectionId, requestId, chat, text)                  
+                elif conv_type == 'agent-react':
+                    msg = run_agent_react(connectionId, requestId, chat, text)                
+                elif conv_type == 'agent-react-chat':
+                    msg = run_agent_react(connectionId, requestId, chat, text)
                 
                 elif conv_type == 'qa':   # RAG
                     print(f'rag_type: {rag_type}')
