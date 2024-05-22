@@ -735,6 +735,10 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/b3997df2-b6ea-4419-9843-1dfe420fef2d)
 
+"서울의 오늘 날씨 알려줘"라고 입력하면 아래와 같이 날씨 정보를 조회하여 보여줍니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/f805a915-0d8a-4124-8243-a08fb1463919)
+
 
 #### 잘못된 응답 유도해보기
 
