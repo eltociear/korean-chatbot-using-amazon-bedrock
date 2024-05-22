@@ -707,7 +707,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         generateStringKey: 'api_key',
         excludeCharacters: '/@"',
       },
-
     });
     weatherApiSecret.grantRead(roleLambdaWebsocket) 
 

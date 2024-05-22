@@ -361,6 +361,11 @@ def get_weather_info(city: str) -> str:
     return: weather statement
     """    
     
+    if isKorean(city):
+        chat = get_chat(profile_of_LLMs, selected_LLM)
+        city = traslation_to_korean(chat, city)
+        print('city (translated): ', city)
+    
     apiKey = api_key
     lang = 'en' 
     units = 'metric' 
