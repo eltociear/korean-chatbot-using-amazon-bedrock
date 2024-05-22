@@ -739,6 +739,10 @@ response = new_vectorstore.add_documents(docs, bulk_size = 2000)
 
 ![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/f805a915-0d8a-4124-8243-a08fb1463919)
 
+LLM에 시간을 물어보면 마지막 Training 시간이나 전혀 관련없는 Hallucination 값을 줍니다. Agent를 사용할 경우에 아래와 같이 현재 시간을 조회하여 보여줍니다. "오늘 날짜 알려줘."와 "현재 시간은?"을 이용하여 동작을 확인합니다.
+
+![image](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/assets/52392004/69b370c5-882a-4031-8e54-b4840d023b90)
+
 
 #### 잘못된 응답 유도해보기
 
