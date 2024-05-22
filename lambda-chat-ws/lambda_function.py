@@ -356,7 +356,7 @@ def get_current_time(format: str = "%Y-%m-%d %H:%M:%S"):
 @tool
 def get_weather_info(city: str) -> str:
     """
-    Search weather information by city name and then return weather statement
+    Search weather information by city name and then return weather statement. If no city, ask the name of city.
     city: the english name of city to search
     return: weather statement
     """    
