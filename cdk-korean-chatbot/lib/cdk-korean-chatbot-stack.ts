@@ -695,7 +695,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
 
     });
     googleApiSecret.grantRead(roleLambdaWebsocket) 
-
     
     const weatherApiSecret = new secretsmanager.Secret(this, `weather-api-secret-for-${projectName}`, {
       description: 'secret for weather api key', // openweathermap
@@ -710,7 +709,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       },
 
     });
-    googleApiSecret.grantRead(roleLambdaWebsocket) 
+    weatherApiSecret.grantRead(roleLambdaWebsocket) 
 
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
