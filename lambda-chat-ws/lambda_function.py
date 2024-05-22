@@ -47,7 +47,8 @@ s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
-profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
+LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
+LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -120,8 +121,8 @@ AI_PROMPT = "\n\nAssistant:"
 map_chain = dict() 
 
 # Multi-LLM
-def get_chat(profile_of_LLMs, selected_LLM):
-    profile = profile_of_LLMs[selected_LLM]
+def get_chat(LLM_for_chat, selected_LLM):
+    profile = LLM_for_chat[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
     print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
@@ -154,8 +155,42 @@ def get_chat(profile_of_LLMs, selected_LLM):
     
     return chat
 
-def get_embedding(profile_of_LLMs, selected_LLM):
-    profile = profile_of_LLMs[selected_LLM]
+def get_multimodal(LLM_for_multimodal, selected_LLM):
+    profile = LLM_for_multimodal[selected_LLM]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
+    )
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
+    # print('parameters: ', parameters)
+
+    multimodal = ChatBedrock(   # new chat model
+        model_id=modelId,
+        client=boto3_bedrock, 
+        model_kwargs=parameters,
+    )    
+    
+    return multimodal
+
+def get_embedding(LLM_for_chat, selected_LLM):
+    profile = LLM_for_chat[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
     print(f'Embedding: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
@@ -362,7 +397,7 @@ def get_weather_info(city: str) -> str:
     """    
                 
     if isKorean(city):
-        chat = get_chat(profile_of_LLMs, selected_LLM)
+        chat = get_chat(LLM_for_chat, selected_LLM)
         city = traslation_to_english(chat, city)
         print('city (translated): ', city)
     
@@ -730,7 +765,9 @@ def extract_timestamp(chat, text):
     
     return msg
 
-def use_multimodal(chat, img_base64, query):    
+def use_multimodal(img_base64, query):    
+    multimodal = get_multimodal(LLM_for_multimodal, selected_LLM)
+    
     if query == "":
         query = "그림에 대해 상세히 설명해줘."
     
@@ -752,7 +789,7 @@ def use_multimodal(chat, img_base64, query):
     ]
     
     try: 
-        result = chat.invoke(messages)
+        result = multimodal.invoke(messages)
         
         summary = result.content
         print('result of code summarization: ', summary)
@@ -2472,14 +2509,14 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        chat = get_chat(profile_of_LLMs, selected_LLM)
-        bedrock_region = profile_of_LLMs[selected_LLM]['bedrock_region']
+        chat = get_chat(LLM_for_chat, selected_LLM)
+        bedrock_region = LLM_for_chat[selected_LLM]['bedrock_region']
 
         process = Process(target=translate_process_from_relevent_doc, args=(child_conn, chat, doc, bedrock_region))
         processes.append(process)
 
         selected_LLM = selected_LLM + 1
-        if selected_LLM == len(profile_of_LLMs):
+        if selected_LLM == len(LLM_for_chat):
             selected_LLM = 0
 
     for process in processes:
@@ -3008,14 +3045,14 @@ def getResponse(connectionId, jsonBody):
         code_type = 'js'
 
     # Multi-LLM
-    profile = profile_of_LLMs[selected_LLM]
+    profile = LLM_for_chat[selected_LLM]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
     print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     # print('profile: ', profile)
     
-    chat = get_chat(profile_of_LLMs, selected_LLM)    
-    bedrock_embedding = get_embedding(profile_of_LLMs, selected_LLM)
+    chat = get_chat(LLM_for_chat, selected_LLM)    
+    bedrock_embedding = get_embedding(LLM_for_chat, selected_LLM)
 
     # allocate memory
     if userId in map_chain:  
@@ -3236,7 +3273,7 @@ def getResponse(connectionId, jsonBody):
                 print('commend: ', commend)
                 
                 # verify the image
-                msg = use_multimodal(chat, img_base64, commend)       
+                msg = use_multimodal(img_base64, commend)       
                 
                 # extract text from the image
                 text = extract_text(chat, img_base64)
@@ -3299,7 +3336,7 @@ def getResponse(connectionId, jsonBody):
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
 
-    if selected_LLM >= len(profile_of_LLMs)-1:
+    if selected_LLM >= len(LLM_for_chat)-1:
         selected_LLM = 0
     else:
         selected_LLM = selected_LLM + 1

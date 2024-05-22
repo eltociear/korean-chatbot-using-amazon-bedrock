@@ -152,7 +152,7 @@ const claude2 = [
   }
 ];
 
-const profile_of_LLMs = claude3_sonnet;
+const LLMs_for_chat = claude3_sonnet;
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -738,7 +738,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
         kendraMethod: kendraMethod,
-        profile_of_LLMs:JSON.stringify(profile_of_LLMs),
+        LLM_for_chat:JSON.stringify(claude3_haiku),
+        LLM_for_multimodal:JSON.stringify(claude3_sonnet),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
@@ -833,7 +834,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // SQS for S3 event (fifo) 
     let queueUrl:string[] = [];
     let queue:any[] = [];
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
         visibilityTimeout: cdk.Duration.seconds(600),
         queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
@@ -856,17 +857,17 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       environment: {
         sqsUrl: queueS3event.queueUrl,
         sqsFifoUrl: JSON.stringify(queueUrl),
-        nqueue: String(profile_of_LLMs.length)
+        nqueue: String(LLMs_for_chat.length)
       }
     });
     lambdaS3eventManager.addEventSource(new SqsEventSource(queueS3event)); // permission for SQS
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
     }
 
     // Lambda for document manager
     let lambdDocumentManager:any[] = [];
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
         description: 'S3 document manager',
         functionName: `lambda-document-manager-for-${projectName}-${i}`,
@@ -875,7 +876,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(600),
         memorySize: 8192,
         environment: {
-          bedrock_region: profile_of_LLMs[i].bedrock_region,
+          bedrock_region: LLMs_for_chat[i].bedrock_region,
           s3_bucket: s3Bucket.bucketName,
           s3_prefix: s3_prefix,
           kendra_region: String(kendra_region),
@@ -890,7 +891,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           max_object_size: String(max_object_size),
           enableNoriPlugin: enableNoriPlugin,
           supportedFormat: supportedFormat,
-          profile_of_LLMs: JSON.stringify(profile_of_LLMs),
+          LLMs_for_chat: JSON.stringify(LLMs_for_chat),
           enableParallelSummay: enableParallelSummay
         }
       });         
@@ -914,7 +915,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // SQS for S3 event (fifo) 
     let queueUrl:string[] = [];
     let queue:any[] = [];
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
         visibilityTimeout: cdk.Duration.seconds(600),
         queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
@@ -936,16 +937,16 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),      
       environment: {
         sqsFifoUrl: JSON.stringify(queueUrl),
-        nqueue: String(profile_of_LLMs.length)
+        nqueue: String(LLMs_for_chat.length)
       }
     });
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
     }
 
     // Lambda for document manager
     let lambdDocumentManager:any[] = [];
-    for(let i=0;i<profile_of_LLMs.length;i++) {
+    for(let i=0;i<LLMs_for_chat.length;i++) {
       lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
         description: 'S3 document manager',
         functionName: `lambda-document-manager-for-${projectName}-${i}`,
@@ -954,7 +955,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(600),
         memorySize: 8192,
         environment: {
-          bedrock_region: profile_of_LLMs[i].bedrock_region,
+          bedrock_region: LLMs_for_chat[i].bedrock_region,
           s3_bucket: s3Bucket.bucketName,
           s3_prefix: s3_prefix,
           kendra_region: String(kendra_region),
@@ -969,7 +970,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           max_object_size: String(max_object_size),
           enableNoriPlugin: enableNoriPlugin,
           supportedFormat: supportedFormat,
-          profile_of_LLMs: JSON.stringify(profile_of_LLMs),
+          LLMs_for_chat: JSON.stringify(LLMs_for_chat),
           enableParallelSummay: enableParallelSummay
         }
       });         
