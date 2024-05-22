@@ -397,7 +397,7 @@ def use_agent(connectionId, requestId, chat, query):
     
     agent = create_react_agent(chat, tools, prompt_template)
     
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     
     response = agent_executor.invoke({"input": query})
     print('response: ', response)
