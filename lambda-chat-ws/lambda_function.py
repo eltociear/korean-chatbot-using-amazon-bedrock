@@ -42,6 +42,7 @@ from langchain.agents import tool
 from langchain.agents import AgentExecutor, create_react_agent
 from bs4 import BeautifulSoup
 from pytz import timezone
+from langchain_community.tools.tavily_search import TavilySearchResults
 
 s3 = boto3.client('s3')
 s3_bucket = os.environ.get('s3_bucket') # bucket name
@@ -457,17 +458,17 @@ def get_weather_info(city: str) -> str:
     return weather_str
 
 @tool
-def search_by_tavily(query: str) -> str:
+def search_by_tavily(keyword: str) -> str:
     """
-    Search general information and then return the result as a string.
-    query: the question to know 
-    return: the information of query
+    Search general information by keyword and then return the result as a string.
+    keyword: search keyword
+    return: the information of keyword
     """    
     
     search = TavilySearchResults(k=5)
                 
     answer = ""
-    output = search.invoke(query)
+    output = search.invoke(keyword)
     print('tavily output: ', output)
     
     for result in output[:5]:
