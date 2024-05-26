@@ -510,7 +510,10 @@ def search_by_opensearch(keyword: str) -> str:
     return: the technical information of keyword
     """    
     
+    print('keyword: ', keyword)
     keyword = keyword.replace('\'','')
+    keyword = keyword.replace('|','')
+    print('modified keyword: ', keyword)
     
     response = os_client.search(
         body=keyword,
