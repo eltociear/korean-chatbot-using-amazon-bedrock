@@ -377,7 +377,7 @@ def get_product_list(keyword: str) -> str:
     return answer
     
 @tool
-def get_current_time(format: str = "%Y-%m-%d %H:%M:%S")->str:
+def get_current_time(format: str = f"%Y-%m-%d %H:%M:%S")->str:
     """Returns the current date and time in the specified format"""
     
     timestr = datetime.datetime.now(timezone('Asia/Seoul')).strftime(format)
@@ -448,21 +448,24 @@ def get_react_prompt_template(): # (hwchase17/react) https://smith.langchain.com
 
 {tools}
 
-Use the following format:
+사용할 수 있는 tools은 아래와 같습니다:
+
+{tools}
+
+다음의 format을 사용하세요.:
 
 Question: 답변하여야 할 input question 
 Thought: you should always think about what to do. 
 Action: 해야 할 action으로서 [{tool_names}]중 하나를 선택합니다.
 Action Input: action의 input
 Observation: action의 result
-... (Thought/Action/Action Input/Observation을 3번 반복 할 수 있습니다. 반복이 끝날때까지 정답을 찾지 못하면 마지막 result로 답변합니다.)
-... (반복이 끝날때까지 적절한 답변을 얻지 못하면, 마지막 결과를 Final Answer를 전달합니다. )
+... (Thought/Action/Action Input/Observation을 3번 반복 할 수 있습니다.)
 Thought: 나는 이제 Final Answer를 알고 있습니다. 
 Final Answer: original input에 대한 Final Answer
 
-When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
+너는 Human에게 해줄 응답이 있거나, Tool을 사용하지 않아도 되는 경우에, 다음 format을 사용하세요.:
 '''
-Thought: Do I need to use a tool? No
+Thought: Tool을 사용해야 하나요? No
 Final Answer: [your response here]
 '''
 
@@ -516,21 +519,24 @@ def get_react_chat_prompt_template():
 
 {tools}
 
-Use the following format:
+사용할 수 있는 tools은 아래와 같습니다:
+
+{tools}
+
+다음의 format을 사용하세요.:
 
 Question: 답변하여야 할 input question 
 Thought: you should always think about what to do. 
 Action: 해야 할 action으로서 [{tool_names}]중 하나를 선택합니다.
 Action Input: action의 input
 Observation: action의 result
-... (Thought/Action/Action Input/Observation을 3번 반복 할 수 있습니다. 반복이 끝날때까지 정답을 찾지 못하면 마지막 result로 답변합니다.)
-... (반복이 끝날때까지 적절한 답변을 얻지 못하면, 마지막 결과를 Final Answer를 전달합니다. )
+... (Thought/Action/Action Input/Observation을 3번 반복 할 수 있습니다.)
 Thought: 나는 이제 Final Answer를 알고 있습니다. 
 Final Answer: original input에 대한 Final Answer
 
-When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
+너는 Human에게 해줄 응답이 있거나, Tool을 사용하지 않아도 되는 경우에, 다음 format을 사용하세요.:
 '''
-Thought: Do I need to use a tool? No
+Thought: Tool을 사용해야 하나요? No
 Final Answer: [your response here]
 '''
 
