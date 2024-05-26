@@ -368,11 +368,11 @@ def general_conversation(connectionId, requestId, chat, query):
     return msg
 
 @tool 
-def get_product_list(keyword: str) -> str:
+def get_book_list(keyword: str) -> str:
     """
-    Search product list by keyword and then return product list
+    Search book list by keyword and then return book list
     keyword: search keyword
-    return: product list
+    return: book list
     """
 
     answer = ""
@@ -480,7 +480,7 @@ def search_by_tavily(keyword: str) -> str:
     return answer
 
 # define tools
-tools = [get_current_time, get_product_list, get_weather_info, search_by_tavily]        
+tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily]        
 
 def get_react_prompt_template(): # (hwchase17/react) https://smith.langchain.com/hub/hwchase17/react
     # Get the react prompt template    
