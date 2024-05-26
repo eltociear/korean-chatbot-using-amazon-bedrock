@@ -288,6 +288,19 @@ def sendErrorMessage(connectionId, requestId, msg):
     }
     print('error: ', json.dumps(errorMsg))
     sendMessage(connectionId, errorMsg)
+    
+os_client = OpenSearch(
+    hosts = [{
+        'host': opensearch_url.replace("https://", ""), 
+        'port': 443
+    }],
+    http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
+    use_ssl = True,
+    verify_certs = True,
+    ssl_assert_hostname = False,
+    ssl_show_warn = False,
+)
 
 def isKorean(text):
     # check korean
@@ -2277,19 +2290,6 @@ def get_code_reference(docs):
                 reference = reference + f"{i+1}. <a href={uri} target=_blank>{name}</a>, {doc['rag_type']} ({doc['assessed_score']}), <a href=\"#\" onClick=\"alert(`{excerpt}`)\">코드설명</a>, <a href=\"#\" onClick=\"alert(`{code}`)\">관련코드</a>\n"
                             
     return reference
-
-os_client = OpenSearch(
-    hosts = [{
-        'host': opensearch_url.replace("https://", ""), 
-        'port': 443
-    }],
-    http_compress = True,
-    http_auth=(opensearch_account, opensearch_passwd),
-    use_ssl = True,
-    verify_certs = True,
-    ssl_assert_hostname = False,
-    ssl_show_warn = False,
-)
 
 def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")

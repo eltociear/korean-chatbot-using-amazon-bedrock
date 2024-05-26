@@ -726,7 +726,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       secretName: 'tavilyapikey',
       secretObjectValue: {
-        project_name: cdk.SecretValue.unsafePlainText('agent-'+projectName),
+        project_name: cdk.SecretValue.unsafePlainText(projectName),
         tavily_api_key: cdk.SecretValue.unsafePlainText(''),
       },
     });
