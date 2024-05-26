@@ -760,7 +760,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         useParallelRAG: useParallelRAG,
         numberOfRelevantDocs: numberOfRelevantDocs,
         kendraMethod: kendraMethod,
-        LLM_for_chat:JSON.stringify(claude3_haiku),
+        LLM_for_chat:JSON.stringify(claude3_sonnet),
         LLM_for_multimodal:JSON.stringify(claude3_sonnet),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
