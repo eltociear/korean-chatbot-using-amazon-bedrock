@@ -489,8 +489,40 @@ def search_by_tavily(keyword: str) -> str:
     
     return answer
 
+@tool
+def search_by_opensearch(keyword: str) -> str:
+    """
+    Search technical information by keyword and then return the result as a string.
+    keyword: search keyword
+    return: the technical information of keyword
+    """    
+    
+    keyword = keyword.replace('\'','')
+    
+    response = os_client.search(
+        body=keyword,
+        index="idx-*", # all
+    )
+        
+    answer = ""
+    top_k = 4    
+    for i, document in enumerate(response['hits']['hits']):
+        if i>top_k: 
+            break
+                
+        excerpt = document['_source']['text']
+        print(f'## Document(opensearch-keyward) {i+1}: {excerpt}')
+
+        uri = ""
+        if "uri" in document['_source']['metadata']:
+            uri = document['_source']['metadata']['uri']
+    
+        answer = answer + f"{excerpt}, URL: {uri}\n"
+    
+    return answer
+
 # define tools
-tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily]        
+tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily, search_by_opensearch]        
 
 def get_react_prompt_template(): # (hwchase17/react) https://smith.langchain.com/hub/hwchase17/react
     # Get the react prompt template    
