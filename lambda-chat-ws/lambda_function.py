@@ -374,6 +374,8 @@ def get_book_list(keyword: str) -> str:
     keyword: search keyword
     return: book list
     """
+    
+    keyword = keyword.replace('\'','')
 
     answer = ""
     url = f"https://search.kyobobook.co.kr/search?keyword={keyword}&gbCode=TOT&target=total"
@@ -397,6 +399,7 @@ def get_book_list(keyword: str) -> str:
 def get_current_time(format: str = f"%Y-%m-%d %H:%M:%S")->str:
     """Returns the current date and time in the specified format"""
     
+    format = format.replace('\'','')
     timestr = datetime.datetime.now(timezone('Asia/Seoul')).strftime(format)
     # print('timestr:', timestr)
     
@@ -464,6 +467,8 @@ def search_by_tavily(keyword: str) -> str:
     keyword: search keyword
     return: the information of keyword
     """    
+    
+    keyword = keyword.replace('\'','')
     
     search = TavilySearchResults(k=5)
                 
