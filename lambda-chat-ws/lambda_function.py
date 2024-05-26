@@ -126,6 +126,11 @@ try:
 except Exception as e:
     raise e
 
+if langsmith_api_key:
+    os.environ["LANGCHAIN_API_KEY"] = langsmith_api_key
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_PROJECT"] = langchain_project
+    
 # api key to use Tavily Search
 tavily_api_key = ""
 try:
