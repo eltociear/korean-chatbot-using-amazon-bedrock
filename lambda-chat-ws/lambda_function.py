@@ -125,6 +125,22 @@ try:
 except Exception as e:
     raise e
 
+# api key to use Tavily Search
+tavily_api_key = ""
+try:
+    get_tavily_api_secret = secretsmanager.get_secret_value(
+        SecretId='tavilyapikey'
+    )
+    #print('get_tavily_api_secret: ', get_tavily_api_secret)
+    secret = json.loads(get_tavily_api_secret['SecretString'])
+    #print('secret: ', secret)
+    tavily_api_key = secret['tavily_api_key']
+except Exception as e: 
+    raise e
+
+if tavily_api_key:
+    os.environ["TAVILY_API_KEY"] = tavily_api_key
+    
 # websocket
 connection_url = os.environ.get('connection_url')
 client = boto3.client('apigatewaymanagementapi', endpoint_url=connection_url)
@@ -440,6 +456,31 @@ def get_weather_info(city: str) -> str:
     print('weather_str: ', weather_str)                            
     return weather_str
 
+@tool
+def search_by_tavily(query: str) -> str:
+    """
+    Search general information and then return the result as a string.
+    query: the question to know 
+    return: the information of query
+    """    
+    
+    search = TavilySearchResults(k=5)
+                
+    answer = ""
+    output = search.invoke(query)
+    print('tavily output: ', output)
+    
+    for result in output[:5]:
+        content = result.get("content")
+        url = result.get("url")
+        
+        answer = answer + f"{content}, URL: {url}\n"
+    
+    return answer
+
+# define tools
+tools = [get_current_time, get_product_list, get_weather_info, search_by_tavily]        
+
 def get_react_prompt_template(): # (hwchase17/react) https://smith.langchain.com/hub/hwchase17/react
     # Get the react prompt template    
     return PromptTemplate.from_template("""다음은 Human과 Assistant의 친근한 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
@@ -475,9 +516,6 @@ Question: {input}
 Thought:{agent_scratchpad}
 """)
         
-# define tools
-tools = [get_current_time, get_product_list, get_weather_info]        
-
 def run_agent_react(connectionId, requestId, chat, query):
     prompt_template = get_react_prompt_template()
     print('prompt_template: ', prompt_template)

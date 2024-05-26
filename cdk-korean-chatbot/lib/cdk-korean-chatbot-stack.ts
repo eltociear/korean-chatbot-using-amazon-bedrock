@@ -721,6 +721,17 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     });
     langsmithApiSecret.grantRead(roleLambdaWebsocket) 
 
+    const tavilyApiSecret = new secretsmanager.Secret(this, `weather-tavily-secret-for-${projectName}`, {
+      description: 'secret for lamgsmith api key', // openweathermap
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      secretName: 'tavilyapikey',
+      secretObjectValue: {
+        project_name: cdk.SecretValue.unsafePlainText('agent-'+projectName),
+        tavily_api_key: cdk.SecretValue.unsafePlainText(''),
+      },
+    });
+    tavilyApiSecret.grantRead(roleLambdaWebsocket) 
+
     // lambda-chat using websocket    
     const lambdaChatWebsocket = new lambda.DockerImageFunction(this, `lambda-chat-ws-for-${projectName}`, {
       description: 'lambda for chat using websocket',
