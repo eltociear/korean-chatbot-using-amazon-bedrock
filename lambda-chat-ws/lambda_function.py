@@ -3258,7 +3258,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global enableReference, code_type
-    global map_chain, memory_chain, debugMessageMode, selected_LLM, selected_embedding, allowDualSearch
+    global map_chain, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
