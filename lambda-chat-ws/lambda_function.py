@@ -78,6 +78,7 @@ enableNoriPlugin = os.environ.get('enableNoriPlugin')
 
 minDocSimilarity = 200
 minCodeSimilarity = 300
+projectName = os.environ.get('projectName')
 
 # google search api
 googleApiSecret = os.environ.get('googleApiSecret')
@@ -99,7 +100,7 @@ except Exception as e:
 # api key to get weather information in agent
 try:
     get_weather_api_secret = secretsmanager.get_secret_value(
-        SecretId='openweathermap'
+        SecretId=f"openweathermap-{projectName}"
     )
     #print('get_weather_api_secret: ', get_weather_api_secret)
     secret = json.loads(get_weather_api_secret['SecretString'])
@@ -113,7 +114,7 @@ except Exception as e:
 langsmith_api_key = ""
 try:
     get_langsmith_api_secret = secretsmanager.get_secret_value(
-        SecretId='langsmithapikey'
+        SecretId=f"langsmithapikey-{projectName}"
     )
     #print('get_langsmith_api_secret: ', get_langsmith_api_secret)
     secret = json.loads(get_langsmith_api_secret['SecretString'])
@@ -132,7 +133,7 @@ if langsmith_api_key:
 tavily_api_key = ""
 try:
     get_tavily_api_secret = secretsmanager.get_secret_value(
-        SecretId='tavilyapikey'
+        SecretId=f"tavilyapikey-{projectName}"
     )
     #print('get_tavily_api_secret: ', get_tavily_api_secret)
     secret = json.loads(get_tavily_api_secret['SecretString'])
@@ -3038,19 +3039,21 @@ def search_by_tavily(keyword: str) -> str:
     return: the information of keyword
     """    
     
-    keyword = keyword.replace('\'','')
-    
-    search = TavilySearchResults(k=5)
-                
     answer = ""
-    output = search.invoke(keyword)
-    print('tavily output: ', output)
     
-    for result in output[:5]:
-        content = result.get("content")
-        url = result.get("url")
+    if tavily_api_key:
+        keyword = keyword.replace('\'','')
         
-        answer = answer + f"{content}, URL: {url}\n\n"
+        search = TavilySearchResults(k=5)
+                    
+        output = search.invoke(keyword)
+        print('tavily output: ', output)
+        
+        for result in output[:5]:
+            content = result.get("content")
+            url = result.get("url")
+            
+            answer = answer + f"{content}, URL: {url}\n\n"
     
     return answer
 
