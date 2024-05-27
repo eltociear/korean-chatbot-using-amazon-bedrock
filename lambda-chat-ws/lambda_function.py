@@ -3063,7 +3063,7 @@ def search_by_opensearch(keyword: str) -> str:
     
     print('keyword: ', keyword)
     keyword = keyword.replace('\'','')
-    keyword = keyword.replace('|','')
+    keyword = keyword.replace('\|','')
     print('modified keyword: ', keyword)
     
     bedrock_embedding = get_embedding(LLM_for_chat, selected_LLM)
