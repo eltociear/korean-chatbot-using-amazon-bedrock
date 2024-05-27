@@ -51,6 +51,8 @@ callLogTableName = os.environ.get('callLogTableName')
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
 LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
 LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
+LLM_for_embedding = json.loads(os.environ.get('LLM_for_embedding'))
+selected_embedding = 0
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -226,16 +228,15 @@ def get_multimodal(LLM_for_multimodal, selected_LLM):
     
     return multimodal
 
-def get_embedding(LLM_for_chat, selected_LLM):
-    profile = LLM_for_chat[selected_LLM]
+def get_embedding():
+    profile = LLM_for_embedding[selected_embedding]
     bedrock_region =  profile['bedrock_region']
-    modelId = profile['model_id']
-    print(f'Embedding: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'Embedding: {selected_embedding}, bedrock_region: {bedrock_region}')
     
     # bedrock   
     boto3_bedrock = boto3.client(
         service_name='bedrock-runtime',
-        region_name=bedrock_region,
+        # region_name=bedrock_region,  # use default
         config=Config(
             retries = {
                 'max_attempts': 30
@@ -248,6 +249,11 @@ def get_embedding(LLM_for_chat, selected_LLM):
         region_name = bedrock_region,
         model_id = 'amazon.titan-embed-text-v1' 
     )  
+    
+    if selected_embedding >= len(LLM_for_embedding)-1:
+        selected_embedding = 0
+    else:
+        selected_embedding = selected_embedding + 1
     
     return bedrock_embedding
     
@@ -3067,9 +3073,7 @@ def search_by_opensearch(keyword: str) -> str:
     keyword = keyword.replace('\n','')
     print('modified keyword: ', keyword)
     
-    print('LLM_for_chat: ', LLM_for_chat)
-    print('selected_LLM: ', selected_LLM)
-    bedrock_embedding = get_embedding(LLM_for_chat, selected_LLM)
+    bedrock_embedding = get_embedding()
         
     vectorstore_opensearch = OpenSearchVectorSearch(
         index_name = "idx-*", # all
@@ -3254,7 +3258,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global enableReference, code_type
-    global map_chain, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
+    global map_chain, memory_chain, debugMessageMode, selected_LLM, selected_embedding, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
@@ -3271,7 +3275,7 @@ def getResponse(connectionId, jsonBody):
     # print('profile: ', profile)
     
     chat = get_chat(LLM_for_chat, selected_LLM)    
-    bedrock_embedding = get_embedding(LLM_for_chat, selected_LLM)
+    bedrock_embedding = get_embedding()
 
     # allocate memory
     if userId in map_chain:  
