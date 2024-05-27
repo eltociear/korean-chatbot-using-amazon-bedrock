@@ -18,10 +18,7 @@ from botocore.config import Config
 from PIL import Image
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.summarize import load_summarize_chain
-from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from langchain_community.docstore.document import Document
 from langchain_community.vectorstores.faiss import FAISS
@@ -33,7 +30,6 @@ from googleapiclient.discovery import build
 from opensearchpy import OpenSearch
 from langchain_core.prompts import PromptTemplate
 
-from langchain_community.chat_models import BedrockChat
 from langchain_core.prompts import MessagesPlaceholder, ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_aws import ChatBedrock
