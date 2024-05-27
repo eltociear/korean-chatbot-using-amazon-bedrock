@@ -2964,10 +2964,9 @@ def get_book_list(keyword: str) -> str:
             answer = "추천 도서는 아래와 같습니다.\n"
             
         for prod in prod_info[:5]:
-            # \n문자를 replace합니다.
             title = prod.text.strip().replace("\n", "")       
             link = prod.get("href")
-            answer = answer + f"{title}, URL: {link}\n"
+            answer = answer + f"{title}, URL: {link}\n\n"
     
     return answer
     
@@ -3056,7 +3055,7 @@ def search_by_tavily(keyword: str) -> str:
         content = result.get("content")
         url = result.get("url")
         
-        answer = answer + f"{content}, URL: {url}\n"
+        answer = answer + f"{content}, URL: {url}\n\n"
     
     return answer
 
@@ -3102,7 +3101,7 @@ def search_by_opensearch(keyword: str) -> str:
         excerpt = document[0].page_content        
         uri = document[0].metadata['uri']
                     
-        answer = answer + f"{excerpt}, URL: {uri}\n"
+        answer = answer + f"{excerpt}, URL: {uri}\n\n"
     
     return answer
 
