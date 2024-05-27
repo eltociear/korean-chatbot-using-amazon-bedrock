@@ -239,7 +239,7 @@ def get_embedding(LLM_for_chat, selected_LLM):
         config=Config(
             retries = {
                 'max_attempts': 30
-            }            
+            }
         )
     )
     
@@ -3067,6 +3067,8 @@ def search_by_opensearch(keyword: str) -> str:
     keyword = keyword.replace('\n','')
     print('modified keyword: ', keyword)
     
+    print('LLM_for_chat: ', LLM_for_chat)
+    print('selected_LLM: ', selected_LLM)
     bedrock_embedding = get_embedding(LLM_for_chat, selected_LLM)
         
     vectorstore_opensearch = OpenSearchVectorSearch(
