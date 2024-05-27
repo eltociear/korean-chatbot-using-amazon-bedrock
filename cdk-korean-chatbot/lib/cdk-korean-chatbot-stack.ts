@@ -738,7 +738,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       secretName: 'langsmithapikey',
       secretObjectValue: {
-        langchain_project: cdk.SecretValue.unsafePlainText('agent-'+projectName),
+        langchain_project: cdk.SecretValue.unsafePlainText(projectName),
         langsmith_api_key: cdk.SecretValue.unsafePlainText(''),
       },
     });
