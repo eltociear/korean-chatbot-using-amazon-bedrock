@@ -229,6 +229,7 @@ def get_multimodal(LLM_for_multimodal, selected_LLM):
     return multimodal
 
 def get_embedding():
+    global selected_embedding
     profile = LLM_for_embedding[selected_embedding]
     bedrock_region =  profile['bedrock_region']
     print(f'Embedding: {selected_embedding}, bedrock_region: {bedrock_region}')
