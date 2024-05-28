@@ -999,7 +999,6 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         timeout: cdk.Duration.seconds(600),
         memorySize: 8192,
         environment: {
-          bedrock_region: LLMs_for_chat[i].bedrock_region,
           s3_bucket: s3Bucket.bucketName,
           s3_prefix: s3_prefix,
           kendra_region: String(kendra_region),

@@ -240,6 +240,7 @@ def get_embedding():
     global selected_embedding
     profile = LLM_for_embedding[selected_embedding]
     bedrock_region =  profile['bedrock_region']
+    model_id = profile['model_id']
     print(f'Embedding: {selected_embedding}, bedrock_region: {bedrock_region}')
     
     # bedrock   
@@ -256,7 +257,7 @@ def get_embedding():
     bedrock_embedding = BedrockEmbeddings(
         client=boto3_bedrock,
         region_name = bedrock_region,
-        model_id = 'amazon.titan-embed-text-v1' 
+        model_id = model_id
     )  
     
     selected_embedding = selected_embedding + 1
