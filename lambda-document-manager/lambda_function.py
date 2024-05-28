@@ -28,12 +28,12 @@ from langchain_aws import ChatBedrock
 
 s3 = boto3.client('s3')
 s3_client = boto3.client('s3')  
+sqs = boto3.client('sqs')
 
 s3_bucket = os.environ.get('s3_bucket') # bucket name
 s3_prefix = os.environ.get('s3_prefix')
 meta_prefix = "metadata/"
 kendra_region = os.environ.get('kendra_region', 'us-west-2')
-profile_of_LLMs = json.loads(os.environ.get('profile_of_LLMs'))
 enableParallelSummay = os.environ.get('enableParallelSummay')
 
 opensearch_account = os.environ.get('opensearch_account')
@@ -42,8 +42,12 @@ opensearch_url = os.environ.get('opensearch_url')
 kendraIndex = os.environ.get('kendraIndex')
 sqsUrl = os.environ.get('sqsUrl')
 doc_prefix = s3_prefix+'/'
-
-sqs = boto3.client('sqs')
+LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
+LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
+LLM_for_embedding = json.loads(os.environ.get('LLM_for_embedding'))
+selected_chat = 0
+selected_multimodal = 0
+selected_embedding = 0
 
 roleArn = os.environ.get('roleArn') 
 path = os.environ.get('path')
@@ -81,24 +85,121 @@ kendra_client = boto3.client(
     )
 )
 
-# embedding for RAG
-region_name = os.environ.get('bedrock_region')
-    
-boto3_bedrock = boto3.client(
-    service_name='bedrock-runtime',
-    region_name=region_name,
-    config=Config(
-        retries = {
-            'max_attempts': 30
-        }            
+HUMAN_PROMPT = "\n\nHuman:"
+AI_PROMPT = "\n\nAssistant:"
+        
+# Multi-LLM
+def get_chat():
+    global selected_chat
+    profile = LLM_for_chat[selected_chat]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'LLM: {selected_chat}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
     )
-)
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
+    # print('parameters: ', parameters)
 
-bedrock_embeddings = BedrockEmbeddings(
-    client=boto3_bedrock,
-    region_name = region_name,
-    model_id = 'amazon.titan-embed-text-v1' 
-)   
+    chat = ChatBedrock(   # new chat model
+        model_id=modelId,
+        client=boto3_bedrock, 
+        model_kwargs=parameters,
+    )    
+    
+    selected_chat = selected_chat + 1
+    if selected_chat == len(selected_chat):
+        selected_chat = 0
+    
+    return chat
+
+def get_multimodal():
+    global selected_multimodal
+    
+    profile = LLM_for_multimodal[selected_multimodal]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'LLM: {selected_multimodal}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    maxOutputTokens = int(profile['maxOutputTokens'])
+                          
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
+    )
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
+    # print('parameters: ', parameters)
+
+    multimodal = ChatBedrock(   # new chat model
+        model_id=modelId,
+        client=boto3_bedrock, 
+        model_kwargs=parameters,
+    )    
+    
+    selected_multimodal = selected_multimodal + 1
+    if selected_multimodal == len(selected_multimodal):
+        selected_multimodal = 0
+    
+    return multimodal
+
+def get_embedding():
+    global selected_embedding
+    profile = LLM_for_embedding[selected_embedding]
+    bedrock_region =  profile['bedrock_region']
+    print(f'Embedding: {selected_embedding}, bedrock_region: {bedrock_region}')
+    
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        # region_name=bedrock_region,  # use default
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
+    )
+    
+    bedrock_embedding = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = 'amazon.titan-embed-text-v1' 
+    )  
+    
+    if selected_embedding >= len(LLM_for_embedding)-1:
+        selected_embedding = 0
+    else:
+        selected_embedding = selected_embedding + 1
+    
+    return bedrock_embedding
+
+# embedding for RAG
+bedrock_embeddings = get_embedding()
 
 index_name = 'idx-rag'
 vectorstore = OpenSearchVectorSearch(
@@ -502,69 +603,6 @@ def check_supported_type(key, file_type, size):
     else:
         return False
         
-HUMAN_PROMPT = "\n\nHuman:"
-AI_PROMPT = "\n\nAssistant:"
-        
-# Multi-LLM
-def get_chat(profile_of_LLMs, selected_LLM):
-    profile = profile_of_LLMs[selected_LLM]
-    bedrock_region =  profile['bedrock_region']
-    modelId = profile['model_id']
-    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
-    maxOutputTokens = int(profile['maxOutputTokens'])
-                          
-    # bedrock   
-    boto3_bedrock = boto3.client(
-        service_name='bedrock-runtime',
-        region_name=bedrock_region,
-        config=Config(
-            retries = {
-                'max_attempts': 30
-            }            
-        )
-    )
-    parameters = {
-        "max_tokens":maxOutputTokens,     
-        "temperature":0.1,
-        "top_k":250,
-        "top_p":0.9,
-        "stop_sequences": [HUMAN_PROMPT]
-    }
-    # print('parameters: ', parameters)
-
-    chat = ChatBedrock(   
-        model_id=modelId,
-        client=boto3_bedrock, 
-        model_kwargs=parameters,
-    )       
-    
-    return chat
-
-def get_embedding(profile_of_LLMs, selected_LLM):
-    profile = profile_of_LLMs[selected_LLM]
-    bedrock_region =  profile['bedrock_region']
-    modelId = profile['model_id']
-    print(f'Embedding: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
-    
-    # bedrock   
-    boto3_bedrock = boto3.client(
-        service_name='bedrock-runtime',
-        region_name=bedrock_region,
-        config=Config(
-            retries = {
-                'max_attempts': 30
-            }            
-        )
-    )
-    
-    bedrock_embedding = BedrockEmbeddings(
-        client=boto3_bedrock,
-        region_name = bedrock_region,
-        model_id = 'amazon.titan-embed-text-v1' 
-    )  
-    
-    return bedrock_embedding
-
 def summary_of_code(chat, code, mode):
     if mode == 'py':
         system = (
@@ -655,7 +693,6 @@ def summarize_process_for_relevent_code(conn, chat, code, key, region_name):
     conn.close()
 
 def summarize_relevant_codes_using_parallel_processing(codes, key):
-    selected_LLM = 0
     relevant_codes = []    
     processes = []
     parent_connections = []
@@ -663,15 +700,11 @@ def summarize_relevant_codes_using_parallel_processing(codes, key):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        chat = get_chat(profile_of_LLMs, selected_LLM)
-        region_name = profile_of_LLMs[selected_LLM]['bedrock_region']
+        chat = get_chat()
+        region_name = LLM_for_chat[selected_chat]['bedrock_region']
 
         process = Process(target=summarize_process_for_relevent_code, args=(child_conn, chat, code, key, region_name))
         processes.append(process)
-
-        selected_LLM = selected_LLM + 1
-        if selected_LLM == len(profile_of_LLMs):
-            selected_LLM = 0
 
     for process in processes:
         process.start()
@@ -875,7 +908,7 @@ def lambda_handler(event, context):
                                         function_name = code[start+1:end]
                                         # print('function_name: ', function_name)
                                                 
-                                        chat = get_chat(profile_of_LLMs, 0)      
+                                        chat = get_multimodal()      
                                         
                                         summary = summary_of_code(chat, code, file_type)                        
                                             
@@ -922,7 +955,7 @@ def lambda_handler(event, context):
                             img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
                                                             
                             # extract text from the image
-                            chat = get_chat(profile_of_LLMs, 0)    
+                            chat = get_multimodal()    
                             text = extract_text(chat, img_base64)
                             extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
                             print('extracted_text: ', extracted_text)

@@ -47,6 +47,8 @@ kendra_region = os.environ.get('kendra_region', 'us-west-2')
 LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
 LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
 LLM_for_embedding = json.loads(os.environ.get('LLM_for_embedding'))
+selected_chat = 0
+selected_multimodal = 0
 selected_embedding = 0
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
@@ -64,7 +66,6 @@ kendraIndex = os.environ.get('kendraIndex')
 kendra_method = os.environ.get('kendraMethod')
 roleArn = os.environ.get('roleArn')
 top_k = int(os.environ.get('numberOfRelevantDocs', '8'))
-selected_LLM = 0
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 MSG_LENGTH = 100
@@ -156,11 +157,12 @@ AI_PROMPT = "\n\nAssistant:"
 map_chain = dict() 
 
 # Multi-LLM
-def get_chat(LLM_for_chat, selected_LLM):
-    profile = LLM_for_chat[selected_LLM]
+def get_chat():
+    global selected_chat
+    profile = LLM_for_chat[selected_chat]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
-    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'LLM: {selected_chat}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     maxOutputTokens = int(profile['maxOutputTokens'])
                           
     # bedrock   
@@ -188,13 +190,19 @@ def get_chat(LLM_for_chat, selected_LLM):
         model_kwargs=parameters,
     )    
     
+    selected_chat = selected_chat + 1
+    if selected_chat == len(selected_chat):
+        selected_chat = 0
+    
     return chat
 
-def get_multimodal(LLM_for_multimodal, selected_LLM):
-    profile = LLM_for_multimodal[selected_LLM]
+def get_multimodal():
+    global selected_multimodal
+    
+    profile = LLM_for_multimodal[selected_multimodal]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
-    print(f'LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'LLM: {selected_multimodal}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     maxOutputTokens = int(profile['maxOutputTokens'])
                           
     # bedrock   
@@ -221,6 +229,10 @@ def get_multimodal(LLM_for_multimodal, selected_LLM):
         client=boto3_bedrock, 
         model_kwargs=parameters,
     )    
+    
+    selected_multimodal = selected_multimodal + 1
+    if selected_multimodal == len(selected_multimodal):
+        selected_multimodal = 0
     
     return multimodal
 
@@ -707,7 +719,7 @@ def extract_timestamp(chat, text):
     return msg
 
 def use_multimodal(img_base64, query):    
-    multimodal = get_multimodal(LLM_for_multimodal, selected_LLM)
+    multimodal = get_multimodal()
     
     if query == "":
         query = "그림에 대해 상세히 설명해줘."
@@ -2428,7 +2440,6 @@ def translate_process_from_relevent_doc(conn, chat, doc, bedrock_region):
     conn.close()
 
 def translate_relevant_documents_using_parallel_processing(docs):
-    selected_LLM = 0
     relevant_docs = []    
     processes = []
     parent_connections = []
@@ -2436,15 +2447,11 @@ def translate_relevant_documents_using_parallel_processing(docs):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        chat = get_chat(LLM_for_chat, selected_LLM)
-        bedrock_region = LLM_for_chat[selected_LLM]['bedrock_region']
+        chat = get_chat()
+        bedrock_region = LLM_for_chat[selected_chat]['bedrock_region']
 
         process = Process(target=translate_process_from_relevent_doc, args=(child_conn, chat, doc, bedrock_region))
         processes.append(process)
-
-        selected_LLM = selected_LLM + 1
-        if selected_LLM == len(LLM_for_chat):
-            selected_LLM = 0
 
     for process in processes:
         process.start()
@@ -2988,7 +2995,7 @@ def get_weather_info(city: str) -> str:
     city = city.replace('\n','')
     city = city.replace('\'','')
     
-    chat = get_chat(LLM_for_chat, selected_LLM)
+    chat = get_chat()
                 
     if isKorean(city):
         place = traslation(chat, city, "Korean", "English")
@@ -3255,7 +3262,7 @@ def getResponse(connectionId, jsonBody):
             print('rag_type: ', rag_type)
 
     global enableReference, code_type
-    global map_chain, memory_chain, debugMessageMode, selected_LLM, allowDualSearch
+    global map_chain, memory_chain, debugMessageMode, allowDualSearch
     
     if function_type == 'dual-search':
         allowDualSearch = 'true'
@@ -3265,13 +3272,13 @@ def getResponse(connectionId, jsonBody):
         code_type = 'js'
 
     # Multi-LLM
-    profile = LLM_for_chat[selected_LLM]
+    profile = LLM_for_chat[selected_chat]
     bedrock_region =  profile['bedrock_region']
     modelId = profile['model_id']
-    print(f'selected_LLM: {selected_LLM}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+    print(f'selected_chat: {selected_chat}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     # print('profile: ', profile)
     
-    chat = get_chat(LLM_for_chat, selected_LLM)    
+    chat = get_chat()    
     bedrock_embedding = get_embedding()
 
     # allocate memory
@@ -3555,11 +3562,6 @@ def getResponse(connectionId, jsonBody):
             print('error message: ', err_msg)
             raise Exception ("Not able to write into dynamodb")        
         #print('resp, ', resp)
-
-    if selected_LLM >= len(LLM_for_chat)-1:
-        selected_LLM = 0
-    else:
-        selected_LLM = selected_LLM + 1
 
     if speech_uri:
         speech = '\n' + f'<a href={speech_uri} target=_blank>{"[결과 읽어주기 (mp3)]"}</a>'                

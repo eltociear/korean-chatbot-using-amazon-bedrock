@@ -1014,7 +1014,9 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           max_object_size: String(max_object_size),
           enableNoriPlugin: enableNoriPlugin,
           supportedFormat: supportedFormat,
-          LLMs_for_chat: JSON.stringify(LLMs_for_chat),
+          LLM_for_chat:JSON.stringify(claude3_sonnet),
+          LLM_for_multimodal:JSON.stringify(claude3_sonnet),
+          LLM_for_embedding: JSON.stringify(titan_embedding_v1),
           enableParallelSummay: enableParallelSummay
         }
       });         
