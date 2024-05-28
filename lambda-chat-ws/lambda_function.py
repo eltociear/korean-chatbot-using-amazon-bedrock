@@ -191,7 +191,7 @@ def get_chat():
     )    
     
     selected_chat = selected_chat + 1
-    if selected_chat == len(selected_chat):
+    if selected_chat == len(LLM_for_chat):
         selected_chat = 0
     
     return chat
@@ -231,7 +231,7 @@ def get_multimodal():
     )    
     
     selected_multimodal = selected_multimodal + 1
-    if selected_multimodal == len(selected_multimodal):
+    if selected_multimodal == len(LLM_for_multimodal):
         selected_multimodal = 0
     
     return multimodal
@@ -259,10 +259,9 @@ def get_embedding():
         model_id = 'amazon.titan-embed-text-v1' 
     )  
     
-    if selected_embedding >= len(LLM_for_embedding)-1:
+    selected_embedding = selected_embedding + 1
+    if selected_embedding == len(LLM_for_embedding):
         selected_embedding = 0
-    else:
-        selected_embedding = selected_embedding + 1
     
     return bedrock_embedding
     
