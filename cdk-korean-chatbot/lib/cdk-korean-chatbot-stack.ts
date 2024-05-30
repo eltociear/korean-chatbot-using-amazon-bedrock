@@ -39,6 +39,7 @@ const kendraMethod = "custom_retriever"; // custom_retriever or kendra_retriever
 const allowDualSearch = 'false';
 const capabilities = JSON.stringify(["kendra", "opensearch"]); 
 const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "docx", "doc", "xlsx", "py", "js", "md", 'png', 'jpeg', 'jpg']);  
+const separated_chat_history = 'true';
 
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableNoriPlugin = 'false';
@@ -787,7 +788,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
         enableNoriPlugin: enableNoriPlugin,
-        projectName: projectName
+        projectName: projectName,
+        separated_chat_history: separated_chat_history
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
