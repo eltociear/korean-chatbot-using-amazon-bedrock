@@ -2510,7 +2510,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
 
             if allowDualSearch=='true' and isKorean(text)==True:
                 print('start RAG for translated revised question')
-                translated_revised_question = traslation_to_english(chat=chat, msg=revised_question)
+                translated_revised_question = traslation_to_english(chat=chat, text=revised_question)
                 print('translated_revised_question: ', translated_revised_question)
 
                 if debugMessageMode=='true':
