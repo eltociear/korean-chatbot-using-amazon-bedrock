@@ -346,6 +346,7 @@ def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
             'uri': path+parse.quote(key)
         }
     )
+    print('loaded_doc: ', loaded_doc)
 
     parent_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
@@ -379,8 +380,6 @@ def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
         docs.extend(sub_docs)
         doc.metadata[id_key] = _id
         doc.metadata["doc_level"] = "parent"
-        doc.metadata["name"] = key
-        doc.metadata["uri"] = path+parse.quote(key)
         
         print(f"{i}th doc: {doc}")
         
