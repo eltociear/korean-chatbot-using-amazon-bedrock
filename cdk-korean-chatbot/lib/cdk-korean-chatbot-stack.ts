@@ -134,6 +134,19 @@ const titan_embedding_v1 = [
   }
 ];
 
+const titan_embedding_v2 = [
+  {
+    "bedrock_region": "us-west-2", // Oregon
+    "model_type": "titan",
+    "model_id": "amazon.titan-embed-text-v2"
+  },
+  {
+    "bedrock_region": "us-east-1", // N.Virginia
+    "model_type": "titan",
+    "model_id": "amazon.titan-embed-text-v2"
+  }
+];
+
 const claude_instant = [
   {
     "bedrock_region": "us-west-2", // Oregon
@@ -307,11 +320,11 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         new iam.ServicePrincipal("kendra.amazonaws.com")
       )
     });
-/*    const cfnIndex = new kendra.CfnIndex(this, 'MyCfnIndex', {
+    const cfnIndex = new kendra.CfnIndex(this, 'MyCfnIndex', {
       edition: 'DEVELOPER_EDITION',  // ENTERPRISE_EDITION, 
       name: `reg-kendra-${projectName}`,
       roleArn: roleKendra.roleArn,
-    });  
+    }); 
     const kendraLogPolicy = new iam.PolicyStatement({
       resources: ['*'],
       actions: ["logs:*", "cloudwatch:GenerateQuery"],
@@ -353,13 +366,13 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         statements: [kendraPolicy],
       }),
     );      
-    kendraIndex = cfnIndex.attrId; */
+    kendraIndex = cfnIndex.attrId;
 
-  /*  roleLambdaWebsocket.attachInlinePolicy( 
+    roleLambdaWebsocket.attachInlinePolicy( 
       new iam.Policy(this, `lambda-inline-policy-for-kendra-in-${projectName}`, {
         statements: [kendraPolicy],
       }),
-    ); */
+    ); 
 
     const passRoleResourceArn = roleLambdaWebsocket.roleArn;
     const passRolePolicy = new iam.PolicyStatement({  
@@ -412,7 +425,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // opensearch
     // Permission for OpenSearch
     const domainName = projectName
-  /*  const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
+    const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
     if(debug) {
       new cdk.CfnOutput(this, `resource-arn-for-${projectName}`, {
         value: resourceArn,
@@ -470,7 +483,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The endpoint of OpenSearch Domain',
     });
     opensearch_url = 'https://'+domain.domainEndpoint;
-*/
+
     // api role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
       roleName: `api-role-for-${projectName}-${region}`,
@@ -783,7 +796,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         kendraMethod: kendraMethod,
         LLM_for_chat:JSON.stringify(claude3_sonnet),
         LLM_for_multimodal:JSON.stringify(claude3_sonnet),
-        LLM_for_embedding: JSON.stringify(titan_embedding_v1),
+        LLM_for_embedding: JSON.stringify(titan_embedding_v2),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
@@ -1017,7 +1030,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           supportedFormat: supportedFormat,
           LLM_for_chat:JSON.stringify(claude3_sonnet),
           LLM_for_multimodal:JSON.stringify(claude3_sonnet),
-          LLM_for_embedding: JSON.stringify(titan_embedding_v1),
+          LLM_for_embedding: JSON.stringify(titan_embedding_v2),
           enableParallelSummay: enableParallelSummay
         }
       });         
