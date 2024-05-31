@@ -358,8 +358,8 @@ def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
     )
     child_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400,
-        chunk_overlap=0,
-        separators=["\n\n", "\n", ".", " ", ""],
+        chunk_overlap=50,
+        # separators=["\n\n", "\n", ".", " ", ""],
         length_function = len,
     )
 
