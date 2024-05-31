@@ -332,6 +332,7 @@ def delete_document_if_exist(metadata_key):
 if enableNoriPlugin == 'true':
     create_nori_index()
 
+enableParentDocument = 'true'
 def store_document_for_opensearch(docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
@@ -342,13 +343,29 @@ def store_document_for_opensearch(docs, key):
     print('meta file name: ', metadata_key)    
     delete_document_if_exist(metadata_key)
     
-    try:        
-        response = vectorstore.add_documents(docs, bulk_size = 2000)
-        print('response of adding documents: ', response)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-        #raise Exception ("Not able to request to LLM")
+    from langchain.storage import InMemoryStore
+    from langchain.retrievers import ParentDocumentRetriever
+    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+    
+    store = InMemoryStore()
+    if enableParentDocument=='true':
+        retriever = ParentDocumentRetriever(
+            vectorstore=vectorstore,
+            docstore=store,
+            child_splitter=child_splitter,
+            parent_splitter=parent_splitter,
+        )
+        
+        retriever.add_documents(docs)
+    else:
+        try:        
+            response = vectorstore.add_documents(docs, bulk_size = 2000)
+            print('response of adding documents: ', response)
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                
+            #raise Exception ("Not able to request to LLM")
 
     print('uploaded into opensearch')
     
