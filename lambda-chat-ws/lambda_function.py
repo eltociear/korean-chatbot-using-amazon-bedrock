@@ -66,7 +66,7 @@ useParallelRAG = os.environ.get('useParallelRAG', 'true')
 kendraIndex = os.environ.get('kendraIndex')
 kendra_method = os.environ.get('kendraMethod')
 roleArn = os.environ.get('roleArn')
-top_k = int(os.environ.get('numberOfRelevantDocs', '8'))
+top_k = int(os.environ.get('numberOfRelevantDocs'))
 capabilities = json.loads(os.environ.get('capabilities'))
 print('capabilities: ', capabilities)
 MSG_LENGTH = 100
