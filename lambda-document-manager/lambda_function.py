@@ -338,6 +338,14 @@ PARENT_DOC_ID_KEY = "parent_doc_id"
 def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
     print('upload to opensearch: ', key) 
     contents = load_document(file_type, key)
+    loaded_doc = Document(
+        page_content=contents,
+        metadata={
+            'name': key,
+            # 'page':i+1,
+            'uri': path+parse.quote(key)
+        }
+    )
 
     parent_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
@@ -352,7 +360,10 @@ def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
         length_function = len,
     )
 
-    documents = parent_splitter.split_documents(contents)
+    documents = parent_splitter.split_documents(loaded_doc)
+    if len(documents):
+        print('documents[0]: ', documents[0])
+        
     doc_ids = [str(uuid.uuid4()) for _ in documents]
     print('doc_ids: ', doc_ids)
     
