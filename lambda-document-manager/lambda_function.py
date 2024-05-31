@@ -332,8 +332,151 @@ def delete_document_if_exist(metadata_key):
 if enableNoriPlugin == 'true':
     create_nori_index()
 
+import uuid
+def parent_child_splitter(text, id_key):
+    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
+    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+
+    documents = parent_splitter.split_documents(text)
+    doc_ids = [str(uuid.uuid4()) for _ in documents]
+    print('doc_ids: ', doc_ids)
+
+    docs = []
+    for i, doc in enumerate(documents):
+        _id = doc_ids[i]
+        sub_docs = child_splitter.split_documents([doc])
+        for _doc in sub_docs:
+            _doc.metadata[id_key] = _id
+            _doc.metadata["doc_level"] = "child"
+        docs.extend(sub_docs)
+        doc.metadata[id_key] = _id
+        doc.metadata["doc_level"] = "parent"
+    return documents, docs
+
+def store_document_for_opensearch(file_type, key):
+    print('upload to opensearch: ', key) 
+    texts = load_document(file_type, key)
+            
+    docs = []                
+    for i in range(len(texts)):
+        if texts[i]:
+            docs.append(
+                Document(
+                    page_content=texts[i],
+                    metadata={
+                        'name': key,
+                        # 'page':i+1,
+                        'uri': path+parse.quote(key)
+                    }
+                )
+            )
+    
+    print('docs size: ', len(docs))
+    
+    ids = []
+    if len(docs)>0:
+        print('docs[0]: ', docs[0])                                    
+        ids = add_to_opensearch(docs, key)        
+    return ids
+
+def store_code_for_opensearch(file_type, key):
+    codes = load_code(file_type, key)  # number of functions in the code
+            
+    if enableParallelSummay=='true':
+        docs = summarize_relevant_codes_using_parallel_processing(codes, key)
+                                
+    else:
+        docs = []
+        for code in codes:
+            start = code.find('\ndef ')
+            end = code.find(':')                    
+            # print(f'start: {start}, end: {end}')
+                                    
+        if start != -1:      
+            function_name = code[start+1:end]
+            # print('function_name: ', function_name)
+                                                
+            chat = get_multimodal()      
+                                        
+            summary = summary_of_code(chat, code, file_type)
+                                            
+            if summary[:len(function_name)]==function_name:
+                summary = summary[summary.find('\n')+1:len(summary)]
+                                                                                        
+            docs.append(
+                Document(
+                    page_content=summary,
+                        metadata={
+                            'name': key,
+                            # 'page':i+1,
+                            #'uri': path+doc_prefix+parse.quote(key),
+                            'uri': path+key,
+                            'code': code,
+                            'function_name': function_name
+                        }
+                    )
+                )
+    print('docs size: ', len(docs))
+    
+    ids = []
+    if len(docs)>0:
+        print('docs[0]: ', docs[0])                                    
+        ids = add_to_opensearch(docs, key)    
+    return ids
+
+def store_image_for_opensearch(key):
+    print('extract text from an image: ', key) 
+                                            
+    image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+                        
+    image_content = image_obj['Body'].read()
+    img = Image.open(BytesIO(image_content))
+                        
+    width, height = img.size 
+    print(f"width: {width}, height: {height}, size: {width*height}")
+                        
+    isResized = False
+    while(width*height > 5242880):
+        width = int(width/2)
+        height = int(height/2)
+        isResized = True
+        print(f"width: {width}, height: {height}, size: {width*height}")
+                        
+    if isResized:
+        img = img.resize((width, height))
+                        
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                                                            
+    # extract text from the image
+    chat = get_multimodal()    
+    text = extract_text(chat, img_base64)
+    extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
+    print('extracted_text: ', extracted_text)
+    
+    docs = []
+    if len(extracted_text)>10:
+        docs.append(
+            Document(
+                page_content=extracted_text,
+                metadata={
+                    'name': key,
+                    # 'page':i+1,
+                    'uri': path+parse.quote(key)
+                }
+            )
+        )                                                                                                            
+    print('docs size: ', len(docs))
+    
+    ids = []
+    if len(docs)>0:
+        print('docs[0]: ', docs[0])                                    
+        ids = add_to_opensearch(docs, key)    
+    return ids
+
 enableParentDocument = 'true'
-def store_document_for_opensearch(docs, key):    
+def add_to_opensearch(docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
         
@@ -343,29 +486,13 @@ def store_document_for_opensearch(docs, key):
     print('meta file name: ', metadata_key)    
     delete_document_if_exist(metadata_key)
     
-    from langchain.storage import InMemoryStore
-    from langchain.retrievers import ParentDocumentRetriever
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
-    
-    store = InMemoryStore()
-    if enableParentDocument=='true':
-        retriever = ParentDocumentRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            child_splitter=child_splitter,
-            parent_splitter=parent_splitter,
-        )
-        
-        retriever.add_documents(docs)
-    else:
-        try:        
-            response = vectorstore.add_documents(docs, bulk_size = 2000)
-            print('response of adding documents: ', response)
-        except Exception:
-            err_msg = traceback.format_exc()
-            print('error message: ', err_msg)                
-            #raise Exception ("Not able to request to LLM")
+    try:        
+        response = vectorstore.add_documents(docs, bulk_size = 2000)
+        print('response of adding documents: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to request to LLM")
 
     print('uploaded into opensearch')
     
@@ -879,125 +1006,28 @@ def lambda_handler(event, context):
                 #    category = 'img'
                 else:
                     category = "upload" # for document
-                documentId = get_documentId(key, category)                                
+                documentId = get_documentId(key, category)
                 print('documentId: ', documentId)
                 
-                ids = []
-                for type in capabilities:                
-                    if type=='kendra' and category=='upload':         
-                        print('upload to kendra: ', key)                                                
-                        # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL                    
+                for type in capabilities:
+                    if type=='kendra' and category=='upload':
+                        print('upload to kendra: ', key)
+                        # PLAIN_TEXT, XSLT, MS_WORD, RTF, CSV, JSON, HTML, PDF, PPT, MD, XML, MS_EXCEL
                         store_document_for_kendra(path, key, documentId)  # store the object into kendra
-                        
-                    elif type=='opensearch':
-                        docs = []
-                        
-                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                            print('upload to opensearch: ', key) 
-                            texts = load_document(file_type, key)
-                            
-                            for i in range(len(texts)):
-                                if texts[i]:
-                                    docs.append(
-                                        Document(
-                                            page_content=texts[i],
-                                            metadata={
-                                                'name': key,
-                                                # 'page':i+1,
-                                                'uri': path+parse.quote(key)
-                                            }
-                                        )
-                                    )
-                                    
-                        elif file_type == 'py' or file_type == 'js':
-                            codes = load_code(file_type, key)  # number of functions in the code
-                                            
-                            if enableParallelSummay=='true':
-                                docs = summarize_relevant_codes_using_parallel_processing(codes, key)
-                                
-                            else:
-                                for code in codes:
-                                    start = code.find('\ndef ')
-                                    end = code.find(':')                    
-                                    # print(f'start: {start}, end: {end}')
-                                    
-                                    if start != -1:      
-                                        function_name = code[start+1:end]
-                                        # print('function_name: ', function_name)
-                                                
-                                        chat = get_multimodal()      
-                                        
-                                        summary = summary_of_code(chat, code, file_type)                        
-                                            
-                                        if summary[:len(function_name)]==function_name:
-                                            summary = summary[summary.find('\n')+1:len(summary)]
-                                                                                        
-                                        docs.append(
-                                            Document(
-                                                page_content=summary,
-                                                metadata={
-                                                    'name': key,
-                                                    # 'page':i+1,
-                                                    #'uri': path+doc_prefix+parse.quote(key),
-                                                    'uri': path+key,
-                                                    'code': code,
-                                                    'function_name': function_name
-                                                }
-                                            )
-                                        )                 
-                        
-                        elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
-                            print('extract text from an image: ', key) 
-                                            
-                            image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
-                        
-                            image_content = image_obj['Body'].read()
-                            img = Image.open(BytesIO(image_content))
-                        
-                            width, height = img.size 
-                            print(f"width: {width}, height: {height}, size: {width*height}")
-                        
-                            isResized = False
-                            while(width*height > 5242880):                    
-                                width = int(width/2)
-                                height = int(height/2)
-                                isResized = True
-                                print(f"width: {width}, height: {height}, size: {width*height}")
-                        
-                            if isResized:
-                                img = img.resize((width, height))
-                        
-                            buffer = BytesIO()
-                            img.save(buffer, format="PNG")
-                            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-                                                            
-                            # extract text from the image
-                            chat = get_multimodal()    
-                            text = extract_text(chat, img_base64)
-                            extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
-                            print('extracted_text: ', extracted_text)
-                            if len(extracted_text)>10:
-                                docs.append(
-                                    Document(
-                                        page_content=extracted_text,
-                                        metadata={
-                                            'name': key,
-                                            # 'page':i+1,
-                                            'uri': path+parse.quote(key)
-                                        }
-                                    )
-                                )        
-                                                                                                    
-                        print('docs size: ', len(docs))
-                        if len(docs)>0:
-                            print('docs[0]: ', docs[0])
-                                
-                            ids = store_document_for_opensearch(docs, key)
 
+                    elif type=='opensearch':
+                        if file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
+                            ids = store_document_for_opensearch(file_type, key)     
+                        elif file_type == 'py' or file_type == 'js':
+                            ids = store_code_for_opensearch(file_type, key)     
+                        elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
+                            ids = store_image_for_opensearch(key)
+                            
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, uri=path+parse.quote(key), category=category, documentId=documentId, ids=ids)
+
             else: # delete if the object is unsupported one for format or size
                 try:
-                    print('delete the unsupported file: ', key)                                
+                    print('delete the unsupported file: ', key)
                     result = s3.delete_object(Bucket=bucket, Key=key)
                     print('result of deletion of the unsupported file: ', result)
                             
@@ -1005,15 +1035,15 @@ def lambda_handler(event, context):
                     err_msg = traceback.format_exc()
                     print('err_msg: ', err_msg)
                     # raise Exception ("Not able to delete unsupported file")
-                    
+
         print('processing time: ', str(time.time() - start_time))
         
         # delete queue
         try:
             sqs.delete_message(QueueUrl=sqsUrl, ReceiptHandle=receiptHandle)
-        except Exception as e:        
+        except Exception as e:
             print('Fail to delete the queue message: ', e)
-            
+
     return {
         'statusCode': 200
     }
