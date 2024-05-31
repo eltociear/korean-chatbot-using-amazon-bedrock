@@ -332,14 +332,31 @@ def delete_document_if_exist(metadata_key):
 if enableNoriPlugin == 'true':
     create_nori_index()
 
+enableParentChildChunking = 'true'
 import uuid
-def parent_child_splitter(text, id_key):
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000)
-    child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+PARENT_DOC_ID_KEY = "parent_doc_id"
+def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
+    print('upload to opensearch: ', key) 
+    contents = load_document(file_type, key)
 
-    documents = parent_splitter.split_documents(text)
+    parent_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000,
+        chunk_overlap=100,
+        separators=["\n\n", "\n", ".", " ", ""],
+        length_function = len,
+    )
+    child_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400,
+        chunk_overlap=0,
+        separators=["\n\n", "\n", ".", " ", ""],
+        length_function = len,
+    )
+
+    documents = parent_splitter.split_documents(contents)
     doc_ids = [str(uuid.uuid4()) for _ in documents]
     print('doc_ids: ', doc_ids)
+    
+    id_key = PARENT_DOC_ID_KEY
 
     docs = []
     for i, doc in enumerate(documents):
@@ -351,11 +368,57 @@ def parent_child_splitter(text, id_key):
         docs.extend(sub_docs)
         doc.metadata[id_key] = _id
         doc.metadata["doc_level"] = "parent"
-    return documents, docs
+        doc.metadata["name"] = key
+        doc.metadata["uri"] = path+parse.quote(key)
+        
+        print(f"{i}th doc: {doc}")
+        
+    ids = []
+    combined_doc = documents+docs
+    if len(combined_doc)>0:
+        print('combined_doc[0]: ', combined_doc[0])
+        ids = add_to_opensearch(combined_doc, key)    
+    return ids
+
+def add_to_opensearch_parent_child_chunking(docs, key):    
+    # index_name = get_index_name(documentId)    
+    # delete_index_if_exist(index_name)
+        
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)    
+    metadata_key = meta_prefix+objectName+'.metadata.json'
+    print('meta file name: ', metadata_key)    
+    delete_document_if_exist(metadata_key)
+    
+    try:        
+        response = vectorstore.add_documents(docs, bulk_size = 2000)
+        print('response of adding documents: ', response)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to request to LLM")
+
+    print('uploaded into opensearch')
+    
+    return response
 
 def store_document_for_opensearch(file_type, key):
     print('upload to opensearch: ', key) 
-    texts = load_document(file_type, key)
+    contents = load_document(file_type, key)
+    
+    texts = ""
+    if len(contents)>0:
+        new_contents = str(contents).replace("\n"," ") 
+        print('length: ', len(new_contents))
+        
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100,
+            separators=["\n\n", "\n", ".", " ", ""],
+            length_function = len,
+        ) 
+
+        texts = text_splitter.split_text(new_contents) 
             
     docs = []                
     for i in range(len(texts)):
@@ -475,7 +538,6 @@ def store_image_for_opensearch(key):
         ids = add_to_opensearch(docs, key)    
     return ids
 
-enableParentDocument = 'true'
 def add_to_opensearch(docs, key):    
     # index_name = get_index_name(documentId)    
     # delete_index_if_exist(index_name)
@@ -682,21 +744,7 @@ def load_document(file_type, key):
                 print('err_msg: ', err_msg)
                 # raise Exception ("Not able to load docx")   
     
-    texts = ""
-    if len(contents)>0:
-        new_contents = str(contents).replace("\n"," ") 
-        print('length: ', len(new_contents))
-        
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=100,
-            separators=["\n\n", "\n", ".", " ", ""],
-            length_function = len,
-        ) 
-
-        texts = text_splitter.split_text(new_contents) 
-                        
-    return texts
+    return contents
 
 # load a code file from s3
 def load_code(file_type, key):
@@ -1017,7 +1065,10 @@ def lambda_handler(event, context):
 
                     elif type=='opensearch':
                         if file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
-                            ids = store_document_for_opensearch(file_type, key)     
+                            # ids = store_document_for_opensearch(file_type, key)                                 
+                            if enableParentChildChunking == 'true':
+                                ids = store_document_for_opensearch_using_parent_child_chunking(file_type, key)
+                                
                         elif file_type == 'py' or file_type == 'js':
                             ids = store_code_for_opensearch(file_type, key)     
                         elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
