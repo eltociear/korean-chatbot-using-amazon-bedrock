@@ -440,7 +440,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       principals: [new iam.AnyPrincipal()],      
     });  
 
-  /*  const domain = new opensearch.Domain(this, 'Domain', {
+    const domain = new opensearch.Domain(this, 'Domain', {
       version: opensearch.EngineVersion.OPENSEARCH_2_3,
       
       domainName: domainName,
@@ -473,7 +473,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         enabled: true,
         availabilityZoneCount: 3,        
       }
-    }); 
+    });
     new cdk.CfnOutput(this, `Domain-of-OpenSearch-for-${projectName}`, {
       value: domain.domainArn,
       description: 'The arm of OpenSearch Domain',
@@ -483,7 +483,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       description: 'The endpoint of OpenSearch Domain',
     });
     opensearch_url = 'https://'+domain.domainEndpoint;
-*/
+
     // api role
     const role = new iam.Role(this, `api-role-for-${projectName}`, {
       roleName: `api-role-for-${projectName}-${region}`,
