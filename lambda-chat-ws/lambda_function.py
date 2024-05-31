@@ -2493,6 +2493,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
         # revise question
         revised_question = revise_question(connectionId, requestId, chat, text)     
         print('revised_question: ', revised_question)  
+        revised_question = revised_question.replace('\n', '')
         
         end_time_for_revise = time.time()
         time_for_revise = end_time_for_revise - start_time_for_revise
