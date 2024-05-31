@@ -338,14 +338,16 @@ PARENT_DOC_ID_KEY = "parent_doc_id"
 def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
     print('upload to opensearch: ', key) 
     contents = load_document(file_type, key)
-    loaded_doc = Document(
+    
+    loaded_doc = []
+    loaded_doc.append(Document(
         page_content=contents,
         metadata={
             'name': key,
             # 'page':i+1,
             'uri': path+parse.quote(key)
         }
-    )
+    ))
     print('loaded_doc: ', loaded_doc)
 
     parent_splitter = RecursiveCharacterTextSplitter(
@@ -362,6 +364,7 @@ def store_document_for_opensearch_using_parent_child_chunking(file_type, key):
     )
 
     documents = parent_splitter.split_documents(loaded_doc)
+    print('len(documents): ', len(documents))
     if len(documents):
         print('documents[0]: ', documents[0])
         
