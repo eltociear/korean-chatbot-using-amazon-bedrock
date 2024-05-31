@@ -242,7 +242,7 @@ def get_embedding():
     profile = LLM_for_embedding[selected_embedding]
     bedrock_region =  profile['bedrock_region']
     model_id = profile['model_id']
-    print(f'Embedding: {selected_embedding}, bedrock_region: {bedrock_region}')
+    print(f'selected_embedding: {selected_embedding}, bedrock_region: {bedrock_region}, model_id: {model_id}')
     
     # bedrock   
     boto3_bedrock = boto3.client(

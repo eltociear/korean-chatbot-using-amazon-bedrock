@@ -796,7 +796,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         kendraMethod: kendraMethod,
         LLM_for_chat:JSON.stringify(claude3_sonnet),
         LLM_for_multimodal:JSON.stringify(claude3_sonnet),
-        LLM_for_embedding: JSON.stringify(titan_embedding_v2),
+        LLM_for_embedding: JSON.stringify(titan_embedding_v1),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
