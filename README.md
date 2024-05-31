@@ -858,3 +858,9 @@ cdk destroy --all
 
 LLM을 사용한 Enterprise용 application을 개발하기 위해서는 기업이 가진 다양한 정보를 활용하여야 합니다. 이를 위해 Fine-tuning이나 RAG를 활용할 수 있습니다. Fine-tuning은 일반적으로 RAG보다 우수한 성능을 기대할 수 있으나, 다양한 application에서 활용하기 위해서 많은 비용과 시행착오가 있을 수 있습니다. RAG는 데이터의 빠른 업데이트 및 비용면에서 활용도가 높아서, Fine-tuning과 RAG를 병행하여 활용하는 방법을 생각해 볼 수 있습니다. 여기에서는 RAG의 성능을 향상시키리 위해 다양한 기술을 통합하고, 이를 활용할 수 있는 Korean Chatbot을 만들었습니다. 이를 통해 다양한 RAG 기술들을 테스트하고 사용하는 용도에 맞게 RAG 기술을 활용할 수 있습니다.
 
+## Reference
+
+[Chunking Strategies for LLM Applications](https://www.pinecone.io/learn/chunking-strategies/)
+
+[Advanced RAG Techniques: An Overview](https://www.linkedin.com/pulse/advanced-rag-techniques-overview-yugank-aman-t4kkf/)
+
