@@ -355,13 +355,13 @@ def chunking(loaded_doc):
         if len(parent_docs):
             print('parent_docs[0]: ', parent_docs[0])
             
-        doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
-        print('doc_ids: ', doc_ids)        
+        parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
+        print('parent_doc_ids: ', parent_doc_ids)        
         
         child_docs = []
         id_key = PARENT_DOC_ID_KEY        
         for i, doc in enumerate(parent_docs):
-            _id = doc_ids[i]
+            _id = parent_doc_ids[i]
             sub_docs = child_splitter.split_documents([doc])
             for _doc in sub_docs:
                 _doc.metadata[id_key] = _id
@@ -371,7 +371,7 @@ def chunking(loaded_doc):
             doc.metadata["doc_level"] = "parent"
             
             print(f"{i}th doc: {doc}")            
-        return parent_docs+child_docs
+        return parent_docs+child_docs, parent_doc_ids
     else:
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -384,7 +384,7 @@ def chunking(loaded_doc):
         print('len(documents): ', len(documents))
         if len(documents):
             print('documents[0]: ', documents[0])        
-        return documents
+        return documents, parent_doc_ids
 
 def store_document_for_opensearch(file_type, key):
     print('upload to opensearch: ', key) 
@@ -503,7 +503,7 @@ def add_to_opensearch(docs, key):
         return []    
     print('docs[0]: ', docs[0])       
     
-    documents = chunking(docs)   
+    documents, parent_doc_ids = chunking(docs)
     
     objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
     print('objectName: ', objectName)    
@@ -521,7 +521,7 @@ def add_to_opensearch(docs, key):
 
     print('uploaded into opensearch')
     
-    return response
+    return response+parent_doc_ids
            
 # store document into Kendra
 def store_document_for_kendra(path, key, documentId):
