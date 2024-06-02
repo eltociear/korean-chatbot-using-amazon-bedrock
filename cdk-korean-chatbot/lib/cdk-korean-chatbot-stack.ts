@@ -19,14 +19,14 @@ import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 const region = process.env.CDK_DEFAULT_REGION;    
-const accountId = process.env.CDK_DEFAULT_ACCOUNT
+const accountId = process.env.CDK_DEFAULT_ACCOUNT;
 const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
 const projectName = `korean-chatbot-with-rag`; 
 const bucketName = `storage-for-${projectName}-${accountId}-${region}`; 
 let kendra_region = process.env.CDK_DEFAULT_REGION;   //  "us-west-2"
-const rag_method = 'RetrievalPrompt' // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
+const rag_method = 'RetrievalPrompt'; // RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 
 const opensearch_account = "admin";
 const opensearch_passwd = "Wifi1234!";
@@ -44,7 +44,7 @@ const separated_chat_history = 'true';
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableNoriPlugin = 'false';
 const enableParallelSummay = 'true';
-const enableParentChildChunking = 'true';
+const enalbeParentDocumentRetrival = 'true';
 
 const claude3_sonnet = [
   {
@@ -804,7 +804,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         enableNoriPlugin: enableNoriPlugin,
         projectName: projectName,
         separated_chat_history: separated_chat_history,
-        enableParentChildChunking: enableParentChildChunking
+        enalbeParentDocumentRetrival: enalbeParentDocumentRetrival
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -1034,7 +1034,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           LLM_for_multimodal:JSON.stringify(claude3_sonnet),
           LLM_for_embedding: JSON.stringify(titan_embedding_v2),
           enableParallelSummay: enableParallelSummay,
-          enableParentChildChunking: enableParentChildChunking
+          enalbeParentDocumentRetrival: enalbeParentDocumentRetrival
         }
       });         
       s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
