@@ -44,6 +44,7 @@ const separated_chat_history = 'true';
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableNoriPlugin = 'false';
 const enableParallelSummay = 'true';
+const enableParentChildChunking = 'true';
 
 const claude3_sonnet = [
   {
@@ -802,7 +803,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         allowDualSearch: allowDualSearch,
         enableNoriPlugin: enableNoriPlugin,
         projectName: projectName,
-        separated_chat_history: separated_chat_history
+        separated_chat_history: separated_chat_history,
+        enableParentChildChunking: enableParentChildChunking
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -1031,7 +1033,8 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
           LLM_for_chat:JSON.stringify(claude3_sonnet),
           LLM_for_multimodal:JSON.stringify(claude3_sonnet),
           LLM_for_embedding: JSON.stringify(titan_embedding_v2),
-          enableParallelSummay: enableParallelSummay
+          enableParallelSummay: enableParallelSummay,
+          enableParentChildChunking: enableParentChildChunking
         }
       });         
       s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3

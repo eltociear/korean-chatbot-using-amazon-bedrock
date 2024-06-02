@@ -2034,6 +2034,8 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
     relevant_docs = []
             
     if rag_type == 'opensearch':
+        #if enableParentChildChunking == 'true':
+                            
         # vector search (semantic) 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
