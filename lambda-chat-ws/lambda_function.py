@@ -52,6 +52,7 @@ selected_multimodal = 0
 selected_embedding = 0
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 separated_chat_history = os.environ.get('separated_chat_history')
+enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -2061,6 +2062,11 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             excerpt = document[0].page_content
             confidence = str(document[1])
             assessed_score = str(document[1])
+            
+            parent_doc_id = ""
+            if enalbeParentDocumentRetrival == 'true':
+                parent_doc_id = document[0].metadata['parent_doc_id']
+                doc_level = document[0].metadata['doc_level']
 
             if page:
                 print('page: ', page)
@@ -2077,7 +2083,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                         "translated_excerpt": "",
                         "document_attributes": {
                             "_excerpt_page_number": page
-                        }
+                        },
+                        "parent_doc_id": parent_doc_id,
+                        "doc_level": doc_level                        
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
@@ -2094,7 +2102,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                         "source": uri,
                         "title": name,
                         "excerpt": excerpt,
-                        "translated_excerpt": ""
+                        "translated_excerpt": "",
+                        "parent_doc_id": parent_doc_id,
+                        "doc_level": doc_level
                     },
                     #"query_id": query_id,
                     #"feedback_token": feedback_token
