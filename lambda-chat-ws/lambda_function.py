@@ -2034,14 +2034,35 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
 
     relevant_docs = []
             
-    if rag_type == 'opensearch':
-        #if enableParentChildChunking == 'true':
-                            
+    if rag_type == 'opensearch':                                                        
         # vector search (semantic) 
-        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
-            query = query,
-            k = top_k,
-        )
+        if enalbeParentDocumentRetrival=='true':
+            result = vectorstore_opensearch.similarity_search_with_score(
+                query = query,
+                k = top_k,
+                pre_filter={"doc_level": {"$eq": "child"}}
+            )
+            print('result: ', result)
+            
+            relevant_documents = []
+            docList = []
+            for re in result:
+                parent_doc_id = re[0].metadata['parent_doc_id']
+                doc_level = re[0].metadata['doc_level']                
+                print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+                
+                if parent_doc_id in docList:
+                    print('duplicated!')
+                else:
+                    relevant_documents.append(re)
+                    docList.append(parent_doc_id)
+            print('relevant_documents: ', relevant_documents)
+                
+        else:
+            relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+                query = query,
+                k = top_k,
+            )
         #print('(opensearch score) relevant_documents: ', relevant_documents)
 
         for i, document in enumerate(relevant_documents):
@@ -2063,9 +2084,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             confidence = str(document[1])
             assessed_score = str(document[1])
             
-            parent_doc_id = ""
+            parent_doc_id = doc_level = ""            
             if enalbeParentDocumentRetrival == 'true':
-                parent_doc_id = document[0].metadata['parent_doc_id']
+                parent_doc_id = document[0].metadata['parent_doc_id']            
                 doc_level = document[0].metadata['doc_level']
 
             if page:
@@ -2560,9 +2581,9 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
 
                 else:
                     relevant_docs_using_translated_question = []
-                    for reg in capabilities:            
+                    for reg in capabilities:
                         if reg == 'kendra':
-                            rel_docs = retrieve_from_kendra(query=translated_revised_question, top_k=top_k)      
+                            rel_docs = retrieve_from_kendra(query=translated_revised_question, top_k=top_k)
                             print('rel_docs (kendra): '+json.dumps(rel_docs))
                         else:
                             rel_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=translated_revised_question, top_k=top_k, rag_type=reg)
@@ -2570,7 +2591,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
                     
                         if(len(rel_docs)>=1):
                             for doc in rel_docs:
-                                relevant_docs_using_translated_question.append(doc)    
+                                relevant_docs_using_translated_question.append(doc)
 
                     if len(relevant_docs_using_translated_question)>=1:
                         for i, doc in enumerate(relevant_docs_using_translated_question):
@@ -2614,7 +2635,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
             print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
         if len(selected_relevant_docs)==0:
-            print('No relevant document! So use google api')            
+            print('No relevant document! So use google api')
             api_key = google_api_key
             cse_id = google_cse_id 
             
