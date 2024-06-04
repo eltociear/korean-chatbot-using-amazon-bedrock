@@ -1802,7 +1802,7 @@ def priority_search(query, relevant_docs, bedrock_embedding, minSimilarity):
         assessed_score = document[1]
         print(f"{order} {name}: {assessed_score}")
 
-        relevant_docs[order]['assessed_score'] = int(assessed_score)
+        relevant_docs[order]['assessed_score'] = assessed_score
 
         if assessed_score < minSimilarity:
             docs.append(relevant_docs[order])    
