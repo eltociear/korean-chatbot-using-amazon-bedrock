@@ -2079,7 +2079,7 @@ def get_parent_document(parent_doc_id):
 def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
-        k = top_k,
+        k = 8,  
         pre_filter={"doc_level": {"$eq": "child"}}
     )
     print('result: ', result)
@@ -2098,6 +2098,9 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
                 else:
                     relevant_documents.append(re)
                     docList.append(parent_doc_id)
+                    
+                    if len(relevant_documents)>=top_k:
+                        break
                                 
     # print('lexical query result: ', json.dumps(response))
     print('relevant_documents: ', relevant_documents)
