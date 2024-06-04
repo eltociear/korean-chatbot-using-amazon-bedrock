@@ -2076,7 +2076,7 @@ def get_parent_document(parent_doc_id):
     
     return source['text'], metadata['name'], metadata['uri'], metadata['doc_level']    
 
-def get_documents_from_opensearch(vectorstore_opensearch, query):
+def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k,
@@ -2112,7 +2112,7 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
     if rag_type == 'opensearch':                                                        
         # vector search (semantic) 
         if enalbeParentDocumentRetrival=='true':
-            relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, query)
+            relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, query, top_k)
                 
         else:
             relevant_documents = vectorstore_opensearch.similarity_search_with_score(
@@ -3190,7 +3190,7 @@ def search_by_opensearch(keyword: str) -> str:
     top_k = 2
     
     if enalbeParentDocumentRetrival == 'true':
-        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch)
+        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, keyword, top_k)
 
         for i, document in enumerate(relevant_documents):
             print(f'## Document(opensearch-vector) {i+1}: {document}')
