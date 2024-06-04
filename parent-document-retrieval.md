@@ -113,9 +113,76 @@ def delete_document_if_exist(metadata_key):
             print('no meta file: ', metadata_key)
 ```
 
+## Parent document의 활용
+
+OpenSearch에 RAG 정보를 요청할 때에 아래와 같이 pre_filter로 doc_level이 child인 문서들을 검색합니다. 상세한 내용은 [lambda-chat](./lambda-chat-ws/lambda_function.py)을 참조합니다.
+
+필터를 적용하여 child에서 질문과 가장 가까운 문서들을 검색합니다. 이후 child 문서의 metadata에서 parent_doc_id을 추출합니다. 하나의 parent 문서에서 여러개의 child 문서가 나오는데, 검색시 하나의 parent에서 여러개의 child가 가장 가까운 문서가 될수 있습니다. 따라서 아래와 같이 child 검색시 더 많은 k를 검색하고, relevant_documents를 선정할 때에 같은 parent_doc_id인지 확인하여 제외합니다.
+
+```python
+def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
+    result = vectorstore_opensearch.similarity_search_with_score(
+        query = query,
+        k = 8,  
+        pre_filter={"doc_level": {"$eq": "child"}}
+    )
+    print('result: ', result)
+            
+    relevant_documents = []
+    docList = []
+    for re in result:
+        if 'parent_doc_id' in re[0].metadata:
+            parent_doc_id = re[0].metadata['parent_doc_id']
+            doc_level = re[0].metadata['doc_level']
+            print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+                    
+            if doc_level == 'child':
+                if parent_doc_id in docList:
+                    print('duplicated!')
+                else:
+                    relevant_documents.append(re)
+                    docList.append(parent_doc_id)
+                    
+                    if len(relevant_documents)>=top_k:
+                        break
+                                
+    # print('lexical query result: ', json.dumps(response))
+    print('relevant_documents: ', relevant_documents)
+    
+    return relevant_documents
+```    
+
+선택된 child 문서의 parent 문서를 찾아서 relevant_documents로 활용합니다. 이를 위해 parent_doc_id를 추출한 후에, boto3로 OpenSearch의 get()을 이용해 문서 정보를 가져옵니다. 가져온 정보중에 문서의 text등을 추출하여 활용합니다.
+
+```python
+relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, keyword, top_k)
+
+for i, document in enumerate(relevant_documents):
+    print(f'## Document(opensearch-vector) {i+1}: {document}')
+    
+    parent_doc_id = document[0].metadata['parent_doc_id']
+    doc_level = document[0].metadata['doc_level']
+    print(f"child: parent_doc_id: {parent_doc_id}, doc_level: {doc_level}")
+        
+    excerpt, name, uri, doc_level = get_parent_document(parent_doc_id) # use pareant document
+    print(f"parent: name: {name}, uri: {uri}, doc_level: {doc_level}")
+    
+    answer = answer + f"{excerpt}, URL: {uri}\n\n"
+
+def get_parent_document(parent_doc_id):
+    response = os_client.get(
+        index="idx-rag", 
+        id = parent_doc_id
+    )
+    
+    source = response['_source']                                
+    metadata = source['metadata']    
+    
+    return source['text'], metadata['name'], metadata['uri'], metadata['doc_level']    
+```
 
 
-## References 
+## Others 
 
 ### LangChain의 Parent Document Retriever
 
