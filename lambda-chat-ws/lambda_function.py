@@ -2028,6 +2028,22 @@ def get_code_reference(docs):
                             
     return reference
 
+def get_parent_document(parent_doc_id):
+    response = os_client.get(
+        index="idx-rag", 
+        id = parent_doc_id
+    )
+    
+    source = response['_source']                            
+    # print('parent_doc: ', source['text'])   
+    
+    metadata = source['metadata']    
+    #print('name: ', metadata['name'])   
+    #print('uri: ', metadata['uri'])   
+    #print('doc_level: ', metadata['doc_level']) 
+    
+    return source['text'], metadata['name'], metadata['uri'], metadata['doc_level']    
+
 def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
@@ -2057,17 +2073,6 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                         else:
                             relevant_documents.append(re)
                             docList.append(parent_doc_id)
-                            
-                            response = os_client.get(
-                                index="idx-rag", 
-                                id = parent_doc_id
-                            )
-                            source = response['_source']                            
-                            print('parent_doc: ', source['text'])   
-                            metadata = source['metadata']
-                            print('name: ', metadata['name'])   
-                            print('uri: ', metadata['uri'])   
-                            print('doc_level: ', metadata['doc_level'])   
                             
             # print('lexical query result: ', json.dumps(response))
             print('relevant_documents: ', relevant_documents)
@@ -2101,8 +2106,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             parent_doc_id = doc_level = ""            
             if enalbeParentDocumentRetrival == 'true':
                 parent_doc_id = document[0].metadata['parent_doc_id']            
-                doc_level = document[0].metadata['doc_level']
-
+                doc_level = document[0].metadata['doc_level']                                
+                excerpt, name, uri, doc_level = get_parent_document(parent_doc_id) # use pareant document
+                
             if page:
                 print('page: ', page)
                 doc_info = {
