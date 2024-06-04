@@ -2065,9 +2065,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                             source = response['_source']                            
                             print('parent_doc: ', source['text'])   
                             metadata = source['metadata']
-                            print('name: ', metadata.name)   
-                            print('uri: ', metadata.uri)   
-                            print('doc_level: ', metadata.doc_level)   
+                            print('name: ', metadata['name'])   
+                            print('uri: ', metadata['uri'])   
+                            print('doc_level: ', metadata['doc_level'])   
                             
             # print('lexical query result: ', json.dumps(response))
             print('relevant_documents: ', relevant_documents)
