@@ -355,7 +355,15 @@ def chunking(loaded_doc):
         if len(parent_docs):
             print('parent_docs[0]: ', parent_docs[0])
             
-        parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
+            try:        
+                parent_doc_ids = vectorstore.add_documents(documents, bulk_size = 2000)
+                print('response of adding documents: ', parent_doc_ids)
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)                
+                #raise Exception ("Not able to add docs in opensearch")
+            
+        # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
         print('parent_doc_ids: ', parent_doc_ids)        
         
         child_docs = []
@@ -384,7 +392,19 @@ def chunking(loaded_doc):
         print('len(documents): ', len(documents))
         if len(documents):
             print('documents[0]: ', documents[0])        
-        return documents, parent_doc_ids
+            
+        try:        
+            response = vectorstore.add_documents(documents, bulk_size = 2000)
+            print('response of adding documents: ', response)
+            
+            ids = response
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                
+            #raise Exception ("Not able to add docs in opensearch")
+
+    print('uploaded into opensearch')
+    return ids
 
 def store_document_for_opensearch(file_type, key):
     print('upload to opensearch: ', key) 
@@ -503,23 +523,15 @@ def add_to_opensearch(docs, key):
         return []    
     print('docs[0]: ', docs[0])       
     
-    documents, parent_doc_ids = chunking(docs)
-    
     objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
     print('objectName: ', objectName)    
     metadata_key = meta_prefix+objectName+'.metadata.json'
     print('meta file name: ', metadata_key)    
     delete_document_if_exist(metadata_key)
     
-    try:        
-        response = vectorstore.add_documents(documents, bulk_size = 2000)
-        print('response of adding documents: ', response)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                
-        #raise Exception ("Not able to request to LLM")
-
-    print('uploaded into opensearch')
+    documents, parent_doc_ids = chunking(docs)
+    
+    
     
     return response+parent_doc_ids
            

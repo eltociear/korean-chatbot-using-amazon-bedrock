@@ -1356,7 +1356,6 @@ def revise_question(connectionId, requestId, chat, query):
         generated_question = result.content
         
         revised_question = generated_question[generated_question.find('<result>')+8:len(generated_question)-9] # remove <result> tag                   
-        print('revised_question: ', revised_question)
         
     except Exception:
         err_msg = traceback.format_exc()
@@ -2047,8 +2046,9 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             relevant_documents = []
             docList = []
             for re in result:
+                id = re[0].
                 parent_doc_id = re[0].metadata['parent_doc_id']
-                doc_level = re[0].metadata['doc_level']                
+                doc_level = re[0].metadata['doc_level']
                 print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
                 
                 if parent_doc_id in docList:
