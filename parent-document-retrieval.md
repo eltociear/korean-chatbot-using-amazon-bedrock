@@ -51,7 +51,7 @@ parent_docs = parent_splitter.split_documents(docs)
         ids = parent_doc_ids+child_doc_ids
 ```
 
-## Metadta 정보 파일의 성성
+## Metadta 정보 파일 생성
 
 사용자가 문서 삭제나 업데이트를 할 경우에 OpenSearch에 저장된 파일정보를 같이 삭제하여야 합니다. 이때는 parent_doc_ids와 child_doc_ids를 이용하여야 하므로 파일을 읽을때 아래와 같이 metadata를 저장하는 json 파일을 생성합니다.
 
