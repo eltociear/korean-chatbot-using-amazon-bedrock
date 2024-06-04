@@ -51,7 +51,45 @@ parent_docs = parent_splitter.split_documents(docs)
         ids = parent_doc_ids+child_doc_ids
 ```
 
-사용자가 문서 삭제나 업데이트를 할 경우에 기생성된 parent_doc_ids와 child_doc_ids를 이용하여 아래와 같이 삭제를 수행합니다. 이때 파일에 대한 OpenSearch의 id 리스트는 파일 생성시 만든 json파일에서 로드하여 이용합니다. 
+## Metadta 정보 파일의 성성
+
+사용자가 문서 삭제나 업데이트를 할 경우에 OpenSearch에 저장된 파일정보를 같이 삭제하여야 합니다. 이때는 parent_doc_ids와 child_doc_ids를 이용하여야 하므로 파일을 읽을때 아래와 같이 metadata를 저장하는 json 파일을 생성합니다.
+
+```python
+def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId, ids):
+    title = key
+    timestamp = int(time.time())
+
+    metadata = {
+        "Attributes": {
+            "_category": category,
+            "_source_uri": uri,
+            "_version": str(timestamp),
+            "_language_code": "ko"
+        },
+        "Title": title,
+        "DocumentId": documentId,      
+        "ids": ids  
+    }
+    print('metadata: ', metadata)
+    
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)
+
+    client = boto3.client('s3')
+    try: 
+        client.put_object(
+            Body=json.dumps(metadata), 
+            Bucket=bucket, 
+            Key=meta_prefix+objectName+'.metadata.json' 
+        )
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+        raise Exception ("Not able to create meta file")
+```
+
+실제 파일 삭제가 필요한 경우에는 아래처럼 OpenSearch의 id 리스트를 읽은 후에 OpenSearch의 delete()를 이용해 삭제합니다.
 
 ```python
 def delete_document_if_exist(metadata_key):
