@@ -2058,10 +2058,11 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                             relevant_documents.append(re)
                             docList.append(parent_doc_id)
                             
-                            result = vectorstore_opensearch.search(
+                            response = os_client.get(
                                 id = parent_doc_id
                             )
-                            print('result: ', result)   
+                            print('parent_doc: ', response)   
+            # print('lexical query result: ', json.dumps(response))
             print('relevant_documents: ', relevant_documents)
                 
         else:
