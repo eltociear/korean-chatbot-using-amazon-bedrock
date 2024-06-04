@@ -481,7 +481,7 @@ def add_to_opensearch(docs, key):
             # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
             # print('parent_doc_ids: ', parent_doc_ids)            
             try:        
-                parent_doc_ids = vectorstore.add_documents(documents, bulk_size = 2000)
+                parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 2000)
                 print('parent_doc_ids: ', parent_doc_ids)
                 
                 child_docs = []

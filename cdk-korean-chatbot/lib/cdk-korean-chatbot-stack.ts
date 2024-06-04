@@ -191,6 +191,7 @@ const claude2 = [
 ];
 
 const LLMs_for_chat = claude3_sonnet;
+const LLMs_for_embedding = titan_embedding_v2;
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -976,7 +977,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
     // SQS for S3 event (fifo) 
     let queueUrl:string[] = [];
     let queue:any[] = [];
-    for(let i=0;i<LLMs_for_chat.length;i++) {
+    for(let i=0;i<LLMs_for_embedding.length;i++) {
       queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
         visibilityTimeout: cdk.Duration.seconds(600),
         queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
@@ -998,16 +999,16 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),      
       environment: {
         sqsFifoUrl: JSON.stringify(queueUrl),
-        nqueue: String(LLMs_for_chat.length)
+        nqueue: String(LLMs_for_embedding.length)
       }
     });
-    for(let i=0;i<LLMs_for_chat.length;i++) {
+    for(let i=0;i<LLMs_for_embedding.length;i++) {
       queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
     }
 
     // Lambda for document manager
     let lambdDocumentManager:any[] = [];
-    for(let i=0;i<LLMs_for_chat.length;i++) {
+    for(let i=0;i<LLMs_for_embedding.length;i++) {
       lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
         description: 'S3 document manager',
         functionName: `lambda-document-manager-for-${projectName}-${i}`,
