@@ -2059,7 +2059,7 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
                             docList.append(parent_doc_id)
                             
                             response = os_client.get(
-                                index="idx-*", 
+                                index="idx-rag", 
                                 id = parent_doc_id
                             )
                             print('parent_doc: ', response)   
