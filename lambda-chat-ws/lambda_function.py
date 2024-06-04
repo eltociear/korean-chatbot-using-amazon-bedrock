@@ -2079,7 +2079,7 @@ def get_parent_document(parent_doc_id):
 def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
-        k = 8,  
+        k = top_k*2,  
         pre_filter={"doc_level": {"$eq": "child"}}
     )
     print('result: ', result)
