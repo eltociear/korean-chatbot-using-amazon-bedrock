@@ -336,6 +336,7 @@ if enableNoriPlugin == 'true':
 
 PARENT_DOC_ID_KEY = "parent_doc_id"
 def chunking(loaded_doc):
+    ids = []
     if enalbeParentDocumentRetrival == 'true':
         parent_splitter = RecursiveCharacterTextSplitter(
             chunk_size=2000,
@@ -354,32 +355,30 @@ def chunking(loaded_doc):
         print('len(parent_docs): ', len(parent_docs))
         if len(parent_docs):
             print('parent_docs[0]: ', parent_docs[0])
-            
+            # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
+            # print('parent_doc_ids: ', parent_doc_ids)            
             try:        
                 parent_doc_ids = vectorstore.add_documents(documents, bulk_size = 2000)
                 print('response of adding documents: ', parent_doc_ids)
+                
+                child_docs = []
+                id_key = PARENT_DOC_ID_KEY        
+                for i, doc in enumerate(parent_docs):
+                    _id = parent_doc_ids[i]
+                    sub_docs = child_splitter.split_documents([doc])
+                    for _doc in sub_docs:
+                        _doc.metadata[id_key] = _id
+                        _doc.metadata["doc_level"] = "child"
+                    child_docs.extend(sub_docs)
+                    doc.metadata[id_key] = _id
+                    doc.metadata["doc_level"] = "parent"                    
+                    print(f"{i}th doc: {doc}")
+                    
+                ids = parent_doc_ids+child_docs
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)                
-                #raise Exception ("Not able to add docs in opensearch")
-            
-        # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
-        print('parent_doc_ids: ', parent_doc_ids)        
-        
-        child_docs = []
-        id_key = PARENT_DOC_ID_KEY        
-        for i, doc in enumerate(parent_docs):
-            _id = parent_doc_ids[i]
-            sub_docs = child_splitter.split_documents([doc])
-            for _doc in sub_docs:
-                _doc.metadata[id_key] = _id
-                _doc.metadata["doc_level"] = "child"
-            child_docs.extend(sub_docs)
-            doc.metadata[id_key] = _id
-            doc.metadata["doc_level"] = "parent"
-            
-            print(f"{i}th doc: {doc}")            
-        return parent_docs+child_docs, parent_doc_ids
+                #raise Exception ("Not able to add docs in opensearch")                
     else:
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -394,16 +393,12 @@ def chunking(loaded_doc):
             print('documents[0]: ', documents[0])        
             
         try:        
-            response = vectorstore.add_documents(documents, bulk_size = 2000)
-            print('response of adding documents: ', response)
-            
-            ids = response
+            ids = vectorstore.add_documents(documents, bulk_size = 2000)
+            print('response of adding documents: ', ids)
         except Exception:
             err_msg = traceback.format_exc()
-            print('error message: ', err_msg)                
+            print('error message: ', err_msg)
             #raise Exception ("Not able to add docs in opensearch")
-
-    print('uploaded into opensearch')
     return ids
 
 def store_document_for_opensearch(file_type, key):
