@@ -344,7 +344,7 @@ def store_document_for_opensearch(file_type, key):
         print('no contents: ', key)
         return []
     
-    contents = str(contents).replace("\n"," ") 
+    # contents = str(contents).replace("\n"," ") 
     print('length: ', len(contents))
     
     docs = []
@@ -496,7 +496,7 @@ def add_to_opensearch(docs, key):
                     doc.metadata[id_key] = _id
                     doc.metadata["doc_level"] = "parent"
                     print(f"{i}th doc: {doc}")
-                print('child_docs: ', child_docs)
+                # print('child_docs: ', child_docs)
                 
                 child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 2000)
                 print('child_doc_ids: ', child_doc_ids)
