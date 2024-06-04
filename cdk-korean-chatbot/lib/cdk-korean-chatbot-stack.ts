@@ -192,6 +192,7 @@ const claude2 = [
 
 const LLMs_for_chat = claude3_sonnet;
 const LLMs_for_embedding = titan_embedding_v2;
+const priorty_search_embedding = titan_embedding_v1;
 
 export class CdkKoreanChatbotStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -774,7 +775,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
       functionName: `lambda-chat-ws-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-chat-ws')),
       timeout: cdk.Duration.seconds(300),
-      memorySize: 8192,
+      memorySize: 2048,
       role: roleLambdaWebsocket,
       environment: {
         // bedrock_region: bedrock_region,
@@ -799,13 +800,14 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         LLM_for_chat:JSON.stringify(claude3_sonnet),
         LLM_for_multimodal:JSON.stringify(claude3_sonnet),
         LLM_for_embedding: JSON.stringify(titan_embedding_v2),
+        priorty_search_embedding: JSON.stringify(priorty_search_embedding),
         capabilities: capabilities,
         googleApiSecret: googleApiSecret.secretName,
         allowDualSearch: allowDualSearch,
         enableNoriPlugin: enableNoriPlugin,
         projectName: projectName,
         separated_chat_history: separated_chat_history,
-        enalbeParentDocumentRetrival: enalbeParentDocumentRetrival
+        enalbeParentDocumentRetrival: enalbeParentDocumentRetrival        
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -936,7 +938,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         role: roleLambdaWebsocket,
         code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
         timeout: cdk.Duration.seconds(600),
-        memorySize: 8192,
+        memorySize: 2048,
         environment: {
           bedrock_region: LLMs_for_chat[i].bedrock_region,
           s3_bucket: s3Bucket.bucketName,
@@ -1015,7 +1017,7 @@ export class CdkKoreanChatbotStack extends cdk.Stack {
         role: roleLambdaWebsocket,
         code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
         timeout: cdk.Duration.seconds(600),
-        memorySize: 8192,
+        memorySize: 2048,
         environment: {
           s3_bucket: s3Bucket.bucketName,
           s3_prefix: s3_prefix,

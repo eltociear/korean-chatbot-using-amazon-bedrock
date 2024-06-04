@@ -47,9 +47,11 @@ kendra_region = os.environ.get('kendra_region', 'us-west-2')
 LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
 LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
 LLM_for_embedding = json.loads(os.environ.get('LLM_for_embedding'))
+priorty_search_embedding = json.loads(os.environ.get('priorty_search_embedding'))
 selected_chat = 0
 selected_multimodal = 0
 selected_embedding = 0
+selected_ps_embedding = 0
 rag_method = os.environ.get('rag_method', 'RetrievalPrompt') # RetrievalPrompt, RetrievalQA, ConversationalRetrievalChain
 separated_chat_history = os.environ.get('separated_chat_history')
 enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
@@ -237,7 +239,7 @@ def get_multimodal():
         selected_multimodal = 0
     
     return multimodal
-
+    
 def get_embedding():
     global selected_embedding
     profile = LLM_for_embedding[selected_embedding]
@@ -267,6 +269,36 @@ def get_embedding():
         selected_embedding = 0
     
     return bedrock_embedding
+
+def get_ps_embedding():
+    global selected_ps_embedding
+    profile = priorty_search_embedding[selected_ps_embedding]
+    bedrock_region =  profile['bedrock_region']
+    model_id = profile['model_id']
+    print(f'selected_ps_embedding: {selected_ps_embedding}, bedrock_region: {bedrock_region}, model_id: {model_id}')
+    
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region, 
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
+    )
+    
+    bedrock_ps_embedding = BedrockEmbeddings(
+        client=boto3_bedrock,
+        region_name = bedrock_region,
+        model_id = model_id
+    )  
+    
+    selected_ps_embedding = selected_ps_embedding + 1
+    if selected_ps_embedding == len(priorty_search_embedding):
+        selected_ps_embedding = 0
+    
+    return bedrock_ps_embedding
     
 def sendMessage(id, body):
     try:
@@ -1761,7 +1793,7 @@ def retrieve_from_kendra_using_custom_retriever(query, top_k):
 
     return relevant_docs
 
-def priority_search(query, relevant_docs, bedrock_embedding, minSimilarity):
+def priority_search(query, relevant_docs, minSimilarity):
     excerpts = []
     for i, doc in enumerate(relevant_docs):
         # print('doc: ', doc)
@@ -1783,7 +1815,7 @@ def priority_search(query, relevant_docs, bedrock_embedding, minSimilarity):
         )  
     print('excerpts: ', excerpts)
 
-    embeddings = bedrock_embedding
+    embeddings = get_ps_embedding()
     vectorstore_confidence = FAISS.from_documents(
         excerpts,  # documents
         embeddings  # embeddings
@@ -1802,7 +1834,7 @@ def priority_search(query, relevant_docs, bedrock_embedding, minSimilarity):
         assessed_score = document[1]
         print(f"{order} {name}: {assessed_score}")
 
-        relevant_docs[order]['assessed_score'] = assessed_score
+        relevant_docs[order]['assessed_score'] = int(assessed_score)
 
         if assessed_score < minSimilarity:
             docs.append(relevant_docs[order])    
@@ -2852,7 +2884,7 @@ def get_code_using_RAG(chat, text, code_type, connectionId, requestId, bedrock_e
 
     selected_relevant_codes = []
     if len(relevant_codes)>=1:
-        selected_relevant_codes = priority_search(text, relevant_codes, bedrock_embedding, minCodeSimilarity)
+        selected_relevant_codes = priority_search(text, relevant_codes, minCodeSimilarity)
         print('selected_relevant_codes: ', json.dumps(selected_relevant_codes))
     
     end_time_for_priority_search = time.time() 
