@@ -1010,6 +1010,7 @@ def lambda_handler(event, context):
                 documentId = get_documentId(key, category)
                 print('documentId: ', documentId)
                 
+                ids = []
                 for type in capabilities:
                     if type=='kendra' and category=='upload':
                         print('upload to kendra: ', key)
