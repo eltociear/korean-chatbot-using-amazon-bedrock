@@ -23,7 +23,7 @@ child_splitter = RecursiveCharacterTextSplitter(
 )
 ```
 
-분리된 parent/child chink들을 OpenSearch에 등록합니다. OpenSearch에 등록할때 사용하는 문서의 id는 OpenSearch의 성능에 영향을 줄 수 있으며, child가 가지고 있는 parent의 id를 기반으로 검색할 수 있어야 하므로, OpenSearch가 생성하는 id를 이용합니다. 아래와 같이 먼저 parent가 되는 chink의 metadata에 doc_level을 parent로 설정한 후에 OpenSearch에 add_documents()로 등록합니다. 이때 child는 생성된 id를 parent의 id로 활용하여 아래와 같이 metadata에 parent_doc_id를 등록합니다. 
+분리된 parent/child chunk들을 OpenSearch에 등록합니다. OpenSearch에 등록할때 사용하는 문서의 id는 OpenSearch의 성능에 영향을 줄 수 있으며, child가 가지고 있는 parent의 id를 기반으로 검색할 수 있어야 하므로, OpenSearch가 생성하는 id를 이용합니다. 아래와 같이 먼저 parent가 되는 chunk의 metadata에 doc_level을 parent로 설정한 후에 OpenSearch에 add_documents()로 등록합니다. 이때 child는 생성된 id를 parent의 id로 활용하여 아래와 같이 metadata에 parent_doc_id를 등록합니다. 
 
 ```python
 parent_docs = parent_splitter.split_documents(docs)
