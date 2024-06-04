@@ -2076,6 +2076,34 @@ def get_parent_document(parent_doc_id):
     
     return source['text'], metadata['name'], metadata['uri'], metadata['doc_level']    
 
+def get_documents_from_opensearch(vectorstore_opensearch):
+    result = vectorstore_opensearch.similarity_search_with_score(
+        query = query,
+        k = top_k,
+        pre_filter={"doc_level": {"$eq": "child"}}
+    )
+    print('result: ', result)
+            
+    relevant_documents = []
+    docList = []
+    for re in result:
+        if 'parent_doc_id' in re[0].metadata:
+            parent_doc_id = re[0].metadata['parent_doc_id']
+            doc_level = re[0].metadata['doc_level']
+            print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+                    
+            if doc_level == 'child':
+                if parent_doc_id in docList:
+                    print('duplicated!')
+                else:
+                    relevant_documents.append(re)
+                    docList.append(parent_doc_id)
+                                
+    # print('lexical query result: ', json.dumps(response))
+    print('relevant_documents: ', relevant_documents)
+    
+    return relevant_documents
+    
 def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_type):
     print(f"query: {query} ({rag_type})")
 
@@ -2084,30 +2112,7 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
     if rag_type == 'opensearch':                                                        
         # vector search (semantic) 
         if enalbeParentDocumentRetrival=='true':
-            result = vectorstore_opensearch.similarity_search_with_score(
-                query = query,
-                k = top_k,
-                pre_filter={"doc_level": {"$eq": "child"}}
-            )
-            print('result: ', result)
-            
-            relevant_documents = []
-            docList = []
-            for re in result:
-                if 'parent_doc_id' in re[0].metadata:
-                    parent_doc_id = re[0].metadata['parent_doc_id']
-                    doc_level = re[0].metadata['doc_level']
-                    print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
-                    
-                    if doc_level == 'child':
-                        if parent_doc_id in docList:
-                            print('duplicated!')
-                        else:
-                            relevant_documents.append(re)
-                            docList.append(parent_doc_id)
-                            
-            # print('lexical query result: ', json.dumps(response))
-            print('relevant_documents: ', relevant_documents)
+            relevant_documents = get_documents_from_opensearch(vectorstore_opensearch)
                 
         else:
             relevant_documents = vectorstore_opensearch.similarity_search_with_score(
@@ -3185,11 +3190,7 @@ def search_by_opensearch(keyword: str) -> str:
     top_k = 2
     
     if enalbeParentDocumentRetrival == 'true':
-        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
-            query = keyword,
-            k = top_k,
-            pre_filter={"doc_level": {"$eq": "child"}}
-        )
+        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch)
 
         for i, document in enumerate(relevant_documents):
             print(f'## Document(opensearch-vector) {i+1}: {document}')
