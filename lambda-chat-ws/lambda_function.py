@@ -2046,15 +2046,16 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             relevant_documents = []
             docList = []
             for re in result:
-                parent_doc_id = re[0].metadata['parent_doc_id']
-                doc_level = re[0].metadata['doc_level']
-                print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
-                
-                if parent_doc_id in docList:
-                    print('duplicated!')
-                else:
-                    relevant_documents.append(re)
-                    docList.append(parent_doc_id)
+                if 'parent_doc_id' in re[0].metadata:
+                    parent_doc_id = re[0].metadata['parent_doc_id']
+                    doc_level = re[0].metadata['doc_level']
+                    print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+                    
+                    if parent_doc_id in docList:
+                        print('duplicated!')
+                    else:
+                        relevant_documents.append(re)
+                        docList.append(parent_doc_id)
             print('relevant_documents: ', relevant_documents)
                 
         else:
