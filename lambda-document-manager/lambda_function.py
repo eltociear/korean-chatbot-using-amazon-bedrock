@@ -497,8 +497,11 @@ def add_to_opensearch(docs, key):
                     doc.metadata["doc_level"] = "parent"
                     print(f"{i}th doc: {doc}")
                 print('child_docs: ', child_docs)
+                
+                child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 2000)
+                print('child_doc_ids: ', child_doc_ids)
                     
-                ids = parent_doc_ids+child_docs
+                ids = parent_doc_ids+child_doc_ids
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)                
