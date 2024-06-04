@@ -2137,8 +2137,8 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             
             parent_doc_id = doc_level = ""            
             if enalbeParentDocumentRetrival == 'true':
-                parent_doc_id = document[0].metadata['parent_doc_id']            
-                doc_level = document[0].metadata['doc_level']                                
+                parent_doc_id = document[0].metadata['parent_doc_id']
+                doc_level = document[0].metadata['doc_level']
                 excerpt, name, uri, doc_level = get_parent_document(parent_doc_id) # use pareant document
                 
             if page:
@@ -3183,18 +3183,38 @@ def search_by_opensearch(keyword: str) -> str:
     
     answer = ""
     top_k = 2
-    relevant_documents = vectorstore_opensearch.similarity_search_with_score(
-        query = keyword,
-        k = top_k,
-    )
+    
+    if enalbeParentDocumentRetrival == 'true':
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = keyword,
+            k = top_k,
+            pre_filter={"doc_level": {"$eq": "child"}}
+        )
 
-    for i, document in enumerate(relevant_documents):
-        print(f'## Document(opensearch-vector) {i+1}: {document}')
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            parent_doc_id = document[0].metadata['parent_doc_id']
+            doc_level = document[0].metadata['doc_level']
+            print(f"child: parent_doc_id: {parent_doc_id}, doc_level: {doc_level}")
+                
+            excerpt, name, uri, doc_level = get_parent_document(parent_doc_id) # use pareant document
+            print(f"parent: name: {name}, uri: {uri}, doc_level: {doc_level}")
+            
+            answer = answer + f"{excerpt}, URL: {uri}\n\n"
+    else: 
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = keyword,
+            k = top_k,
+        )
 
-        excerpt = document[0].page_content        
-        uri = document[0].metadata['uri']
-                    
-        answer = answer + f"{excerpt}, URL: {uri}\n\n"
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            excerpt = document[0].page_content        
+            uri = document[0].metadata['uri']
+                            
+            answer = answer + f"{excerpt}, URL: {uri}\n\n"
     
     return answer
 
