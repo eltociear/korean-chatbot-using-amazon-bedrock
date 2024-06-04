@@ -2683,7 +2683,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
         selected_relevant_docs = []
         if len(relevant_docs)>=1:
             print('start priority search')
-            selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
+            selected_relevant_docs = priority_search(revised_question, relevant_docs, minDocSimilarity)
             print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
 
         if len(selected_relevant_docs)==0:
@@ -2736,7 +2736,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
                 #raise Exception ("Not able to search using google api") 
             
             if len(relevant_docs)>=1:
-                selected_relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
+                selected_relevant_docs = priority_search(revised_question, relevant_docs, minDocSimilarity)
                 print('selected_relevant_docs: ', json.dumps(selected_relevant_docs))
             # print('selected_relevant_docs (google): ', selected_relevant_docs)
 
@@ -2780,7 +2780,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
         if rag_type == 'kendra':
             relevant_docs = retrieve_from_kendra(query=revised_question, top_k=top_k)
             if len(relevant_docs) >= 1:
-                relevant_docs = priority_search(revised_question, relevant_docs, bedrock_embedding, minDocSimilarity)
+                relevant_docs = priority_search(revised_question, relevant_docs, minDocSimilarity)
         else:
             relevant_docs = retrieve_docs_from_vectorstore(vectorstore_opensearch=vectorstore_opensearch, query=revised_question, top_k=top_k, rag_type=rag_type)
         print('relevant_docs: ', json.dumps(relevant_docs))
