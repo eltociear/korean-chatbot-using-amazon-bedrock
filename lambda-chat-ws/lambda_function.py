@@ -2520,7 +2520,7 @@ def get_relevant_documents_using_parallel_processing(vectorstore_opensearch, que
 
 def translate_process_from_relevent_doc(conn, chat, doc, bedrock_region):
     try: 
-        translated_excerpt = traslation_to_korean(chat=chat, msg=doc['metadata']['excerpt'])
+        translated_excerpt = traslation_to_korean(chat=chat, text=doc['metadata']['excerpt'])
         print(f"translated_excerpt ({bedrock_region}): {translated_excerpt}")
 
         doc['metadata']['translated_excerpt'] = translated_excerpt
@@ -2656,7 +2656,7 @@ def get_answer_using_RAG(chat, text, conv_type, connectionId, requestId, bedrock
                     if len(relevant_docs_using_translated_question)>=1:
                         for i, doc in enumerate(relevant_docs_using_translated_question):
                             if isKorean(doc)==False:
-                                translated_excerpt = traslation_to_korean(chat=chat, msg=doc['metadata']['excerpt'])
+                                translated_excerpt = traslation_to_korean(chat=chat, text=doc['metadata']['excerpt'])
                                 print(f"#### {i} (ENG): {doc['metadata']['excerpt']}")
                                 print(f"#### {i} (KOR): {translated_excerpt}")
 
@@ -3668,7 +3668,7 @@ def getResponse(connectionId, jsonBody):
         if type=='text' and isControlMsg==False:        
             if (conv_type=='qa' or  conv_type == "normal"):
                 if isKorean(msg)==False :
-                    translated_msg = traslation_to_korean(chat, msg)
+                    translated_msg = traslation_to_korean(chat=chat, text=msg)
                     print('translated_msg: ', translated_msg)
                     msg = msg+'\n[한국어]\n'+translated_msg
                     
