@@ -2046,7 +2046,6 @@ def retrieve_docs_from_vectorstore(vectorstore_opensearch, query, top_k, rag_typ
             relevant_documents = []
             docList = []
             for re in result:
-                id = re[0].
                 parent_doc_id = re[0].metadata['parent_doc_id']
                 doc_level = re[0].metadata['doc_level']
                 print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
