@@ -4,7 +4,7 @@
 
 ## Parent/Child Chunking
 
-문서 또는 이미지 파일에서 텍스트를 추출시 Parent와 Child로 Chunking을 수행합니다. 상세한 코드는 [lambda-document](./lambda-document-manager/lambda_function.py)을 참조합니다.
+문서 또는 이미지 파일에서 텍스트를 추출시 parent와 child로 chunking을 수행합니다. 상세한 코드는 [lambda-document](./lambda-document-manager/lambda_function.py)을 참조합니다.
 
 먼저 parent/child splitter를 지정합니다. parent의 경우에 전체 문서를 나눠야하므로 separator로 개행이나 마침표와 같은 단어를 기준으로 합니다. 여기서는, chunk_size는 2000으로 하였으나 목적에 맞게 조정할 수 있습니다. chunk_size가 크면 LLM이 충분한 정보를 가질수 있으나, 전체적으로 token 소모량이 증가하고, 문서의 수(top_k)를 많이 넣으면 LLM에 따라서는 context winodow를 초과할 수 있어 주의가 필요합니다. child splitter의 경우는 여기서는 400을 기준으로 50의 overlap을 설정하였습니다. child의 경우에 관련된 문서를 찾는 기준이 되나 실제 사용은 parent를 사용하므로 검색이 잘되도록 하는것이 중요합니다. child의 경우는 하나의 문장의 일부가 될 수 있어야 하고 제목이 하나의 chunk를 가져가면 안되므로, 아래와 같이 개행문자등을 separator로 등록하지 않았습니다. 
 
@@ -53,7 +53,7 @@ parent_docs = parent_splitter.split_documents(docs)
 
 ## Metadta 정보 파일 생성
 
-사용자가 문서 삭제나 업데이트를 할 경우에 OpenSearch에 저장된 파일정보를 같이 삭제하여야 합니다. 이때는 parent_doc_ids와 child_doc_ids를 이용하여야 하므로 파일을 읽을때 아래와 같이 metadata를 저장하는 json 파일을 생성합니다.
+사용자가 문서 삭제나 업데이트를 할 경우에 OpenSearch에 저장된 파일정보를 같이 삭제하여야 합니다. 이때는 parent_doc_ids와 child_doc_ids를 이용하여야 하므로 파일을 읽을때 아래와 같이 metadata를 저장하는 json 파일을 생성하여 id를 저장합니다.
 
 ```python
 def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, documentId, ids):
@@ -74,7 +74,6 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
     print('metadata: ', metadata)
     
     objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
-    print('objectName: ', objectName)
 
     client = boto3.client('s3')
     try: 
@@ -89,7 +88,7 @@ def create_metadata(bucket, key, meta_prefix, s3_prefix, uri, category, document
         raise Exception ("Not able to create meta file")
 ```
 
-실제 파일 삭제가 필요한 경우에는 아래처럼 OpenSearch의 id 리스트를 읽은 후에 OpenSearch의 delete()를 이용해 삭제합니다.
+파일이 삭제되거나 새로운 파일로 업데이트가 되면, 아래처럼 OpenSearch의 id 리스트를 읽은 후에 OpenSearch의 delete()를 이용해 삭제합니다.
 
 ```python
 def delete_document_if_exist(metadata_key):
@@ -115,15 +114,15 @@ def delete_document_if_exist(metadata_key):
 
 ## Parent document의 활용
 
-OpenSearch에 RAG 정보를 요청할 때에 아래와 같이 pre_filter로 doc_level이 child인 문서들을 검색합니다. 상세한 내용은 [lambda-chat](./lambda-chat-ws/lambda_function.py)을 참조합니다.
+OpenSearch에 RAG 정보를 요청할 때에 아래와 같이 pre_filter로 doc_level이 child인 문서들을 검색합니다. 상세한 코드는 [lambda-chat](./lambda-chat-ws/lambda_function.py)을 참조합니다.
 
-필터를 적용하여 child에서 질문과 가장 가까운 문서들을 검색합니다. 이후 child 문서의 metadata에서 parent_doc_id을 추출합니다. 하나의 parent 문서에서 여러개의 child 문서가 나오는데, 검색시 하나의 parent에서 여러개의 child가 가장 가까운 문서가 될수 있습니다. 따라서 아래와 같이 child 검색시 더 많은 k를 검색하고, relevant_documents를 선정할 때에 같은 parent_doc_id인지 확인하여 제외합니다.
+필터를 적용하여 질문과 가장 가까운 child 문서들을 검색한 후에 metadata에서 parent_doc_id을 추출합니다. 하나의 parent 문서에서 여러개의 child 문서가 나오는데, 검색시 하나의 parent에서 여러개의 child가 가장 가까운 문서가 될수 있습니다. 따라서 아래와 같이 child 검색시 더 많은 문서를 검색하고, relevant_documents를 선정할 때에 같은 parent_doc_id인지 확인하여 제외합니다.
 
 ```python
 def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
-        k = 8,  
+        k = top_k*2,  
         pre_filter={"doc_level": {"$eq": "child"}}
     )
     print('result: ', result)
