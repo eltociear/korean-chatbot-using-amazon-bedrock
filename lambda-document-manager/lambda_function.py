@@ -335,7 +335,7 @@ if enableNoriPlugin == 'true':
     create_nori_index()
 
 PARENT_DOC_ID_KEY = "parent_doc_id"
-def chunking(loaded_doc):
+def add_to_opensearch(loaded_doc):
     ids = []
     if enalbeParentDocumentRetrival == 'true':
         parent_splitter = RecursiveCharacterTextSplitter(
@@ -359,7 +359,7 @@ def chunking(loaded_doc):
             # print('parent_doc_ids: ', parent_doc_ids)            
             try:        
                 parent_doc_ids = vectorstore.add_documents(documents, bulk_size = 2000)
-                print('response of adding documents: ', parent_doc_ids)
+                print('parent_doc_ids: ', parent_doc_ids)
                 
                 child_docs = []
                 id_key = PARENT_DOC_ID_KEY        
@@ -371,8 +371,9 @@ def chunking(loaded_doc):
                         _doc.metadata["doc_level"] = "child"
                     child_docs.extend(sub_docs)
                     doc.metadata[id_key] = _id
-                    doc.metadata["doc_level"] = "parent"                    
+                    doc.metadata["doc_level"] = "parent"
                     print(f"{i}th doc: {doc}")
+                print('child_docs: ', child_docs)
                     
                 ids = parent_doc_ids+child_docs
             except Exception:
@@ -524,11 +525,10 @@ def add_to_opensearch(docs, key):
     print('meta file name: ', metadata_key)    
     delete_document_if_exist(metadata_key)
     
-    documents, parent_doc_ids = chunking(docs)
+    ids = add_to_opensearch(docs)
+    print('ids: ', ids)
     
-    
-    
-    return response+parent_doc_ids
+    return ids
            
 # store document into Kendra
 def store_document_for_kendra(path, key, documentId):
