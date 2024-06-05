@@ -211,7 +211,7 @@ def translate_relevant_documents_using_parallel_processing(docs):
 
 ### Agent 정의 및 활용
 
-[LLM Agent](https://github.com/kyopark2014/llm-agent)를 이용하면, 다양한 API를 이용하여 LLM의 성능을 높일 수 있습니다. 메뉴에서 ReAct나 ReAct chat을 이용해 기능을 확인하시기 바랍니다.
+[LLM Agent](https://github.com/kyopark2014/llm-agent)와 같이, 다양한 API를 이용하기 위하여 Agent를 이용할 수 있습니다. 메뉴에서 ReAct나 ReAct chat을 이용해 기능을 확인할 수 있습니다.
 
 
 ### Parent Document Retrieval
