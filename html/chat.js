@@ -87,6 +87,193 @@ function sendMessage(message) {
     }     
 }
 
+// TTS
+let ttsMode = true; // true: no voice 
+let tts = localStorage.getItem('tts'); // set userID if exists 
+if(tts=="" || tts==null) {
+    tts = 'Silent';    
+}
+console.log('tts: ', tts);
+
+if(tts=='Silent') {
+    ttsMode = true;
+}
+else {
+    ttsMode = false;
+}
+console.log('ttsMode: ', ttsMode);
+
+if(ttsMode) {
+    var AudioContext;
+    var audioContext;
+
+    window.onload = function() {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+            AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioContext();
+        }).catch(e => {
+            console.error(`Audio permissions denied: ${e}`);
+        });
+    }
+}
+
+let sentance = new HashMap();
+let lineText = "";
+let playList = [];
+let playId = 0;
+let requestId = ""
+let next = true;
+let isPlayedTTS = new HashMap();
+
+let audioData = new HashMap();
+function loadAudio(requestId, text) {
+    const uri = "speech";
+    const xhr = new XMLHttpRequest();
+
+    let speed = 120;
+    let voiceId;
+    let langCode;
+    if(conversationType=='english') {
+        langCode = 'en-US';
+        voiceId = 'Ivy';
+    }
+    else {
+        langCode = 'ko-KR';  // ko-KR en-US(영어)) ja-JP(일본어)) cmn-CN(중국어)) sv-SE(스페인어))
+        voiceId = 'Seoyeon';
+    }
+    
+    // voiceId: 'Aditi'|'Amy'|'Astrid'|'Bianca'|'Brian'|'Camila'|'Carla'|'Carmen'|'Celine'|'Chantal'|'Conchita'|'Cristiano'|'Dora'|'Emma'|'Enrique'|'Ewa'|'Filiz'|'Gabrielle'|'Geraint'|'Giorgio'|'Gwyneth'|'Hans'|'Ines'|'Ivy'|'Jacek'|'Jan'|'Joanna'|'Joey'|'Justin'|'Karl'|'Kendra'|'Kevin'|'Kimberly'|'Lea'|'Liv'|'Lotte'|'Lucia'|'Lupe'|'Mads'|'Maja'|'Marlene'|'Mathieu'|'Matthew'|'Maxim'|'Mia'|'Miguel'|'Mizuki'|'Naja'|'Nicole'|'Olivia'|'Penelope'|'Raveena'|'Ricardo'|'Ruben'|'Russell'|'Salli'|'Seoyeon'|'Takumi'|'Tatyana'|'Vicki'|'Vitoria'|'Zeina'|'Zhiyu'|'Aria'|'Ayanda'|'Arlet'|'Hannah'|'Arthur'|'Daniel'|'Liam'|'Pedro'|'Kajal'|'Hiujin'|'Laura'|'Elin'|'Ida'|'Suvi'|'Ola'|'Hala'|'Andres'|'Sergio'|'Remi'|'Adriano'|'Thiago'|'Ruth'|'Stephen'|'Kazuha'|'Tomoko'
+
+    // Aditi: neural is not support
+    // Amy: good
+    // Astrid: neural is not support
+    // Bianca: 스페인어? (x)
+    // Brian: 
+    // Camila (o)
+   
+    if(conversationType == 'translation') {
+        langCode = langCode;
+        voiceId = voiceId; // child Ivy, adult Joanna
+        speed = '120';
+    }    
+    // console.log('voiceId: ', voiceId);
+    
+    xhr.open("POST", uri, true);
+    xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            response = JSON.parse(xhr.responseText);
+            // console.log("response: ", response);
+
+            audioData[requestId+text] = response.body;
+
+            // console.log('successfully loaded. text= '+text);
+            // console.log(response.body);
+            // console.log(audioData[requestId+text]);
+        }
+    };
+    
+    var requestObj = {
+        "text": text,
+        "voiceId": voiceId,
+        "langCode": langCode,
+        "speed": speed
+    }
+    // console.log("request: " + JSON.stringify(requestObj));
+
+    var blob = new Blob([JSON.stringify(requestObj)], {type: 'application/json'});
+
+    xhr.send(blob);            
+}
+
+let retryCounter;
+function checkingDelayedPlayList() {
+    // console.log('->checking delayed played list ('+retryCounter+')');  
+    playAudioList();
+
+    let isCompleted = true;
+    for(let i=0; i<playList.length;i++) {
+        if(playList[i].played == false) {
+            isCompleted = false;
+            break;
+        }
+    }
+    
+    if(isCompleted==true) {
+        playList = [];
+    } 
+    else {
+        playTm = setTimeout(function () {           
+            retryCounter--;
+    
+            if(retryCounter>0) {
+                checkingDelayedPlayList();
+            }
+        }, 1000);
+    }    
+}
+
+function playAudioList() {
+    // console.log('next = '+next+', playList: '+playList.length);
+    
+    for(let i=0; i<playList.length;i++) {
+        // console.log('audio data--> ', audioData[requestId+playList[i].text])
+        // console.log('playList: ', playList);
+
+        if(next == true && playList[i].played == false && requestId == playList[i].requestId && audioData[requestId+playList[i].text]) {
+            // console.log('[play] '+i+': '+requestId+', text: '+playList[i].text);
+            playId = i;
+            playAudioLine(audioData[requestId+playList[i].text]);            
+
+            next = false;
+            break;
+        }
+        else if(requestId != playList[i].requestId) {
+            playList[i].played = true;
+        }
+    }
+}
+
+async function playAudioLine(audio_body){    
+    var sound = "data:audio/ogg;base64,"+audio_body;
+    
+    var audio = document.querySelector('audio');
+    audio.src = sound;
+    
+    // console.log('play audio');
+
+    await playAudio(audio)
+}
+
+// audio play
+var audio = document.querySelector('audio');
+audio.addEventListener("ended", function() {
+    console.log("playId: ", playId)
+
+    if(playList[playId] != undefined) {
+        console.log("played audio: ", playList[playId].text)
+
+        delay(1000)
+
+        next = true;
+        playList[playId].played = true;
+        audioData.remove([requestId+playList[playId].text]);
+
+        playAudioList()
+    }        
+    else {
+        playList = [];
+        playId = 0;
+    }
+});
+
+function playAudio(audio) {
+    return new Promise(res=>{
+        audio.play()
+        audio.onended = res
+    })
+}
+
+// Keep alive
 let tm;
 function ping() {
     console.log('->ping');
@@ -151,19 +338,68 @@ function connect(endpoint, type) {
                 }
                 // console.log('response: ', response);
 
-                if(response.status == 'completed') {          
+                if(response.status == 'completed') {
+                    console.log('completed!');
                     feedback.style.display = 'none';          
-                    console.log('received message: ', response.msg);                  
+                    console.log('received message: ', response.msg);
                     addReceivedMessage(response.request_id, response.msg);  
+
+                    if(ttsMode) {                    
+                        console.log('Is already played? ', isPlayedTTS[response.request_id]);
+                        if(isPlayedTTS[response.request_id] == undefined) {
+                            requestId = response.request_id;
+                            playList.push({
+                                'played': false,
+                                'requestId': requestId,
+                                'text': response.msg
+                            });
+                            lineText = "";      
+                        
+                            loadAudio(response.request_id, response.msg);
+                                
+                            next = true;
+                            playAudioList();
+                        }    
+                        
+                        retryCounter = 5;
+                        checkingDelayedPlayList();
+                    }
                 }                
+                
+                else if(response.status == 'proceeding') {
+                    console.log('proceeding...');
+                    feedback.style.display = 'none';
+                    sentance.put(response.request_id, sentance.get(response.request_id)+response.msg); 
+                    addReceivedMessage(response.request_id, response.msg);  
+
+                    if(ttsMode) {
+                        lineText += response.msg;
+                        lineText = lineText.replace('\n','');
+                        if(lineText.length>3 && (response.msg == '.' || response.msg == '?' || response.msg == '!')) {     
+                            console.log('lineText: ', lineText);
+                            text = lineText
+                            playList.push({
+                                'played': false,
+                                'requestId': requestId,
+                                'text': text
+                            });
+                            lineText = "";
+                
+                            isPlayedTTS[response.request_id] = true;
+                            loadAudio(response.request_id, text);
+                        }
+                        
+                        requestId = response.request_id;
+                        playAudioList();
+                    } 
+                }        
+
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
                     // feedback.innerHTML = '<i>typing a message...</i>'; 
-                }
-                else if(response.status == 'proceeding') {
-                    feedback.style.display = 'none';
-                    addReceivedMessage(response.request_id, response.msg);  
-                }                
+
+                    sentance.put(response.request_id, "");
+                }        
                 else if(response.status == 'debug') {
                     feedback.style.display = 'none';
                     console.log('debug: ', response.msg);
