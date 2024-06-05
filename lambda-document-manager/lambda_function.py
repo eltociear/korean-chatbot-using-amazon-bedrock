@@ -526,7 +526,7 @@ def add_to_opensearch(docs, key):
             err_msg = traceback.format_exc()
             print('error message: ', err_msg)
             #raise Exception ("Not able to add docs in opensearch")    
-    return ids
+    return ids 
            
 # store document into Kendra
 def store_document_for_kendra(path, key, documentId):
